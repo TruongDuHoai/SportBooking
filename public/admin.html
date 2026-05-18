@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị - SportBooking Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+        .admin-header {
+            background: linear-gradient(135deg, #1a6b30, #0d4620);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-header h1 i { margin-right: 10px; }
+        .admin-container { display: flex; min-height: calc(100vh - 70px); }
+        .sidebar {
+            width: 260px;
+            background: #2c3e50;
+            padding: 20px 0;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            color: white;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .sidebar a:hover, .sidebar a.active { background: #1a6b30; }
+        .content { flex: 1; padding: 30px; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-card i { font-size: 36px; color: #1a6b30; }
+        .stat-card .number { font-size: 28px; font-weight: bold; color: #1a6b30; }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn-add {
+            background: #1a6b30;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-add:hover { background: #0d4620; }
+        .data-table {
+            background: white;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        .data-table table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .data-table th { background: #f8f9fa; }
+        .status-pending { background: #fff3cd; color: #856404; padding: 4px 12px; border-radius: 20px; display: inline-block; }
+        .status-confirmed { background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 20px; display: inline-block; }
+        .status-cancelled { background: #f8d7da; color: #721c24; padding: 4px 12px; border-radius: 20px; display: inline-block; }
+        .btn-edit, .btn-delete { background: none; border: none; cursor: pointer; padding: 5px 10px; }
+        .btn-edit { color: #ff9800; }
+        .btn-delete { color: #e74c3c; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            width: 500px;
+            max-width: 90%;
+            padding: 25px;
+            border-radius: 12px;
+        }
+        .modal-content input, .modal-content select, .modal-content textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-save { background: #1a6b30; color: white; flex: 1; padding: 10px; border: none; border-radius: 5px; }
+        .btn-cancel { background: #ccc; flex: 1; padding: 10px; border: none; border-radius: 5px; }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        /* Calendar Styles */
+        .calendar-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .calendar-toolbar button {
+            background: #1a6b30;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .calendar-toolbar select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .calendar-grid {
+            background: white;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        .calendar-grid table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .calendar-grid th {
+            background: #1a6b30;
+            color: white;
+            padding: 12px;
+            text-align: center;
+        }
+        .calendar-grid td {
+            border: 1px solid #ddd;
+            vertical-align: top;
+            padding: 8px;
+            width: 100px;
+            height: 100px;
+        }
+        .calendar-day-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .booking-slot {
+            background: #ff9800;
+            color: white;
+            font-size: 11px;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin: 2px 0;
+            cursor: pointer;
+        }
+        .booking-slot.confirmed { background: #1a6b30; }
+        .booking-slot.pending { background: #ff9800; }
+        .empty-slot {
+            font-size: 10px;
+            color: #999;
+        }
+        .san-selector {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .san-selector select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 250px;
+        }
+        @media (max-width: 768px) {
+            .admin-container { flex-direction: column; }
+            .sidebar { width: 100%; display: flex; overflow-x: auto; }
+            .sidebar a { white-space: nowrap; }
+            .calendar-grid td { width: 60px; height: 80px; font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="adminApp">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Đang kiểm tra quyền truy cập...
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
+            authDomain: "thue-san-the-thao.firebaseapp.com",
+            projectId: "thue-san-the-thao",
+            storageBucket: "thue-san-the-thao.firebasestorage.app",
+            messagingSenderId: "90803956356",
+            appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let isAdmin = false;
+
+        async function checkAdminRole(user) {
+            if (!user) return false;
+            try {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                return userDoc.exists() && userDoc.data().role === "admin";
+            } catch (error) {
+                console.error("Lỗi kiểm tra role:", error);
+                return false;
+            }
+        }
+
+        // Chuyển hướng về trang đăng nhập
+        function redirectToLogin() {
+            window.location.href = 'dangnhap.html';
+        }
+
+        async function renderAdminPanel() {
+            if (!currentUser) {
+                redirectToLogin();
+                return;
+            }
+            
+            if (!isAdmin) {
+                document.getElementById('adminApp').innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: red;">
+                        <i class="fas fa-lock" style="font-size: 50px;"></i>
+                        <h2>🚫 Truy cập bị từ chối</h2>
+                        <p>Bạn không có quyền truy cập trang quản trị.</p>
+                        <a href="index.html" style="color: #1a6b30;">← Về trang chủ</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            document.getElementById('adminApp').innerHTML = `
+                <div class="admin-header"><h1><i class="fas fa-crown"></i> SportBooking Admin</h1><div><span><i class="fas fa-user-shield"></i> ${currentUser?.email}</span><button id="logoutBtn" style="margin-left:20px; background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></div></div>
+                <div class="admin-container">
+                    <div class="sidebar">
+                        <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                        <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> 📅 Lịch sân</a>
+                        <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
+                        <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
+                        <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
+                    </div>
+                    <div class="content">
+                        <div id="dashboardTab"></div>
+                        <div id="calendarTab" style="display:none;"></div>
+                        <div id="bookingsTab" style="display:none;"></div>
+                        <div id="sansTab" style="display:none;"></div>
+                        <div id="usersTab" style="display:none;"></div>
+                    </div>
+                </div>
+            `;
+            
+            document.querySelectorAll('.sidebar a').forEach(link => {
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    document.querySelectorAll('.sidebar a').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    const tab = link.dataset.tab;
+                    document.getElementById('dashboardTab').style.display = tab === 'dashboard' ? 'block' : 'none';
+                    document.getElementById('calendarTab').style.display = tab === 'calendar' ? 'block' : 'none';
+                    document.getElementById('bookingsTab').style.display = tab === 'bookings' ? 'block' : 'none';
+                    document.getElementById('sansTab').style.display = tab === 'sans' ? 'block' : 'none';
+                    document.getElementById('usersTab').style.display = tab === 'users' ? 'block' : 'none';
+                    if (tab === 'dashboard') loadDashboard();
+                    if (tab === 'calendar') loadCalendar();
+                    if (tab === 'bookings') loadBookings();
+                    if (tab === 'sans') loadSans();
+                    if (tab === 'users') loadUsers();
+                };
+            });
+            
+            document.getElementById('logoutBtn').onclick = async () => {
+                await signOut(auth);
+                window.location.href = 'index.html';
+            };
+            
+            loadDashboard();
+        }
+
+        async function loadDashboard() {
+            const container = document.getElementById('dashboardTab');
+            container.innerHTML = '<p>Đang tải...</p>';
+            const [bookingsSnap, sansSnap, usersSnap] = await Promise.all([
+                getDocs(collection(db, "donDat")),
+                getDocs(collection(db, "san")),
+                getDocs(collection(db, "users"))
+            ]);
+            let totalRevenue = 0, pending = 0, confirmed = 0;
+            bookingsSnap.forEach(doc => {
+                const b = doc.data();
+                if (b.trangThai === 'đã_xác_nhận') totalRevenue += (b.tongTien || 0);
+                if (b.trangThai === 'chờ_xác_nhận') pending++;
+                if (b.trangThai === 'đã_xác_nhận') confirmed++;
+            });
+            container.innerHTML = `<div class="stats"><div class="stat-card"><i class="fas fa-store"></i><h3>Tổng số sân</h3><div class="number">${sansSnap.size}</div></div><div class="stat-card"><i class="fas fa-users"></i><h3>Người dùng</h3><div class="number">${usersSnap.size}</div></div><div class="stat-card"><i class="fas fa-shopping-cart"></i><h3>Tổng đơn</h3><div class="number">${bookingsSnap.size}</div></div><div class="stat-card"><i class="fas fa-clock"></i><h3>Chờ xác nhận</h3><div class="number">${pending}</div></div><div class="stat-card"><i class="fas fa-check-circle"></i><h3>Đã xác nhận</h3><div class="number">${confirmed}</div></div><div class="stat-card"><i class="fas fa-money-bill-wave"></i><h3>Doanh thu</h3><div class="number">${totalRevenue.toLocaleString()}đ</div></div></div>`;
+        }
+
+        let currentSanId = null;
+        let currentMonth = new Date();
+
+        async function loadCalendar() {
+            const container = document.getElementById('calendarTab');
+            const sansSnap = await getDocs(collection(db, "san"));
+            let sanOptions = '<option value="">-- Chọn sân --</option>';
+            sansSnap.forEach(doc => {
+                const san = doc.data();
+                sanOptions += `<option value="${doc.id}">${san.ten} (${san.diaChi})</option>`;
+            });
+            
+            container.innerHTML = `
+                <div class="card-header"><h2><i class="fas fa-calendar-alt"></i> Lịch đặt sân</h2></div>
+                <div class="san-selector">
+                    <select id="selectSan">${sanOptions}</select>
+                    <div class="calendar-toolbar">
+                        <button id="prevMonthBtn"><i class="fas fa-chevron-left"></i> Tháng trước</button>
+                        <span id="monthYearDisplay" style="font-weight:bold; min-width:150px; text-align:center;"></span>
+                        <button id="nextMonthBtn">Tháng sau <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <div id="calendarGrid" class="calendar-grid"></div>
+            `;
+            
+            document.getElementById('selectSan').onchange = () => {
+                currentSanId = document.getElementById('selectSan').value;
+                renderCalendarGrid();
+            };
+            document.getElementById('prevMonthBtn').onclick = () => {
+                currentMonth.setMonth(currentMonth.getMonth() - 1);
+                renderCalendarGrid();
+            };
+            document.getElementById('nextMonthBtn').onclick = () => {
+                currentMonth.setMonth(currentMonth.getMonth() + 1);
+                renderCalendarGrid();
+            };
+            renderCalendarGrid();
+        }
+        
+        async function renderCalendarGrid() {
+            if (!currentSanId) {
+                document.getElementById('calendarGrid').innerHTML = '<p style="text-align:center; padding:40px;">Vui lòng chọn sân để xem lịch.</p>';
+                document.getElementById('monthYearDisplay').innerHTML = '';
+                return;
+            }
+            
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startWeekday = firstDay.getDay();
+            const daysInMonth = lastDay.getDate();
+            
+            document.getElementById('monthYearDisplay').innerHTML = `${month + 1}/${year}`;
+            
+            const bookingsRef = collection(db, "donDat");
+            const q = query(bookingsRef, where("sanId", "==", currentSanId));
+            const snapshot = await getDocs(q);
+            const bookings = {};
+            snapshot.forEach(doc => {
+                const b = doc.data();
+                const date = b.ngayDat;
+                if (!bookings[date]) bookings[date] = [];
+                bookings[date].push(b);
+            });
+            
+            let html = `<table><thead><tr>`;
+            const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+            weekdays.forEach(day => html += `<th>${day}</th>`);
+            html += `</tr></thead><tbody><tr>`;
+            
+            for (let i = 0; i < startWeekday; i++) {
+                html += `<td style="background:#f5f5f5;"></td>`;
+            }
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const dayBookings = bookings[dateStr] || [];
+                
+                html += `<td style="vertical-align:top;">`;
+                html += `<div class="calendar-day-number">${day}</div>`;
+                
+                if (dayBookings.length === 0) {
+                    html += `<div class="empty-slot">✅ Còn trống</div>`;
+                } else {
+                    dayBookings.forEach(b => {
+                        const statusClass = b.trangThai === 'đã_xác_nhận' ? 'confirmed' : 'pending';
+                        html += `<div class="booking-slot ${statusClass}" title="${b.userName || b.userEmail}">
+                            ${b.gioBatDau}:00 - ${b.gioKetThuc}:00<br>
+                            <small>${b.trangThai === 'chờ_xác_nhận' ? '⏳' : '✅'}</small>
+                        </div>`;
+                    });
+                }
+                html += `</td>`;
+                
+                if ((startWeekday + day) % 7 === 0) {
+                    html += `</tr><tr>`;
+                }
+            }
+            
+            const lastCell = (startWeekday + daysInMonth) % 7;
+            if (lastCell !== 0) {
+                for (let i = lastCell; i < 7; i++) {
+                    html += `<td style="background:#f5f5f5;"></td>`;
+                }
+            }
+            html += `</tr></tbody></table>`;
+            html += `<div style="margin-top:15px; padding:10px; background:#eee; border-radius:5px;">
+                        <strong>📌 Ghi chú:</strong> Cam = Chờ xác nhận | Xanh = Đã xác nhận | <span style="color:#1a6b30;">✅ Còn trống</span> = Khung giờ trống
+                     </div>`;
+            document.getElementById('calendarGrid').innerHTML = html;
+        }
+
+        async function loadBookings() {
+            const container = document.getElementById('bookingsTab');
+            const q = query(collection(db, "donDat"), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) { container.innerHTML = '<div class="data-table"><p style="padding:20px;">Chưa có đơn đặt sân nào.</p></div>'; return; }
+            let html = `<div class="card-header"><h2><i class="fas fa-list"></i> Danh sách đơn đặt</h2></div><div class="data-table"><table><thead><tr><th>STT</th><th>Khách hàng</th><th>Sân</th><th>Ngày</th><th>Giờ</th><th>Tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>`;
+            let stt = 1;
+            for (const docSnap of snapshot.docs) {
+                const b = docSnap.data();
+                let statusClass = b.trangThai === 'chờ_xác_nhận' ? 'status-pending' : (b.trangThai === 'đã_xác_nhận' ? 'status-confirmed' : 'status-cancelled');
+                html += `<tr>
+                    <td>${stt++}</td>
+                    <td>${b.userName || b.userEmail || '---'}</td>
+                    <td>${b.tenSan || '---'}</td>
+                    <td>${b.ngayDat || '---'}</td>
+                    <td>${b.gioBatDau}:00 - ${b.gioKetThuc}:00</td>
+                    <td>${(b.tongTien || 0).toLocaleString()}đ</td>
+                    <td><select class="${statusClass}" data-id="${docSnap.id}" style="border:none; padding:4px 12px; border-radius:20px;"><option value="chờ_xác_nhận" ${b.trangThai === 'chờ_xác_nhận' ? 'selected' : ''}>⏳ Chờ xác nhận</option><option value="đã_xác_nhận" ${b.trangThai === 'đã_xác_nhận' ? 'selected' : ''}>✅ Đã xác nhận</option><option value="đã_hủy" ${b.trangThai === 'đã_hủy' ? 'selected' : ''}>❌ Đã hủy</option></select></td>
+                    <td><button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }
+            html += `</tbody></table></div>`;
+            container.innerHTML = html;
+            document.querySelectorAll('.status-pending, .status-confirmed, .status-cancelled').forEach(select => { select.onchange = async () => { if (confirm('Cập nhật trạng thái?')) { await updateDoc(doc(db, "donDat", select.dataset.id), { trangThai: select.value }); loadBookings(); } }; });
+            document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa đơn này?')) { await deleteDoc(doc(db, "donDat", btn.dataset.id)); loadBookings(); } }; });
+        }
+
+        async function loadSans() {
+            const snapshot = await getDocs(collection(db, "san"));
+            let html = `<div class="card-header"><h2><i class="fas fa-futbol"></i> Quản lý sân</h2><button class="btn-add" id="addSanBtn"><i class="fas fa-plus"></i> Thêm sân</button></div><div class="data-table"><table><thead><tr><th>STT</th><th>Tên sân</th><th>Loại</th><th>Giá/giờ</th><th>Địa chỉ</th><th>Thao tác</th></tr></thead><tbody>`;
+            let stt = 1;
+            for (const docSnap of snapshot.docs) {
+                const s = docSnap.data();
+                let loaiText = s.loai === 'caulong' ? '🏸 Cầu lông' : (s.loai === 'pickleball' ? '🎾 Pickleball' : '⚽ Bóng đá');
+                html += `<tr>
+                    <td>${stt++}</td>
+                    <td>${s.ten}</td>
+                    <td>${loaiText}</td>
+                    <td>${s.gia.toLocaleString()}đ</td>
+                    <td>${s.diaChi || '---'}</td>
+                    <td><button class="btn-edit" data-id="${docSnap.id}" data-ten="${s.ten}" data-loai="${s.loai}" data-gia="${s.gia}" data-diachi="${s.diaChi || ''}" data-mota="${s.moTa || ''}"><i class="fas fa-edit"></i></button><button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }
+            html += `</tbody></table></div>`;
+            document.getElementById('sansTab').innerHTML = html;
+            document.getElementById('addSanBtn').onclick = () => showSanModal();
+            document.querySelectorAll('.btn-edit').forEach(btn => { btn.onclick = () => showSanModal(btn.dataset); });
+            document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa sân này?')) { await deleteDoc(doc(db, "san", btn.dataset.id)); loadSans(); } }; });
+        }
+
+        async function loadUsers() {
+            const snapshot = await getDocs(collection(db, "users"));
+            let html = `<div class="card-header"><h2><i class="fas fa-users"></i> Quản lý người dùng</h2></div><div class="data-table"><table><thead><tr><th>STT</th><th>Email</th><th>Họ tên</th><th>SĐT</th><th>Vai trò</th><th>Thao tác</th></tr></thead><tbody>`;
+            let stt = 1;
+            for (const docSnap of snapshot.docs) {
+                const u = docSnap.data();
+                html += `<tr>
+                    <td>${stt++}</td>
+                    <td>${u.email}</td>
+                    <td>${u.fullName || '---'}</td>
+                    <td>${u.phone || '---'}</td>
+                    <td><select class="role-select" data-id="${docSnap.id}" data-email="${u.email}"><option value="user" ${u.role === 'user' ? 'selected' : ''}>👤 Người dùng</option><option value="admin" ${u.role === 'admin' ? 'selected' : ''}>👑 Admin</option></select></td>
+                    <td><button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }
+            html += `</tbody></table></div>`;
+            document.getElementById('usersTab').innerHTML = html;
+            document.querySelectorAll('.role-select').forEach(select => { select.onchange = async () => { if (select.dataset.email === currentUser?.email) { alert('Bạn không thể thay đổi vai trò của chính mình!'); loadUsers(); return; } if (confirm('Cập nhật vai trò?')) { await updateDoc(doc(db, "users", select.dataset.id), { role: select.value }); loadUsers(); } }; });
+            document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa người dùng này?')) { await deleteDoc(doc(db, "users", btn.dataset.id)); loadUsers(); } }; });
+        }
+
+        function showSanModal(data = null) {
+            const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
+            modal.innerHTML = `<div class="modal-content"><h3><i class="fas fa-futbol"></i> ${data ? 'Sửa sân' : 'Thêm sân mới'}</h3><input type="text" id="sanTen" placeholder="Tên sân" value="${data ? data.ten : ''}"><select id="sanLoai"><option value="caulong" ${data && data.loai === 'caulong' ? 'selected' : ''}>🏸 Cầu lông</option><option value="pickleball" ${data && data.loai === 'pickleball' ? 'selected' : ''}>🎾 Pickleball</option><option value="bongda" ${data && data.loai === 'bongda' ? 'selected' : ''}>⚽ Bóng đá</option></select><input type="number" id="sanGia" placeholder="Giá mỗi giờ (VNĐ)" value="${data ? data.gia : ''}"><input type="text" id="sanDiaChi" placeholder="Địa chỉ" value="${data ? data.diachi : ''}"><textarea id="sanMoTa" rows="3" placeholder="Mô tả sân">${data ? data.mota : ''}</textarea><div class="modal-buttons"><button class="btn-save" id="saveSanBtn"><i class="fas fa-save"></i> Lưu</button><button class="btn-cancel" id="cancelModalBtn"><i class="fas fa-times"></i> Hủy</button></div></div>`;
+            document.body.appendChild(modal);
+            document.getElementById('saveSanBtn').onclick = async () => {
+                const sanData = { ten: document.getElementById('sanTen').value, loai: document.getElementById('sanLoai').value, gia: parseInt(document.getElementById('sanGia').value), diaChi: document.getElementById('sanDiaChi').value, moTa: document.getElementById('sanMoTa').value, hinhAnh: "https://images.unsplash.com/photo-1534158914592-062992fbea52" };
+                if (!sanData.ten || !sanData.gia) { alert('Vui lòng nhập đầy đủ!'); return; }
+                if (data && data.id) await updateDoc(doc(db, "san", data.id), sanData);
+                else await addDoc(collection(db, "san"), sanData);
+                modal.remove(); loadSans(); loadDashboard();
+            };
+            document.getElementById('cancelModalBtn').onclick = () => modal.remove();
+        }
+
+        // Kiểm tra đăng nhập và role, nếu chưa đăng nhập thì chuyển về dangnhap.html
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                isAdmin = await checkAdminRole(user);
+                renderAdminPanel();
+            } else {
+                // Chưa đăng nhập -> chuyển về trang đăng nhập
+                window.location.href = 'dangnhap.html';
+            }
+        });
+    </script>
+</body>
+</html>

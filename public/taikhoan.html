@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin tài khoản - SportBooking</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .profile-header {
+            background: linear-gradient(135deg, #1a6b30, #0d4620);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .profile-header h2 {
+            margin-bottom: 10px;
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: #ff9800;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 48px;
+        }
+        .profile-body {
+            padding: 30px;
+        }
+        .info-group {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            width: 150px;
+            display: inline-block;
+        }
+        .info-value {
+            color: #333;
+            font-size: 16px;
+        }
+        .edit-btn {
+            background: #1a6b30;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .edit-btn:hover {
+            background: #0d4620;
+        }
+        .edit-form {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        .edit-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .save-btn {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            color: #1a6b30;
+            text-decoration: none;
+        }
+        .order-history {
+            margin-top: 30px;
+        }
+        .order-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>⛳ SportBooking</h1>
+        </div>
+        <nav>
+            <a href="index.html">Trang chủ</a>
+            <a href="san.html">Sân</a>
+            <a href="giohang.html">Giỏ hàng</a>
+            <a href="lichsu.html">Lịch sử</a>
+            <a href="#" id="logoutBtn">Đăng xuất</a>
+        </nav>
+    </header>
+
+    <div class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar">👤</div>
+                <h2 id="displayName">Tên người dùng</h2>
+                <p id="userEmail">email@example.com</p>
+            </div>
+            
+            <div class="profile-body">
+                <div class="info-group">
+                    <span class="info-label">Họ và tên:</span>
+                    <span class="info-value" id="infoFullName">---</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value" id="infoEmail">---</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label">Số điện thoại:</span>
+                    <span class="info-value" id="infoPhone">Chưa cập nhật</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label">Ngày tham gia:</span>
+                    <span class="info-value" id="infoCreatedAt">---</span>
+                </div>
+                
+                <button class="edit-btn" id="editBtn">✏️ Chỉnh sửa thông tin</button>
+                
+                <div class="edit-form" id="editForm">
+                    <h3>Chỉnh sửa thông tin</h3>
+                    <input type="text" id="editFullName" placeholder="Họ và tên">
+                    <input type="tel" id="editPhone" placeholder="Số điện thoại">
+                    <button class="save-btn" id="saveBtn">💾 Lưu thay đổi</button>
+                    <button id="cancelBtn" style="margin-left:10px;">Hủy</button>
+                </div>
+                
+                <a href="index.html" class="back-btn">← Quay lại trang chủ</a>
+            </div>
+        </div>
+        
+        <div class="order-history">
+            <h3>📋 Lịch sử đặt sân</h3>
+            <div id="orderList">
+                <p>Chưa có đơn đặt sân nào.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
+            authDomain: "thue-san-the-thao.firebaseapp.com",
+            projectId: "thue-san-the-thao",
+            storageBucket: "thue-san-the-thao.firebasestorage.app",
+            messagingSenderId: "90803956356",
+            appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Kiểm tra đăng nhập
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                alert('Vui lòng đăng nhập để xem thông tin cá nhân');
+                window.location.href = 'dangnhap.html';
+                return;
+            }
+            
+            // Hiển thị thông tin user
+            document.getElementById('displayName').textContent = user.displayName || user.email;
+            document.getElementById('userEmail').textContent = user.email;
+            
+            // Lấy thông tin từ Firestore
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            if (userDoc.exists()) {
+                const userData = userDoc.data();
+                document.getElementById('infoFullName').textContent = userData.fullName || user.displayName || '---';
+                document.getElementById('infoEmail').textContent = user.email;
+                document.getElementById('infoPhone').textContent = userData.phone || 'Chưa cập nhật';
+                document.getElementById('infoCreatedAt').textContent = userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('vi-VN') : '---';
+                
+                // Điền vào form chỉnh sửa
+                document.getElementById('editFullName').value = userData.fullName || '';
+                document.getElementById('editPhone').value = userData.phone || '';
+            }
+            
+            // Lấy lịch sử đặt sân
+            await loadOrderHistory(user.uid);
+        });
+        
+        // Load lịch sử đặt sân
+        async function loadOrderHistory(userId) {
+            const ordersRef = collection(db, "donDat");
+            const q = query(ordersRef, where("userId", "==", userId));
+            const snapshot = await getDocs(q);
+            
+            const orderList = document.getElementById('orderList');
+            if (snapshot.empty) {
+                orderList.innerHTML = '<p>Chưa có đơn đặt sân nào.</p>';
+                return;
+            }
+            
+            let html = '';
+            snapshot.forEach(doc => {
+                const order = doc.data();
+                html += `
+                    <div class="order-item">
+                        <strong>Sân:</strong> ${order.tenSan || 'Đang cập nhật'}<br>
+                        <strong>Ngày:</strong> ${order.ngayDat || '---'}<br>
+                        <strong>Giờ:</strong> ${order.gioBatDau || '---'}h - ${order.gioKetThuc || '---'}h<br>
+                        <strong>Tổng tiền:</strong> ${(order.tongTien || 0).toLocaleString()}đ<br>
+                        <strong>Trạng thái:</strong> <span style="color: ${order.trangThai === 'đã_xác_nhận' ? 'green' : 'orange'}">${order.trangThai || 'chờ xác nhận'}</span>
+                    </div>
+                `;
+            });
+            orderList.innerHTML = html;
+        }
+        
+        // Chỉnh sửa thông tin
+        document.getElementById('editBtn').onclick = () => {
+            document.getElementById('editForm').style.display = 'block';
+        };
+        
+        document.getElementById('cancelBtn').onclick = () => {
+            document.getElementById('editForm').style.display = 'none';
+        };
+        
+        document.getElementById('saveBtn').onclick = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            const newFullName = document.getElementById('editFullName').value;
+            const newPhone = document.getElementById('editPhone').value;
+            
+            try {
+                // Cập nhật Firebase Auth
+                await updateProfile(user, { displayName: newFullName });
+                
+                // Cập nhật Firestore
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, {
+                    fullName: newFullName,
+                    phone: newPhone,
+                    updatedAt: new Date().toISOString()
+                });
+                
+                // Cập nhật hiển thị
+                document.getElementById('infoFullName').textContent = newFullName;
+                document.getElementById('infoPhone').textContent = newPhone || 'Chưa cập nhật';
+                document.getElementById('displayName').textContent = newFullName;
+                
+                alert('Cập nhật thông tin thành công!');
+                document.getElementById('editForm').style.display = 'none';
+                
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        };
+        
+        // Đăng xuất
+        document.getElementById('logoutBtn').onclick = async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'index.html';
+        };
+    </script>
+</body>
+</html>

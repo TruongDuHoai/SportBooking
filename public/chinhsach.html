@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chính sách - SportBooking</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .policy-container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+        .policy-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .policy-card h2 {
+            color: #1a6b30;
+            border-bottom: 2px solid #1a6b30;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .policy-card h3 {
+            color: #333;
+            margin: 15px 0 10px;
+        }
+        .policy-card p, .policy-card ul {
+            color: #666;
+            line-height: 1.6;
+        }
+        .policy-card ul {
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo"><h1>⛳ SportBooking</h1></div>
+        <nav>
+            <a href="index.html">Trang chủ</a>
+            <a href="san.html">Sân</a>
+            <a href="giohang.html">Giỏ hàng</a>
+            <a href="lichsu.html">Lịch sử</a>
+            <a href="#" id="loginBtn">Đăng nhập</a>
+            <a href="#" id="userInfoBtn" style="display:none;">👤 Tài khoản</a>
+        </nav>
+    </header>
+
+    <div class="policy-container">
+        <div class="policy-card">
+            <h2>📋 Chính sách đặt sân</h2>
+            <p><strong>⏰ Thời gian đặt sân:</strong> Khách hàng có thể đặt sân trước tối đa 7 ngày.</p>
+            <p><strong>✅ Xác nhận đặt sân:</strong> Đơn đặt sẽ được xác nhận sau khi admin duyệt (trong vòng 24h).</p>
+            <p><strong>💸 Thanh toán:</strong> Thanh toán khi nhận sân hoặc chuyển khoản trước.</p>
+        </div>
+
+        <div class="policy-card">
+            <h2>🔄 Chính sách hủy đặt & hoàn tiền</h2>
+            <p><strong>Hủy trước 24h:</strong> Được hoàn 100% tiền đặt cọc.</p>
+            <p><strong>Hủy trước 12h:</strong> Được hoàn 50% tiền đặt cọc.</p>
+            <p><strong>Hủy dưới 12h:</strong> Không được hoàn tiền.</p>
+            <p><strong>Lưu ý:</strong> Vui lòng liên hệ hotline để được hỗ trợ hủy đặt.</p>
+        </div>
+
+        <div class="policy-card">
+            <h2>🚚 Chính sách vận chuyển (Cho thuê dụng cụ)</h2>
+            <p><strong>Cho thuê vợt cầu lông:</strong> 50.000đ/cây</p>
+            <p><strong>Cho thuê bóng đá:</strong> 30.000đ/quả</p>
+            <p><strong>Phí giao hàng:</strong> Miễn phí trong bán kính 5km, từ 15.000đ - 30.000đ cho khu vực xa.</p>
+        </div>
+
+        <div class="policy-card">
+            <h2>🔧 Chính sách bảo hành & đổi trả dụng cụ</h2>
+            <p><strong>Bảo hành vợt cầu lông:</strong> 3 tháng đối với lỗi nhà sản xuất.</p>
+            <p><strong>Đổi trả:</strong> Trong vòng 7 ngày nếu sản phẩm lỗi kỹ thuật.</p>
+            <p><strong>Không đổi trả:</strong> Do va đập, rơi vỡ trong quá trình sử dụng.</p>
+        </div>
+
+        <div class="policy-card">
+            <h2>📞 Liên hệ hỗ trợ</h2>
+            <p><strong>📧 Email:</strong> support@sportbooking.com</p>
+            <p><strong>📞 Hotline:</strong> 1900 1234 (8h00 - 21h00 hàng ngày)</p>
+            <p><strong>📍 Địa chỉ:</strong> 123 Đường Nguyễn Du, Quận 1, TP.HCM</p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div><h4>Liên hệ</h4><p>📞 1900 1234</p><p>📧 support@sportbooking.com</p></div>
+            <div><h4>Chính sách</h4><p><a href="chinhsach.html">Chính sách đặt sân</a></p></div>
+            <div><h4>Theo dõi</h4><p><i class="fab fa-facebook"></i> Facebook</p></div>
+        </div>
+        <p class="copyright">&copy; 2025 SportBooking - Thuê sân thể thao trực tuyến</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4K9c1PJQm7ed7TG3naiDTA9X_Pky-fHI",
+            authDomain: "thue-san-the-thao.firebaseapp.com",
+            projectId: "thue-san-the-thao",
+            storageBucket: "thue-san-the-thao.firebasestorage.app",
+            messagingSenderId: "90803956356",
+            appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfoBtn = document.getElementById('userInfoBtn');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginBtn.style.display = 'none';
+                userInfoBtn.style.display = 'inline';
+                userInfoBtn.onclick = () => window.location.href = 'taikhoan.html';
+            } else {
+                loginBtn.style.display = 'inline';
+                userInfoBtn.style.display = 'none';
+                loginBtn.onclick = () => window.location.href = 'dangnhap.html';
+            }
+        });
+    </script>
+</body>
+</html>

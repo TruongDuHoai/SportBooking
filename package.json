@@ -1,0 +1,15 @@
+{
+  "name": "website-booking-sport",
+  "version": "1.0.0",
+  "description": "Website đặt sân cầu lông, pickleball, bóng đá",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx live-server public --port=3000"
+  },
+  "keywords": ["booking", "sports", "badminton", "pickleball", "soccer"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "firebase": "^10.8.0"
+  }
+}

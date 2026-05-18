@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thuê Sân Thể Thao - Cầu Lông, Pickleball, Bóng Đá</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <a href="index.html" style="text-decoration: none; color: white;">
+                <h1> SportBooking</h1>
+            </a>
+        </div>
+        <nav>
+            <a href="index.html">Trang chủ</a>
+            <a href="giohang.html">Giỏ hàng</a>
+            <a href="lichsu.html">Lịch sử</a>
+            <div style="position:relative; display:inline-block;" id="userMenu">
+                <a href="#" id="loginBtn" style="display:inline-block;">Đăng nhập</a>
+                <a href="#" id="userInfoBtn" style="display:none;">👤 Tài khoản</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h2>Đặt Sân Thể Thao Dễ Dàng</h2>
+        <p>Cầu lông | Pickleball | Bóng đá</p>
+        <div class="search-box">
+            <input type="text" placeholder="Tìm sân theo tên, địa chỉ...">
+            <button>Tìm kiếm</button>
+        </div>
+    </section>
+
+    <!-- Bộ lọc -->
+    <section class="filters">
+        <select id="locLoaiSan">
+            <option value="">Tất cả loại sân</option>
+            <option value="caulong">🏸 Cầu lông</option>
+            <option value="pickleball">🎾 Pickleball</option>
+            <option value="bongda">⚽ Bóng đá</option>
+        </select>
+        <select id="locKhuVuc">
+            <option value="">Tất cả khu vực</option>
+            <option value="quan1">Quận 1</option>
+            <option value="quan2">Quận 2</option>
+            <option value="quan3">Quận 3</option>
+            <option value="quan10">Quận 10</option>
+            <option value="tanbinh">Tân Bình</option>
+        </select>
+        <select id="sapXep">
+            <option value="giaTang">💰 Giá tăng dần</option>
+            <option value="giaGiam">💰 Giá giảm dần</option>
+            <option value="tenAZ">📝 Tên A-Z</option>
+        </select>
+    </section>
+
+    <!-- Danh sách sân -->
+    <section class="san-list">
+        <h2>Danh sách sân</h2>
+        <div id="danhSachSan" class="grid-container">
+            <!-- Sẽ load dữ liệu từ Firebase -->
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div>
+                <h4>Liên hệ</h4>
+                <p>📞 Hotline: 1900 1234</p>
+                <p>📧 Email: info@sportbooking.com</p>
+            </div>
+            <div>
+                <h4>Chính sách</h4>
+                <p><a href="chinhsach.html">Chính sách đặt sân</a></p>
+                <p><a href="chinhsach.html#hoantien">Chính sách hủy đặt</a></p>
+                <p><a href="chinhsach.html#baohanh">Chính sách bảo hành</a></p>
+            </div>
+            <div>
+                <h4>Theo dõi</h4>
+                <p><i class="fab fa-facebook"></i> Facebook</p>
+                <p><i class="fab fa-instagram"></i> Instagram</p>
+            </div>
+        </div>
+        <p class="copyright">&copy; 2025 SportBooking - Thuê sân thể thao trực tuyến</p>
+    </footer>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

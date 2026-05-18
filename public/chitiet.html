@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết sân - SportBooking</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .detail-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .detail-image img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        .detail-info h2 {
+            color: #1a6b30;
+            margin-bottom: 15px;
+        }
+        .detail-price {
+            font-size: 28px;
+            color: #e74c3c;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .detail-address {
+            color: #666;
+            margin: 10px 0;
+        }
+        .booking-form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .booking-form h3 {
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .time-slot {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .time-slot:hover {
+            background: #1a6b30;
+            color: white;
+        }
+        .time-slot.selected {
+            background: #1a6b30;
+            color: white;
+        }
+        .time-slot.booked {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .btn-book {
+            width: 100%;
+            background: #ff9800;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn-book:hover {
+            background: #e68900;
+        }
+        .total-price {
+            font-size: 20px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .map-container {
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .map-container iframe {
+            width: 100%;
+            height: 250px;
+            border: 0;
+        }
+        @media (max-width: 768px) {
+            .detail-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>⛳ SportBooking</h1>
+        </div>
+        <nav>
+            <a href="index.html">Trang chủ</a>
+            <a href="san.html">Sân</a>
+            <a href="giohang.html">Giỏ hàng</a>
+            <a href="lichsu.html">Lịch sử</a>
+            <div style="position:relative; display:inline-block;" id="userMenu">
+                <a href="#" id="loginBtn" style="display:inline-block;">Đăng nhập</a>
+                <a href="#" id="userInfoBtn" style="display:none;">👤 Tài khoản</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="detail-container" id="detailContainer">
+        <!-- Dữ liệu sẽ load từ JS -->
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
+            authDomain: "thue-san-the-thao.firebaseapp.com",
+            projectId: "thue-san-the-thao",
+            storageBucket: "thue-san-the-thao.firebasestorage.app",
+            messagingSenderId: "90803956356",
+            appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sanId = urlParams.get('id');
+
+        let currentSan = null;
+        let currentUser = null;
+        let selectedDate = '';
+        let selectedHour = '';
+
+        const gioTrongNgay = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+
+        async function loadSan() {
+            if (!sanId) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const sanRef = doc(db, "san", sanId);
+            const sanSnap = await getDoc(sanRef);
+            
+            if (!sanSnap.exists()) {
+                alert('Không tìm thấy sân!');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentSan = { id: sanSnap.id, ...sanSnap.data() };
+            hienThiChiTietSan();
+        }
+
+        function hienThiChiTietSan() {
+            let loaiText = '';
+            if (currentSan.loai === 'caulong') loaiText = '🏸 Cầu lông';
+            else if (currentSan.loai === 'pickleball') loaiText = '🎾 Pickleball';
+            else loaiText = '⚽ Bóng đá';
+
+            // Tạo tọa độ Google Maps dựa trên địa chỉ (mặc định là TP.HCM)
+            const address = encodeURIComponent(currentSan.diaChi + ", TP.HCM");
+            const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyAOiaqOwzYeJRRae09aM8MYyMKlbTlJ_hg&q=${address}&language=vi`;
+
+            const container = document.getElementById('detailContainer');
+            container.innerHTML = `
+                <div class="detail-image">
+                    <img src="${currentSan.hinhAnh}" alt="${currentSan.ten}">
+                </div>
+                <div class="detail-info">
+                    <h2>${loaiText} - ${currentSan.ten}</h2>
+                    <div class="detail-price">${currentSan.gia.toLocaleString()}đ / giờ</div>
+                    <div class="detail-address">📍 Địa chỉ: ${currentSan.diaChi}</div>
+                    <div class="detail-address">📝 Mô tả: ${currentSan.moTa || 'Sân đẹp, chất lượng tốt'}</div>
+                    
+                    <!-- Google Maps -->
+                    <div class="map-container">
+                        <iframe 
+                            src="${mapUrl}"
+                            allowfullscreen="" 
+                            loading="lazy">
+                        </iframe>
+                    </div>
+                    
+                    <div class="booking-form">
+                        <h3>📅 Đặt sân</h3>
+                        <div class="form-group">
+                            <label>Chọn ngày:</label>
+                            <input type="date" id="ngayDat" min="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <div class="form-group">
+                            <label>Chọn giờ:</label>
+                            <div class="time-slots" id="timeSlots"></div>
+                        </div>
+                        <div class="total-price" id="totalPrice"></div>
+                        <button class="btn-book" id="bookBtn">✅ Xác nhận đặt sân</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('ngayDat').addEventListener('change', (e) => {
+                selectedDate = e.target.value;
+                loadLichTrong(selectedDate);
+            });
+
+            document.getElementById('bookBtn').addEventListener('click', datSan);
+        }
+
+        async function loadLichTrong(date) {
+            if (!date) return;
+
+            const timeSlotsDiv = document.getElementById('timeSlots');
+            timeSlotsDiv.innerHTML = '<p>Đang kiểm tra lịch...</p>';
+
+            try {
+                const bookingsRef = collection(db, "donDat");
+                const q = query(bookingsRef, where("sanId", "==", sanId), where("ngayDat", "==", date));
+                const snapshot = await getDocs(q);
+                
+                const bookedHours = new Set();
+                snapshot.forEach(doc => {
+                    const booking = doc.data();
+                    bookedHours.add(booking.gioBatDau);
+                });
+
+                let html = '';
+                gioTrongNgay.forEach(gio => {
+                    let statusClass = '';
+                    let disabled = false;
+                    if (bookedHours.has(gio)) {
+                        statusClass = 'booked';
+                        disabled = true;
+                    }
+                    html += `<div class="time-slot ${statusClass}" data-gio="${gio}" ${disabled ? 'style="opacity:0.5"' : ''}>${gio}:00 - ${gio+1}:00</div>`;
+                });
+                timeSlotsDiv.innerHTML = html;
+
+                document.querySelectorAll('.time-slot:not(.booked)').forEach(slot => {
+                    slot.addEventListener('click', () => {
+                        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                        slot.classList.add('selected');
+                        selectedHour = parseInt(slot.dataset.gio);
+                        updateTotalPrice();
+                    });
+                });
+
+            } catch (error) {
+                console.error('Lỗi:', error);
+                timeSlotsDiv.innerHTML = '<p style="color:red">Lỗi tải lịch</p>';
+            }
+        }
+
+        function updateTotalPrice() {
+            if (selectedDate && selectedHour) {
+                const totalDiv = document.getElementById('totalPrice');
+                totalDiv.innerHTML = `💰 Tổng tiền: ${currentSan.gia.toLocaleString()}đ`;
+            }
+        }
+
+        async function datSan() {
+            if (!currentUser) {
+                alert('Vui lòng đăng nhập để đặt sân!');
+                window.location.href = 'dangnhap.html';
+                return;
+            }
+
+            if (!selectedDate) {
+                alert('Vui lòng chọn ngày đặt sân!');
+                return;
+            }
+
+            if (!selectedHour) {
+                alert('Vui lòng chọn giờ đặt sân!');
+                return;
+            }
+
+            const confirmMsg = `Xác nhận đặt sân:\nSân: ${currentSan.ten}\nNgày: ${selectedDate}\nGiờ: ${selectedHour}:00 - ${selectedHour+1}:00\nThành tiền: ${currentSan.gia.toLocaleString()}đ\nBạn có chắc chắn muốn đặt?`;
+            
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                await addDoc(collection(db, "donDat"), {
+                    sanId: sanId,
+                    tenSan: currentSan.ten,
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email,
+                    userName: currentUser.displayName || currentUser.email,
+                    ngayDat: selectedDate,
+                    gioBatDau: selectedHour,
+                    gioKetThuc: selectedHour + 1,
+                    gia: currentSan.gia,
+                    tongTien: currentSan.gia,
+                    trangThai: "chờ_xác_nhận",
+                    createdAt: new Date().toISOString()
+                });
+                
+                alert('🎉 Đặt sân thành công! Vui lòng chờ admin xác nhận.');
+                window.location.href = 'lichsu.html';
+                
+            } catch (error) {
+                alert('Đặt sân thất bại! Vui lòng thử lại.');
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const loginBtn = document.getElementById('loginBtn');
+            const userInfoBtn = document.getElementById('userInfoBtn');
+            
+            if (user) {
+                loginBtn.style.display = 'none';
+                userInfoBtn.style.display = 'inline';
+                userInfoBtn.onclick = () => window.location.href = 'taikhoan.html';
+            } else {
+                loginBtn.style.display = 'inline';
+                userInfoBtn.style.display = 'none';
+                loginBtn.onclick = () => window.location.href = 'dangnhap.html';
+            }
+        });
+
+        loadSan();
+    </script>
+</body>
+</html>
