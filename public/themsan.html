@@ -46,7 +46,7 @@
     <div class="container">
         <h1>🏸 Thêm dữ liệu sân vào Firebase</h1>
         <p>Nhấn nút bên dưới để thêm 6 sân mẫu vào Firestore</p>
-        <button id="btnThem">➕ Thêm dữ liệu</button>
+        <button id="btnThem"> Thêm dữ liệu</button>
         <div id="status"></div>
         <p><a href="index.html" style="color: #1a6b30;">← Quay lại trang chủ</a></p>
     </div>
@@ -83,7 +83,7 @@
         document.getElementById('btnThem').onclick = async () => {
             const statusDiv = document.getElementById('status');
             statusDiv.className = 'status loading';
-            statusDiv.innerHTML = '⏳ Đang thêm dữ liệu... Vui lòng đợi!';
+            statusDiv.innerHTML = ' Đang thêm dữ liệu... Vui lòng đợi!';
             
             try {
                 const sanCollection = collection(db, "san");
@@ -92,7 +92,7 @@
                 const existing = await getDocs(sanCollection);
                 if (!existing.empty) {
                     statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '⚠️ Dữ liệu đã tồn tại! Không thêm nữa để tránh trùng lặp.';
+                    statusDiv.innerHTML = ' Dữ liệu đã tồn tại! Không thêm nữa để tránh trùng lặp.';
                     return;
                 }
                 
@@ -101,16 +101,16 @@
                 for (const san of danhSachSan) {
                     await addDoc(sanCollection, san);
                     count++;
-                    statusDiv.innerHTML = `⏳ Đã thêm ${count}/${danhSachSan.length} sân...`;
+                    statusDiv.innerHTML = ` Đã thêm ${count}/${danhSachSan.length} sân...`;
                 }
                 
                 statusDiv.className = 'status success';
-                statusDiv.innerHTML = `✅ Thành công! Đã thêm ${count} sân vào Firestore.<br>🎉 Bạn có thể quay lại trang chủ để xem danh sách sân từ Firebase!`;
+                statusDiv.innerHTML = ` Thành công! Đã thêm ${count} sân vào Firestore.<br>🎉 Bạn có thể quay lại trang chủ để xem danh sách sân từ Firebase!`;
                 
                 // Thêm nút về trang chủ
                 const btnHome = document.createElement('a');
                 btnHome.href = 'index.html';
-                btnHome.innerHTML = '🏠 Về trang chủ';
+                btnHome.innerHTML = ' Về trang chủ';
                 btnHome.style.cssText = 'display:inline-block; margin-top:15px; background:#1a6b30; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;';
                 statusDiv.appendChild(document.createElement('br'));
                 statusDiv.appendChild(btnHome);
@@ -118,7 +118,7 @@
             } catch (error) {
                 console.error('Lỗi:', error);
                 statusDiv.className = 'status error';
-                statusDiv.innerHTML = `❌ Lỗi: ${error.message}<br>Kiểm tra lại kết nối Firebase!`;
+                statusDiv.innerHTML = ` Lỗi: ${error.message}<br>Kiểm tra lại kết nối Firebase!`;
             }
         };
     </script>

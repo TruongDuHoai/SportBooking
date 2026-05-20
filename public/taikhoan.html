@@ -106,23 +106,23 @@
     </style>
 </head>
 <body>
-    <header>
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
         <div class="logo">
-            <h1>⛳ SportBooking</h1>
+            <a href="index.html" style="text-decoration: none; color: white;">
+                <h1> SportBooking</h1>
+            </a>
         </div>
         <nav>
-            <a href="index.html">Trang chủ</a>
-            <a href="san.html">Sân</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
-            <a href="#" id="logoutBtn">Đăng xuất</a>
+            <a href="#" id="logoutBtnInProfile" style="color: #e74c3c;">Đăng xuất</a>
         </nav>
     </header>
 
     <div class="profile-container">
         <div class="profile-card">
             <div class="profile-header">
-                <div class="avatar">👤</div>
+                <div class="avatar"></div>
                 <h2 id="displayName">Tên người dùng</h2>
                 <p id="userEmail">email@example.com</p>
             </div>
@@ -145,22 +145,20 @@
                     <span class="info-value" id="infoCreatedAt">---</span>
                 </div>
                 
-                <button class="edit-btn" id="editBtn">✏️ Chỉnh sửa thông tin</button>
+                <button class="edit-btn" id="editBtn"> Chỉnh sửa thông tin</button>
                 
                 <div class="edit-form" id="editForm">
                     <h3>Chỉnh sửa thông tin</h3>
                     <input type="text" id="editFullName" placeholder="Họ và tên">
                     <input type="tel" id="editPhone" placeholder="Số điện thoại">
-                    <button class="save-btn" id="saveBtn">💾 Lưu thay đổi</button>
+                    <button class="save-btn" id="saveBtn"> Lưu thay đổi</button>
                     <button id="cancelBtn" style="margin-left:10px;">Hủy</button>
                 </div>
-                
-                <a href="index.html" class="back-btn">← Quay lại trang chủ</a>
             </div>
         </div>
         
         <div class="order-history">
-            <h3>📋 Lịch sử đặt sân</h3>
+            <h3> Lịch sử đặt sân</h3>
             <div id="orderList">
                 <p>Chưa có đơn đặt sân nào.</p>
             </div>
@@ -186,33 +184,40 @@
         const db = getFirestore(app);
 
         // Kiểm tra đăng nhập
+        let authChecked = false;
+
         onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                alert('Vui lòng đăng nhập để xem thông tin cá nhân');
-                window.location.href = 'dangnhap.html';
-                return;
-            }
+            console.log("Auth state changed:", user ? user.email : "No user");
             
-            // Hiển thị thông tin user
-            document.getElementById('displayName').textContent = user.displayName || user.email;
-            document.getElementById('userEmail').textContent = user.email;
+            if (authChecked) return;
+            authChecked = true;
             
-            // Lấy thông tin từ Firestore
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                document.getElementById('infoFullName').textContent = userData.fullName || user.displayName || '---';
-                document.getElementById('infoEmail').textContent = user.email;
-                document.getElementById('infoPhone').textContent = userData.phone || 'Chưa cập nhật';
-                document.getElementById('infoCreatedAt').textContent = userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('vi-VN') : '---';
+            
+            try {
+                // Hiển thị thông tin user
+                document.getElementById('displayName').textContent = user.displayName || user.email;
+                document.getElementById('userEmail').textContent = user.email;
                 
-                // Điền vào form chỉnh sửa
-                document.getElementById('editFullName').value = userData.fullName || '';
-                document.getElementById('editPhone').value = userData.phone || '';
+                // Lấy thông tin từ Firestore
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    document.getElementById('infoFullName').textContent = userData.fullName || user.displayName || '---';
+                    document.getElementById('infoEmail').textContent = user.email;
+                    document.getElementById('infoPhone').textContent = userData.phone || 'Chưa cập nhật';
+                    document.getElementById('infoCreatedAt').textContent = userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('vi-VN') : '---';
+                    
+                    document.getElementById('editFullName').value = userData.fullName || '';
+                    document.getElementById('editPhone').value = userData.phone || '';
+                }
+                
+                // Lấy lịch sử đặt sân
+                await loadOrderHistory(user.uid);
+                
+            } catch (error) {
+                console.error("Lỗi load dữ liệu:", error);
+                alert('Có lỗi xảy ra khi tải dữ liệu!');
             }
-            
-            // Lấy lịch sử đặt sân
-            await loadOrderHistory(user.uid);
         });
         
         // Load lịch sử đặt sân
@@ -285,11 +290,20 @@
         };
         
         // Đăng xuất
-        document.getElementById('logoutBtn').onclick = async (e) => {
-            e.preventDefault();
-            await signOut(auth);
-            window.location.href = 'index.html';
-        };
+        const logoutBtn = document.getElementById('logoutBtnInProfile');
+        if (logoutBtn) {
+            logoutBtn.onclick = async (e) => {
+                e.preventDefault();
+                try {
+                    await signOut(auth);
+                    alert('Đã đăng xuất!');
+                    window.location.href = 'index.html';
+                } catch (error) {
+                    console.error('Lỗi đăng xuất:', error);
+                    alert('Đăng xuất thất bại!');
+                }
+            };
+        }
     </script>
 </body>
 </html>

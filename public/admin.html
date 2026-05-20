@@ -252,7 +252,7 @@
                 document.getElementById('adminApp').innerHTML = `
                     <div style="text-align: center; padding: 50px; color: red;">
                         <i class="fas fa-lock" style="font-size: 50px;"></i>
-                        <h2>🚫 Truy cập bị từ chối</h2>
+                        <h2> Truy cập bị từ chối</h2>
                         <p>Bạn không có quyền truy cập trang quản trị.</p>
                         <a href="index.html" style="color: #1a6b30;">← Về trang chủ</a>
                     </div>
@@ -409,7 +409,7 @@
                 html += `<div class="calendar-day-number">${day}</div>`;
                 
                 if (dayBookings.length === 0) {
-                    html += `<div class="empty-slot">✅ Còn trống</div>`;
+                    html += `<div class="empty-slot"> Còn trống</div>`;
                 } else {
                     dayBookings.forEach(b => {
                         const statusClass = b.trangThai === 'đã_xác_nhận' ? 'confirmed' : 'pending';
@@ -472,7 +472,7 @@
             let stt = 1;
             for (const docSnap of snapshot.docs) {
                 const s = docSnap.data();
-                let loaiText = s.loai === 'caulong' ? '🏸 Cầu lông' : (s.loai === 'pickleball' ? '🎾 Pickleball' : '⚽ Bóng đá');
+                let loaiText = s.loai === 'caulong' ? ' Cầu lông' : (s.loai === 'pickleball' ? ' Pickleball' : ' Bóng đá');
                 html += `<tr>
                     <td>${stt++}</td>
                     <td>${s.ten}</td>

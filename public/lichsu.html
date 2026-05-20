@@ -124,30 +124,32 @@
 <body>
     <header>
         <div class="logo">
-            <h1>⛳ SportBooking</h1>
+            <a href="index.html" style="text-decoration: none; color: white;">
+                <h1> SportBooking</h1>
+            </a>
         </div>
         <nav>
-            <a href="index.html">Trang chủ</a>
-            <a href="san.html">Sân</a>
+           <!-- <a href="index.html">Trang chủ</a>
+            <a href="san.html">Sân</a>-->
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
             <div style="position:relative; display:inline-block;" id="userMenu">
                 <a href="#" id="loginBtn">Đăng nhập</a>
-                <a href="#" id="userInfoBtn" style="display:none;">👤 Tài khoản</a>
+                <a href="#" id="userInfoBtn" style="display:none;"> Tài khoản</a>
             </div>
         </nav>
     </header>
 
     <div class="history-container">
-        <h2 class="history-title">📋 Lịch sử đặt sân</h2>
+        <h2 class="history-title"> Lịch sử đặt sân</h2>
         
         <div class="filter-bar">
             <label>🔍 Lọc theo trạng thái:</label>
             <select id="filterStatus">
                 <option value="all">Tất cả</option>
-                <option value="chờ_xác_nhận">⏳ Chờ xác nhận</option>
-                <option value="đã_xác_nhận">✅ Đã xác nhận</option>
-                <option value="đã_hủy">❌ Đã hủy</option>
+                <option value="chờ_xác_nhận"> Chờ xác nhận</option>
+                <option value="đã_xác_nhận"> Đã xác nhận</option>
+                <option value="đã_hủy"> Đã hủy</option>
             </select>
         </div>
         
@@ -156,7 +158,7 @@
 
     <footer>
         <div class="footer-content">
-            <div><h4>Liên hệ</h4><p>📞 1900 1234</p></div>
+            <div><h4>Liên hệ</h4><p> 1900 1234</p></div>
             <div><h4>Chính sách</h4><p><a href="chinhsach.html">Xem chi tiết</a></p></div>
         </div>
         <p class="copyright">&copy; 2025 SportBooking</p>
@@ -185,7 +187,7 @@
 
         async function loadLichSu(userId) {
             const bookingList = document.getElementById('bookingList');
-            bookingList.innerHTML = '<p style="text-align:center;">⏳ Đang tải...</p>';
+            bookingList.innerHTML = '<p style="text-align:center;"> Đang tải...</p>';
             
             try {
                 const bookingsRef = collection(db, "donDat");
@@ -222,7 +224,7 @@
             if (bookings.length === 0) {
                 bookingList.innerHTML = `
                     <div class="empty-history">
-                        <p>😊 Không có đơn đặt sân nào.</p>
+                        <p> Không có đơn đặt sân nào.</p>
                         <a href="index.html" style="color: #1a6b30;">→ Đặt sân ngay</a>
                     </div>
                 `;
@@ -239,15 +241,15 @@
                 switch(booking.trangThai) {
                     case 'chờ_xác_nhận':
                         statusClass = 'status-pending';
-                        statusText = '⏳ Chờ xác nhận';
+                        statusText = ' Chờ xác nhận';
                         break;
                     case 'đã_xác_nhận':
                         statusClass = 'status-confirmed';
-                        statusText = '✅ Đã xác nhận';
+                        statusText = ' Đã xác nhận';
                         break;
                     case 'đã_hủy':
                         statusClass = 'status-cancelled';
-                        statusText = '❌ Đã hủy';
+                        statusText = ' Đã hủy';
                         break;
                     default:
                         statusClass = 'status-pending';
@@ -259,13 +261,13 @@
                 html += `
                     <div class="booking-item" data-id="${booking.id}">
                         <div class="booking-info">
-                            <h3>🏸 ${booking.tenSan}</h3>
-                            <p>📅 Ngày: ${booking.ngayDat}</p>
-                            <p>⏰ Giờ: ${booking.gioBatDau}:00 - ${booking.gioKetThuc}:00</p>
-                            <p>💰 ${(booking.tongTien || 0).toLocaleString()}đ</p>
+                            <h3> ${booking.tenSan}</h3>
+                            <p> Ngày: ${booking.ngayDat}</p>
+                            <p> Giờ: ${booking.gioBatDau}:00 - ${booking.gioKetThuc}:00</p>
+                            <p> ${(booking.tongTien || 0).toLocaleString()}đ</p>
                             <div class="booking-actions">
-                                ${canRebook ? `<button class="btn-rebook" data-sanid="${booking.sanId}" data-ngay="${booking.ngayDat}" data-gio="${booking.gioBatDau}">🔄 Đặt lại</button>` : ''}
-                                ${booking.trangThai === 'chờ_xác_nhận' ? `<button class="btn-cancel" data-id="${booking.id}">❌ Hủy đơn</button>` : ''}
+                                ${canRebook ? `<button class="btn-rebook" data-sanid="${booking.sanId}" data-ngay="${booking.ngayDat}" data-gio="${booking.gioBatDau}"> Đặt lại</button>` : ''}
+                                ${booking.trangThai === 'chờ_xác_nhận' ? `<button class="btn-cancel" data-id="${booking.id}"> Hủy đơn</button>` : ''}
                             </div>
                         </div>
                         <div class="booking-status ${statusClass}">${statusText}</div>
@@ -294,7 +296,7 @@
                     const snapshot = await getDocs(q);
                     
                     if (!snapshot.empty) {
-                        alert('⚠️ Khung giờ này đã được đặt! Vui lòng chọn khung giờ khác.');
+                        alert(' Khung giờ này đã được đặt! Vui lòng chọn khung giờ khác.');
                         return;
                     }
                     
@@ -321,7 +323,7 @@
                             trangThai: "chờ_xác_nhận",
                             createdAt: new Date().toISOString()
                         });
-                        alert('🎉 Đặt lại sân thành công!');
+                        alert(' Đặt lại sân thành công!');
                         loadLichSu(currentUser.uid);
                     }
                 });
@@ -367,7 +369,7 @@
                 };
                 document.getElementById('bookingList').innerHTML = `
                     <div class="empty-history">
-                        <p>🔐 Vui lòng đăng nhập để xem lịch sử đặt sân</p>
+                        <p> Vui lòng đăng nhập để xem lịch sử đặt sân</p>
                         <a href="dangnhap.html" style="color: #1a6b30;">→ Đăng nhập ngay</a>
                     </div>
                 `;

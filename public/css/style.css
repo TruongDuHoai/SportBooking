@@ -293,3 +293,13 @@ footer a:hover {
         height: 140px;
     }
 }
+/* Dropdown menu */
+#userDropdownArea {
+    position: relative;
+    display: inline-block;
+}
+
+#dropdownMenu a:hover {
+    background: #f5f5f5;
+}
+

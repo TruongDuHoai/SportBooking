@@ -50,38 +50,11 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        .form-group input, .form-group select {
+        .form-group input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
-        }
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .time-slot {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .time-slot:hover {
-            background: #1a6b30;
-            color: white;
-        }
-        .time-slot.selected {
-            background: #1a6b30;
-            color: white;
-        }
-        .time-slot.booked {
-            background: #ccc;
-            cursor: not-allowed;
-            opacity: 0.5;
         }
         .btn-book {
             width: 100%;
@@ -112,6 +85,29 @@
             height: 250px;
             border: 0;
         }
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .time-slot-label {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .time-slot-label:hover {
+            background: #1a6b30;
+            color: white;
+        }
+        .time-slot-label.booked {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
         @media (max-width: 768px) {
             .detail-container {
                 grid-template-columns: 1fr;
@@ -122,27 +118,25 @@
 <body>
     <header>
         <div class="logo">
-            <h1>⛳ SportBooking</h1>
+            <a href="index.html" style="text-decoration: none; color: white;">
+                <h1>SportBooking</h1>
+            </a>
         </div>
         <nav>
-            <a href="index.html">Trang chủ</a>
-            <a href="san.html">Sân</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
             <div style="position:relative; display:inline-block;" id="userMenu">
                 <a href="#" id="loginBtn" style="display:inline-block;">Đăng nhập</a>
-                <a href="#" id="userInfoBtn" style="display:none;">👤 Tài khoản</a>
+                <a href="#" id="userInfoBtn" style="display:none;">Tài khoản</a>
             </div>
         </nav>
     </header>
 
-    <div class="detail-container" id="detailContainer">
-        <!-- Dữ liệu sẽ load từ JS -->
-    </div>
+    <div class="detail-container" id="detailContainer"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -164,7 +158,7 @@
         let currentSan = null;
         let currentUser = null;
         let selectedDate = '';
-        let selectedHour = '';
+        let selectedHours = [];
 
         const gioTrongNgay = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
@@ -189,11 +183,10 @@
 
         function hienThiChiTietSan() {
             let loaiText = '';
-            if (currentSan.loai === 'caulong') loaiText = '🏸 Cầu lông';
-            else if (currentSan.loai === 'pickleball') loaiText = '🎾 Pickleball';
-            else loaiText = '⚽ Bóng đá';
+            if (currentSan.loai === 'caulong') loaiText = 'Cầu lông';
+            else if (currentSan.loai === 'pickleball') loaiText = 'Pickleball';
+            else loaiText = 'Bóng đá';
 
-            // Tạo tọa độ Google Maps dựa trên địa chỉ (mặc định là TP.HCM)
             const address = encodeURIComponent(currentSan.diaChi + ", TP.HCM");
             const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyAOiaqOwzYeJRRae09aM8MYyMKlbTlJ_hg&q=${address}&language=vi`;
 
@@ -205,36 +198,32 @@
                 <div class="detail-info">
                     <h2>${loaiText} - ${currentSan.ten}</h2>
                     <div class="detail-price">${currentSan.gia.toLocaleString()}đ / giờ</div>
-                    <div class="detail-address">📍 Địa chỉ: ${currentSan.diaChi}</div>
-                    <div class="detail-address">📝 Mô tả: ${currentSan.moTa || 'Sân đẹp, chất lượng tốt'}</div>
+                    <div class="detail-address">Địa chỉ: ${currentSan.diaChi}</div>
+                    <div class="detail-address">Mô tả: ${currentSan.moTa || 'Sân đẹp, chất lượng tốt'}</div>
                     
-                    <!-- Google Maps -->
                     <div class="map-container">
-                        <iframe 
-                            src="${mapUrl}"
-                            allowfullscreen="" 
-                            loading="lazy">
-                        </iframe>
+                        <iframe src="${mapUrl}" allowfullscreen="" loading="lazy"></iframe>
                     </div>
                     
                     <div class="booking-form">
-                        <h3>📅 Đặt sân</h3>
+                        <h3>Đặt sân</h3>
                         <div class="form-group">
                             <label>Chọn ngày:</label>
                             <input type="date" id="ngayDat" min="${new Date().toISOString().split('T')[0]}">
                         </div>
                         <div class="form-group">
                             <label>Chọn giờ:</label>
-                            <div class="time-slots" id="timeSlots"></div>
+                            <div id="timeSlots"></div>
                         </div>
                         <div class="total-price" id="totalPrice"></div>
-                        <button class="btn-book" id="bookBtn">✅ Xác nhận đặt sân</button>
+                        <button class="btn-book" id="bookBtn">Thêm vào giỏ hàng</button>
                     </div>
                 </div>
             `;
 
             document.getElementById('ngayDat').addEventListener('change', (e) => {
                 selectedDate = e.target.value;
+                selectedHours = [];
                 loadLichTrong(selectedDate);
             });
 
@@ -258,27 +247,35 @@
                     bookedHours.add(booking.gioBatDau);
                 });
 
-                let html = '';
+                let html = '<div class="time-slots-grid">';
                 gioTrongNgay.forEach(gio => {
-                    let statusClass = '';
-                    let disabled = false;
-                    if (bookedHours.has(gio)) {
-                        statusClass = 'booked';
-                        disabled = true;
-                    }
-                    html += `<div class="time-slot ${statusClass}" data-gio="${gio}" ${disabled ? 'style="opacity:0.5"' : ''}>${gio}:00 - ${gio+1}:00</div>`;
+                    let isBooked = bookedHours.has(gio);
+                    let checkedAttr = selectedHours.includes(gio) ? 'checked' : '';
+                    html += `
+                        <label class="time-slot-label ${isBooked ? 'booked' : ''}">
+                            <input type="checkbox" class="time-checkbox" value="${gio}" ${checkedAttr} ${isBooked ? 'disabled' : ''}>
+                            ${gio}:00 - ${gio+1}:00
+                        </label>
+                    `;
                 });
+                html += '</div>';
                 timeSlotsDiv.innerHTML = html;
-
-                document.querySelectorAll('.time-slot:not(.booked)').forEach(slot => {
-                    slot.addEventListener('click', () => {
-                        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
-                        slot.classList.add('selected');
-                        selectedHour = parseInt(slot.dataset.gio);
+                
+                document.querySelectorAll('.time-checkbox:not([disabled])').forEach(cb => {
+                    cb.addEventListener('change', (e) => {
+                        const gio = parseInt(e.target.value);
+                        if (e.target.checked) {
+                            selectedHours.push(gio);
+                            selectedHours.sort((a,b) => a-b);
+                        } else {
+                            selectedHours = selectedHours.filter(h => h !== gio);
+                        }
                         updateTotalPrice();
                     });
                 });
-
+                
+                updateTotalPrice();
+                
             } catch (error) {
                 console.error('Lỗi:', error);
                 timeSlotsDiv.innerHTML = '<p style="color:red">Lỗi tải lịch</p>';
@@ -286,9 +283,12 @@
         }
 
         function updateTotalPrice() {
-            if (selectedDate && selectedHour) {
+            if (selectedDate && selectedHours.length > 0) {
                 const totalDiv = document.getElementById('totalPrice');
-                totalDiv.innerHTML = `💰 Tổng tiền: ${currentSan.gia.toLocaleString()}đ`;
+                const total = currentSan.gia * selectedHours.length;
+                totalDiv.innerHTML = `💰 Tổng tiền: ${total.toLocaleString()}đ (${selectedHours.length} giờ)`;
+            } else {
+                document.getElementById('totalPrice').innerHTML = '';
             }
         }
 
@@ -304,36 +304,47 @@
                 return;
             }
 
-            if (!selectedHour) {
-                alert('Vui lòng chọn giờ đặt sân!');
+            if (selectedHours.length === 0) {
+                alert('Vui lòng chọn ít nhất 1 khung giờ!');
                 return;
             }
 
-            const confirmMsg = `Xác nhận đặt sân:\nSân: ${currentSan.ten}\nNgày: ${selectedDate}\nGiờ: ${selectedHour}:00 - ${selectedHour+1}:00\nThành tiền: ${currentSan.gia.toLocaleString()}đ\nBạn có chắc chắn muốn đặt?`;
+            const total = currentSan.gia * selectedHours.length;
+            let gioText = selectedHours.map(h => `${h}:00-${h+1}:00`).join(', ');
+            
+            const confirmMsg = `Xác nhận thêm vào giỏ hàng:\nSân: ${currentSan.ten}\nNgày: ${selectedDate}\nGiờ: ${gioText}\nSố giờ: ${selectedHours.length}\nThành tiền: ${total.toLocaleString()}đ`;
             
             if (!confirm(confirmMsg)) return;
 
             try {
-                await addDoc(collection(db, "donDat"), {
-                    sanId: sanId,
-                    tenSan: currentSan.ten,
-                    userId: currentUser.uid,
-                    userEmail: currentUser.email,
-                    userName: currentUser.displayName || currentUser.email,
-                    ngayDat: selectedDate,
-                    gioBatDau: selectedHour,
-                    gioKetThuc: selectedHour + 1,
-                    gia: currentSan.gia,
-                    tongTien: currentSan.gia,
-                    trangThai: "chờ_xác_nhận",
-                    createdAt: new Date().toISOString()
-                });
+                const cartRef = doc(db, "carts", currentUser.uid);
+                const cartSnap = await getDoc(cartRef);
+                let items = cartSnap.exists() ? cartSnap.data().items || [] : [];
                 
-                alert('🎉 Đặt sân thành công! Vui lòng chờ admin xác nhận.');
-                window.location.href = 'lichsu.html';
+                for (const gio of selectedHours) {
+                    const newItem = {
+                        id: `${currentSan.id}_${selectedDate}_${gio}`,
+                        sanId: currentSan.id,
+                        tenSan: currentSan.ten,
+                        ngayDat: selectedDate,
+                        gioBatDau: gio,
+                        gioKetThuc: gio + 1,
+                        gia: currentSan.gia
+                    };
+                    const exists = items.some(i => i.id === newItem.id);
+                    if (!exists) {
+                        items.push(newItem);
+                    }
+                }
+                
+                await setDoc(cartRef, { items: items, updatedAt: new Date().toISOString() });
+                
+                alert(`Đã thêm ${selectedHours.length} khung giờ vào giỏ hàng!`);
+                window.location.href = 'giohang.html';
                 
             } catch (error) {
-                alert('Đặt sân thất bại! Vui lòng thử lại.');
+                console.error('Lỗi:', error);
+                alert('Thêm vào giỏ hàng thất bại: ' + error.message);
             }
         }
 

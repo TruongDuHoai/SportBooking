@@ -9,19 +9,25 @@
 </head>
 <body>
     <!-- Header -->
-    <header>
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
         <div class="logo">
             <a href="index.html" style="text-decoration: none; color: white;">
                 <h1> SportBooking</h1>
             </a>
         </div>
         <nav>
-            <a href="index.html">Trang chủ</a>
+            <!--<a href="san.html">Sân</a>-->
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
             <div style="position:relative; display:inline-block;" id="userMenu">
-                <a href="#" id="loginBtn" style="display:inline-block;">Đăng nhập</a>
-                <a href="#" id="userInfoBtn" style="display:none;">👤 Tài khoản</a>
+                <a href="#" id="loginBtn">Đăng nhập</a>
+                <div id="userDropdownArea" style="display:none; position:relative;">
+                    <a href="#" id="userInfoBtn">Tài khoản</a>
+                    <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:white; min-width:120px; box-shadow:0 2px 5px rgba(0,0,0,0.2); border-radius:5px; z-index:100;">
+                        <a href="taikhoan.html" style="display:block; padding:10px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">Thông tin</a>
+                        <a href="#" id="logoutDropdownBtn" style="display:block; padding:10px; color:#e74c3c; text-decoration:none;">Đăng xuất</a>
+                    </div>
+                </div>
             </div>
         </nav>
     </header>
@@ -40,9 +46,9 @@
     <section class="filters">
         <select id="locLoaiSan">
             <option value="">Tất cả loại sân</option>
-            <option value="caulong">🏸 Cầu lông</option>
-            <option value="pickleball">🎾 Pickleball</option>
-            <option value="bongda">⚽ Bóng đá</option>
+            <option value="caulong"> Cầu lông</option>
+            <option value="pickleball"> Pickleball</option>
+            <option value="bongda"> Bóng đá</option>
         </select>
         <select id="locKhuVuc">
             <option value="">Tất cả khu vực</option>
@@ -53,9 +59,9 @@
             <option value="tanbinh">Tân Bình</option>
         </select>
         <select id="sapXep">
-            <option value="giaTang">💰 Giá tăng dần</option>
-            <option value="giaGiam">💰 Giá giảm dần</option>
-            <option value="tenAZ">📝 Tên A-Z</option>
+            <option value="giaTang"> Giá tăng dần</option>
+            <option value="giaGiam"> Giá giảm dần</option>
+            <option value="tenAZ"> Tên A-Z</option>
         </select>
     </section>
 
@@ -72,8 +78,8 @@
         <div class="footer-content">
             <div>
                 <h4>Liên hệ</h4>
-                <p>📞 Hotline: 1900 1234</p>
-                <p>📧 Email: info@sportbooking.com</p>
+                <p> Hotline: 1900 1234</p>
+                <p> Email: info@sportbooking.com</p>
             </div>
             <div>
                 <h4>Chính sách</h4>
