@@ -78,9 +78,13 @@
         .status-pending { background: #fff3cd; color: #856404; padding: 4px 12px; border-radius: 20px; display: inline-block; }
         .status-confirmed { background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 20px; display: inline-block; }
         .status-cancelled { background: #f8d7da; color: #721c24; padding: 4px 12px; border-radius: 20px; display: inline-block; }
-        .btn-edit, .btn-delete { background: none; border: none; cursor: pointer; padding: 5px 10px; }
+        .status-active { background: #d4edda; color: #155724; padding: 4px 12px; border-radius: 20px; display: inline-block; }
+        .status-inactive { background: #f8d7da; color: #721c24; padding: 4px 12px; border-radius: 20px; display: inline-block; }
+        .btn-edit, .btn-delete, .btn-block, .btn-view { background: none; border: none; cursor: pointer; padding: 5px 10px; }
         .btn-edit { color: #ff9800; }
         .btn-delete { color: #e74c3c; }
+        .btn-block { color: #e67e22; }
+        .btn-view { color: #1a6b30; }
         .modal {
             display: none;
             position: fixed;
@@ -114,8 +118,25 @@
             font-size: 18px;
             color: #666;
         }
-        
-        /* Calendar Styles */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-box input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 250px;
+        }
+        .search-box button {
+            background: #1a6b30;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
         .calendar-toolbar {
             display: flex;
             justify-content: space-between;
@@ -132,69 +153,56 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        .calendar-toolbar select {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-        .calendar-grid {
-            background: white;
-            border-radius: 12px;
-            overflow-x: auto;
-        }
-        .calendar-grid table {
+        .calendar-table {
             width: 100%;
             border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
         }
-        .calendar-grid th {
+        .calendar-table th {
             background: #1a6b30;
             color: white;
             padding: 12px;
             text-align: center;
         }
-        .calendar-grid td {
+        .calendar-table td {
             border: 1px solid #ddd;
             vertical-align: top;
             padding: 8px;
-            width: 100px;
             height: 100px;
         }
+        .calendar-cell { cursor: pointer; }
+        .empty-cell { background: #f5f5f5; }
         .calendar-day-number {
             font-weight: bold;
             margin-bottom: 5px;
+            color: #333;
         }
         .booking-slot {
             background: #ff9800;
             color: white;
             font-size: 11px;
-            padding: 2px 4px;
-            border-radius: 3px;
-            margin: 2px 0;
+            padding: 4px 6px;
+            border-radius: 5px;
+            margin: 3px 0;
             cursor: pointer;
+            transition: 0.2s;
         }
+        .booking-slot:hover { opacity: 0.8; transform: scale(1.02); }
         .booking-slot.confirmed { background: #1a6b30; }
         .booking-slot.pending { background: #ff9800; }
-        .empty-slot {
-            font-size: 10px;
-            color: #999;
-        }
-        .san-selector {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .san-selector select {
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            width: 250px;
-        }
+        .empty-slot { font-size: 11px; color: #999; text-align: center; padding: 5px; }
+        .san-selector { margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .san-selector select { padding: 8px; border-radius: 5px; border: 1px solid #ddd; width: 250px; }
+        .user-history { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .user-history h4 { margin-bottom: 10px; color: #1a6b30; }
+        .history-item { padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
         @media (max-width: 768px) {
             .admin-container { flex-direction: column; }
             .sidebar { width: 100%; display: flex; overflow-x: auto; }
             .sidebar a { white-space: nowrap; }
-            .calendar-grid td { width: 60px; height: 80px; font-size: 10px; }
+            .calendar-table td { width: 60px; height: 80px; font-size: 10px; }
         }
     </style>
 </head>
@@ -207,8 +215,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, getDoc, where, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
@@ -223,36 +231,37 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        let currentUser = null;
-        let isAdmin = false;
+                let currentUser = null;
+        let currentUserRole = null;
 
-        async function checkAdminRole(user) {
-            if (!user) return false;
+        async function checkUserRole(user) {
+            if (!user) return null;
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
-                return userDoc.exists() && userDoc.data().role === "admin";
+                console.log("User role from Firestore:", userDoc.data()?.role);
+                return userDoc.exists() ? userDoc.data().role || 'user' : 'user';
             } catch (error) {
                 console.error("Lỗi kiểm tra role:", error);
-                return false;
+                return 'user';
             }
         }
 
-        // Chuyển hướng về trang đăng nhập
         function redirectToLogin() {
             window.location.href = 'dangnhap.html';
         }
 
         async function renderAdminPanel() {
-            if (!currentUser) {
-                redirectToLogin();
-                return;
-            }
+            if (!currentUser) { redirectToLogin(); return; }
             
-            if (!isAdmin) {
+            currentUserRole = await checkUserRole(currentUser);
+            console.log("Final role:", currentUserRole);
+            
+            // Staff và Admin được vào, User thì chặn
+            if (currentUserRole !== 'admin' && currentUserRole !== 'staff') {
                 document.getElementById('adminApp').innerHTML = `
                     <div style="text-align: center; padding: 50px; color: red;">
                         <i class="fas fa-lock" style="font-size: 50px;"></i>
-                        <h2> Truy cập bị từ chối</h2>
+                        <h2>Truy cập bị từ chối</h2>
                         <p>Bạn không có quyền truy cập trang quản trị.</p>
                         <a href="index.html" style="color: #1a6b30;">← Về trang chủ</a>
                     </div>
@@ -260,19 +269,29 @@
                 return;
             }
             
+            // Admin thấy đầy đủ menu, Staff chỉ thấy Lịch sân
+            let sidebarHtml = '';
+            if (currentUserRole === 'admin') {
+                sidebarHtml = `
+                    <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
+                    <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
+                    <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
+                    <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
+                `;
+            } else {
+                sidebarHtml = `
+                    <a href="#" data-tab="calendar" class="active"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
+                `;
+            }
+            
             document.getElementById('adminApp').innerHTML = `
-                <div class="admin-header"><h1><i class="fas fa-crown"></i> SportBooking Admin</h1><div><span><i class="fas fa-user-shield"></i> ${currentUser?.email}</span><button id="logoutBtn" style="margin-left:20px; background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></div></div>
+                <div class="admin-header"><h1><i class="fas fa-crown"></i> SportBooking Admin</h1><div><span><i class="fas fa-user-shield"></i> ${currentUser?.email} (${currentUserRole === 'admin' ? 'Admin' : 'Nhân viên'})</span><button id="logoutBtn" style="margin-left:20px; background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></div></div>
                 <div class="admin-container">
-                    <div class="sidebar">
-                        <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                        <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> 📅 Lịch sân</a>
-                        <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
-                        <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
-                        <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
-                    </div>
+                    <div class="sidebar">${sidebarHtml}</div>
                     <div class="content">
-                        <div id="dashboardTab"></div>
-                        <div id="calendarTab" style="display:none;"></div>
+                        <div id="dashboardTab" style="display:none;"></div>
+                        <div id="calendarTab"></div>
                         <div id="bookingsTab" style="display:none;"></div>
                         <div id="sansTab" style="display:none;"></div>
                         <div id="usersTab" style="display:none;"></div>
@@ -299,13 +318,17 @@
                 };
             });
             
-            document.getElementById('logoutBtn').onclick = async () => {
-                await signOut(auth);
-                window.location.href = 'index.html';
-            };
+            document.getElementById('logoutBtn').onclick = async () => { await signOut(auth); window.location.href = 'index.html'; };
             
-            loadDashboard();
+            if (currentUserRole === 'admin') {
+                loadDashboard();
+            } else {
+                loadCalendar();
+            }
         }
+
+        let currentSanId = null;
+        let currentMonth = new Date();
 
         async function loadDashboard() {
             const container = document.getElementById('dashboardTab');
@@ -325,98 +348,70 @@
             container.innerHTML = `<div class="stats"><div class="stat-card"><i class="fas fa-store"></i><h3>Tổng số sân</h3><div class="number">${sansSnap.size}</div></div><div class="stat-card"><i class="fas fa-users"></i><h3>Người dùng</h3><div class="number">${usersSnap.size}</div></div><div class="stat-card"><i class="fas fa-shopping-cart"></i><h3>Tổng đơn</h3><div class="number">${bookingsSnap.size}</div></div><div class="stat-card"><i class="fas fa-clock"></i><h3>Chờ xác nhận</h3><div class="number">${pending}</div></div><div class="stat-card"><i class="fas fa-check-circle"></i><h3>Đã xác nhận</h3><div class="number">${confirmed}</div></div><div class="stat-card"><i class="fas fa-money-bill-wave"></i><h3>Doanh thu</h3><div class="number">${totalRevenue.toLocaleString()}đ</div></div></div>`;
         }
 
-        let currentSanId = null;
-        let currentMonth = new Date();
-
         async function loadCalendar() {
             const container = document.getElementById('calendarTab');
             const sansSnap = await getDocs(collection(db, "san"));
             let sanOptions = '<option value="">-- Chọn sân --</option>';
-            sansSnap.forEach(doc => {
-                const san = doc.data();
-                sanOptions += `<option value="${doc.id}">${san.ten} (${san.diaChi})</option>`;
-            });
-            
-            container.innerHTML = `
-                <div class="card-header"><h2><i class="fas fa-calendar-alt"></i> Lịch đặt sân</h2></div>
-                <div class="san-selector">
-                    <select id="selectSan">${sanOptions}</select>
-                    <div class="calendar-toolbar">
-                        <button id="prevMonthBtn"><i class="fas fa-chevron-left"></i> Tháng trước</button>
-                        <span id="monthYearDisplay" style="font-weight:bold; min-width:150px; text-align:center;"></span>
-                        <button id="nextMonthBtn">Tháng sau <i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-                <div id="calendarGrid" class="calendar-grid"></div>
-            `;
-            
-            document.getElementById('selectSan').onchange = () => {
-                currentSanId = document.getElementById('selectSan').value;
-                renderCalendarGrid();
-            };
-            document.getElementById('prevMonthBtn').onclick = () => {
-                currentMonth.setMonth(currentMonth.getMonth() - 1);
-                renderCalendarGrid();
-            };
-            document.getElementById('nextMonthBtn').onclick = () => {
-                currentMonth.setMonth(currentMonth.getMonth() + 1);
-                renderCalendarGrid();
-            };
+            sansSnap.forEach(doc => { const san = doc.data(); sanOptions += `<option value="${doc.id}">${san.ten} (${san.diaChi})</option>`; });
+            container.innerHTML = `<div class="card-header"><h2><i class="fas fa-calendar-alt"></i> Lịch đặt sân</h2></div><div class="san-selector"><select id="selectSan">${sanOptions}</select><div class="calendar-toolbar"><button id="prevMonthBtn"><i class="fas fa-chevron-left"></i> Tháng trước</button><span id="monthYearDisplay" style="font-weight:bold; min-width:150px; text-align:center;"></span><button id="nextMonthBtn">Tháng sau <i class="fas fa-chevron-right"></i></button></div></div><div id="calendarGrid" class="calendar-grid"></div>`;
+            document.getElementById('selectSan').onchange = () => { currentSanId = document.getElementById('selectSan').value; renderCalendarGrid(); };
+            document.getElementById('prevMonthBtn').onclick = () => { currentMonth.setMonth(currentMonth.getMonth() - 1); renderCalendarGrid(); };
+            document.getElementById('nextMonthBtn').onclick = () => { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendarGrid(); };
             renderCalendarGrid();
         }
         
         async function renderCalendarGrid() {
-            if (!currentSanId) {
-                document.getElementById('calendarGrid').innerHTML = '<p style="text-align:center; padding:40px;">Vui lòng chọn sân để xem lịch.</p>';
-                document.getElementById('monthYearDisplay').innerHTML = '';
-                return;
+            if (!currentSanId) { 
+                document.getElementById('calendarGrid').innerHTML = '<p style="text-align:center; padding:40px;">Vui lòng chọn sân để xem lịch.</p>'; 
+                document.getElementById('monthYearDisplay').innerHTML = ''; 
+                return; 
             }
             
-            const year = currentMonth.getFullYear();
-            const month = currentMonth.getMonth();
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const startWeekday = firstDay.getDay();
-            const daysInMonth = lastDay.getDate();
-            
+            const year = currentMonth.getFullYear(), month = currentMonth.getMonth();
+            const firstDay = new Date(year, month, 1), lastDay = new Date(year, month + 1, 0);
+            const startWeekday = firstDay.getDay(), daysInMonth = lastDay.getDate();
             document.getElementById('monthYearDisplay').innerHTML = `${month + 1}/${year}`;
             
+            // Lấy tất cả đơn đặt của sân này
             const bookingsRef = collection(db, "donDat");
             const q = query(bookingsRef, where("sanId", "==", currentSanId));
             const snapshot = await getDocs(q);
             const bookings = {};
-            snapshot.forEach(doc => {
-                const b = doc.data();
-                const date = b.ngayDat;
-                if (!bookings[date]) bookings[date] = [];
-                bookings[date].push(b);
+            snapshot.forEach(doc => { 
+                const b = doc.data(); 
+                b.bookingId = doc.id;  // Lưu ID để xác nhận sau
+                const date = b.ngayDat; 
+                if (!bookings[date]) bookings[date] = []; 
+                bookings[date].push(b); 
             });
             
-            let html = `<table><thead><tr>`;
+            let html = `<table class="calendar-table"><thead><tr>`;
             const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
             weekdays.forEach(day => html += `<th>${day}</th>`);
             html += `</tr></thead><tbody><tr>`;
             
             for (let i = 0; i < startWeekday; i++) {
-                html += `<td style="background:#f5f5f5;"></td>`;
+                html += `<td class="empty-cell"></td>`;
             }
             
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
                 const dayBookings = bookings[dateStr] || [];
                 
-                html += `<td style="vertical-align:top;">`;
+                html += `<td class="calendar-cell" style="vertical-align:top; width:120px; min-width:120px;">`;
                 html += `<div class="calendar-day-number">${day}</div>`;
                 
                 if (dayBookings.length === 0) {
-                    html += `<div class="empty-slot"> Còn trống</div>`;
+                    html += `<div class="empty-slot">Còn trống</div>`;
                 } else {
                     dayBookings.forEach(b => {
                         const statusClass = b.trangThai === 'đã_xác_nhận' ? 'confirmed' : 'pending';
-                        html += `<div class="booking-slot ${statusClass}" title="${b.userName || b.userEmail}">
-                            ${b.gioBatDau}:00 - ${b.gioKetThuc}:00<br>
-                            <small>${b.trangThai === 'chờ_xác_nhận' ? '⏳' : '✅'}</small>
-                        </div>`;
+                        const statusText = b.trangThai === 'chờ_xác_nhận' ? '⏳ Chờ' : '✅ Đã xác nhận';
+                        html += `<div class="booking-slot ${statusClass}" 
+                                    onclick="showBookingDetail('${b.bookingId}', '${b.tenSan}', '${dateStr}', ${b.gioBatDau}, ${b.gioKetThuc}, ${b.tongTien}, '${b.trangThai}', '${b.userName || b.userEmail}')">
+                                    ${b.gioBatDau}:00 - ${b.gioKetThuc}:00<br>
+                                    <small>${statusText}</small>
+                                </div>`;
                     });
                 }
                 html += `</td>`;
@@ -429,14 +424,128 @@
             const lastCell = (startWeekday + daysInMonth) % 7;
             if (lastCell !== 0) {
                 for (let i = lastCell; i < 7; i++) {
-                    html += `<td style="background:#f5f5f5;"></td>`;
+                    html += `<td class="empty-cell"></td>`;
                 }
             }
             html += `</tr></tbody></table>`;
             html += `<div style="margin-top:15px; padding:10px; background:#eee; border-radius:5px;">
-                        <strong>📌 Ghi chú:</strong> Cam = Chờ xác nhận | Xanh = Đã xác nhận | <span style="color:#1a6b30;">✅ Còn trống</span> = Khung giờ trống
-                     </div>`;
+                        <strong>Ghi chú:</strong> <span style="background:#ff9800; padding:2px 8px; border-radius:3px;">Cam</span> = Chờ xác nhận | 
+                        <span style="background:#1a6b30; padding:2px 8px; border-radius:3px; color:white;">Xanh</span> = Đã xác nhận | 
+                        <span style="color:#1a6b30;">Còn trống</span> = Khung giờ trống<br>
+                        <strong>Click vào ô đặt để xác nhận/hủy đơn!</strong>
+                    </div>`;
+            
             document.getElementById('calendarGrid').innerHTML = html;
+        }
+
+        // Hàm hiển thị chi tiết đơn và xác nhận/hủy
+        window.showBookingDetail = async function(bookingId, tenSan, ngayDat, gioBatDau, gioKetThuc, tongTien, trangThai, userName) {
+            const statusText = trangThai === 'chờ_xác_nhận' ? 'Chờ xác nhận' : 'Đã xác nhận';
+            const isPending = trangThai === 'chờ_xác_nhận';
+            
+            const modal = document.createElement('div'); 
+            modal.className = 'modal'; 
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>Chi tiết đặt sân</h3>
+                    <div style="margin: 15px 0;">
+                        <p><strong>Sân:</strong> ${tenSan}</p>
+                        <p><strong>Ngày:</strong> ${ngayDat}</p>
+                        <p><strong>Giờ:</strong> ${gioBatDau}:00 - ${gioKetThuc}:00</p>
+                        <p><strong>Khách hàng:</strong> ${userName}</p>
+                        <p><strong>Thành tiền:</strong> ${tongTien.toLocaleString()}đ</p>
+                        <p><strong>Trạng thái hiện tại:</strong> <span style="color: ${isPending ? '#ff9800' : '#1a6b30'}">${statusText}</span></p>
+                    </div>
+                    <div class="modal-buttons">
+                        ${isPending ? `<button class="btn-save" id="confirmBookingBtn" style="background:#1a6b30;">✅ Xác nhận đơn</button>` : ''}
+                        ${isPending ? `<button class="btn-cancel" id="rejectBookingBtn" style="background:#e74c3c;">❌ Từ chối / Xóa</button>` : ''}
+                        <button class="btn-cancel" id="closeDetailModal">Đóng</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            if (isPending) {
+                document.getElementById('confirmBookingBtn').onclick = async () => {
+                    if (confirm('Xác nhận đơn đặt sân này?')) {
+                        await updateDoc(doc(db, "donDat", bookingId), { trangThai: "đã_xác_nhận" });
+                        alert('Đã xác nhận đơn đặt sân!');
+                        modal.remove();
+                        renderCalendarGrid();
+                        loadBookings();
+                        loadDashboard();
+                    }
+                };
+                
+                document.getElementById('rejectBookingBtn').onclick = async () => {
+                    if (confirm('Từ chối / Xóa đơn đặt sân này?')) {
+                        await deleteDoc(doc(db, "donDat", bookingId));
+                        alert('Đã xóa đơn đặt sân!');
+                        modal.remove();
+                        renderCalendarGrid();
+                        loadBookings();
+                        loadDashboard();
+                    }
+                };
+            }
+            
+            document.getElementById('closeDetailModal').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        }
+
+        window.showBookingDetail = async function(bookingId, tenSan, ngayDat, gioBatDau, gioKetThuc, tongTien, trangThai, userName) {
+            const isPending = trangThai === 'chờ_xác_nhận';
+            
+            const modal = document.createElement('div'); 
+            modal.className = 'modal'; 
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>Chi tiết đặt sân</h3>
+                    <div style="margin: 15px 0;">
+                        <p><strong>Sân:</strong> ${tenSan}</p>
+                        <p><strong>Ngày:</strong> ${ngayDat}</p>
+                        <p><strong>Giờ:</strong> ${gioBatDau}:00 - ${gioKetThuc}:00</p>
+                        <p><strong>Khách hàng:</strong> ${userName}</p>
+                        <p><strong>Thành tiền:</strong> ${tongTien.toLocaleString()}đ</p>
+                        <p><strong>Trạng thái hiện tại:</strong> <span style="color: ${isPending ? '#ff9800' : '#1a6b30'}">${isPending ? 'Chờ xác nhận' : 'Đã xác nhận'}</span></p>
+                    </div>
+                    <div class="modal-buttons">
+                        ${isPending ? `<button class="btn-save" id="confirmBookingBtn" style="background:#1a6b30;">Xác nhận đơn</button>` : ''}
+                        ${isPending ? `<button class="btn-cancel" id="rejectBookingBtn" style="background:#e74c3c;">Từ chối / Xóa</button>` : ''}
+                        <button class="btn-cancel" id="closeDetailModal">Đóng</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            if (isPending) {
+                document.getElementById('confirmBookingBtn').onclick = async () => {
+                    if (confirm('Xác nhận đơn đặt sân này?')) {
+                        await updateDoc(doc(db, "donDat", bookingId), { trangThai: "đã_xác_nhận" });
+                        alert('Đã xác nhận đơn đặt sân!');
+                        modal.remove();
+                        renderCalendarGrid();
+                        loadBookings();
+                        loadDashboard();
+                    }
+                };
+                
+                document.getElementById('rejectBookingBtn').onclick = async () => {
+                    if (confirm('Từ chối / Xóa đơn đặt sân này?')) {
+                        await deleteDoc(doc(db, "donDat", bookingId));
+                        alert('Đã xóa đơn đặt sân!');
+                        modal.remove();
+                        renderCalendarGrid();
+                        loadBookings();
+                        loadDashboard();
+                    }
+                };
+            }
+            
+            document.getElementById('closeDetailModal').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
         }
 
         async function loadBookings() {
@@ -456,7 +565,7 @@
                     <td>${b.ngayDat || '---'}</td>
                     <td>${b.gioBatDau}:00 - ${b.gioKetThuc}:00</td>
                     <td>${(b.tongTien || 0).toLocaleString()}đ</td>
-                    <td><select class="${statusClass}" data-id="${docSnap.id}" style="border:none; padding:4px 12px; border-radius:20px;"><option value="chờ_xác_nhận" ${b.trangThai === 'chờ_xác_nhận' ? 'selected' : ''}>⏳ Chờ xác nhận</option><option value="đã_xác_nhận" ${b.trangThai === 'đã_xác_nhận' ? 'selected' : ''}>✅ Đã xác nhận</option><option value="đã_hủy" ${b.trangThai === 'đã_hủy' ? 'selected' : ''}>❌ Đã hủy</option></select></td>
+                    <td><select class="${statusClass}" data-id="${docSnap.id}" style="border:none; padding:4px 12px; border-radius:20px;"><option value="chờ_xác_nhận" ${b.trangThai === 'chờ_xác_nhận' ? 'selected' : ''}>Chờ xác nhận</option><option value="đã_xác_nhận" ${b.trangThai === 'đã_xác_nhận' ? 'selected' : ''}>Đã xác nhận</option><option value="đã_hủy" ${b.trangThai === 'đã_hủy' ? 'selected' : ''}>Đã hủy</option></select></td>
                     <td><button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
                 </tr>`;
             }
@@ -472,14 +581,15 @@
             let stt = 1;
             for (const docSnap of snapshot.docs) {
                 const s = docSnap.data();
-                let loaiText = s.loai === 'caulong' ? ' Cầu lông' : (s.loai === 'pickleball' ? ' Pickleball' : ' Bóng đá');
+                let loaiText = s.loai === 'caulong' ? 'Cầu lông' : (s.loai === 'pickleball' ? 'Pickleball' : 'Bóng đá');
                 html += `<tr>
                     <td>${stt++}</td>
                     <td>${s.ten}</td>
                     <td>${loaiText}</td>
                     <td>${s.gia.toLocaleString()}đ</td>
                     <td>${s.diaChi || '---'}</td>
-                    <td><button class="btn-edit" data-id="${docSnap.id}" data-ten="${s.ten}" data-loai="${s.loai}" data-gia="${s.gia}" data-diachi="${s.diaChi || ''}" data-mota="${s.moTa || ''}"><i class="fas fa-edit"></i></button><button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
+                    <td><button class="btn-edit" data-id="${docSnap.id}" data-ten="${s.ten}" data-loai="${s.loai}" data-gia="${s.gia}" data-diachi="${s.diaChi || ''}" data-mota="${s.moTa || ''}"><i class="fas fa-edit"></i></button>
+                    <button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
                 </tr>`;
             }
             html += `</tbody></table></div>`;
@@ -489,30 +599,15 @@
             document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa sân này?')) { await deleteDoc(doc(db, "san", btn.dataset.id)); loadSans(); } }; });
         }
 
-        async function loadUsers() {
-            const snapshot = await getDocs(collection(db, "users"));
-            let html = `<div class="card-header"><h2><i class="fas fa-users"></i> Quản lý người dùng</h2></div><div class="data-table"><table><thead><tr><th>STT</th><th>Email</th><th>Họ tên</th><th>SĐT</th><th>Vai trò</th><th>Thao tác</th></tr></thead><tbody>`;
-            let stt = 1;
-            for (const docSnap of snapshot.docs) {
-                const u = docSnap.data();
-                html += `<tr>
-                    <td>${stt++}</td>
-                    <td>${u.email}</td>
-                    <td>${u.fullName || '---'}</td>
-                    <td>${u.phone || '---'}</td>
-                    <td><select class="role-select" data-id="${docSnap.id}" data-email="${u.email}"><option value="user" ${u.role === 'user' ? 'selected' : ''}>👤 Người dùng</option><option value="admin" ${u.role === 'admin' ? 'selected' : ''}>👑 Admin</option></select></td>
-                    <td><button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
-                </tr>`;
-            }
-            html += `</tbody></table></div>`;
-            document.getElementById('usersTab').innerHTML = html;
-            document.querySelectorAll('.role-select').forEach(select => { select.onchange = async () => { if (select.dataset.email === currentUser?.email) { alert('Bạn không thể thay đổi vai trò của chính mình!'); loadUsers(); return; } if (confirm('Cập nhật vai trò?')) { await updateDoc(doc(db, "users", select.dataset.id), { role: select.value }); loadUsers(); } }; });
-            document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa người dùng này?')) { await deleteDoc(doc(db, "users", btn.dataset.id)); loadUsers(); } }; });
-        }
-
         function showSanModal(data = null) {
             const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
-            modal.innerHTML = `<div class="modal-content"><h3><i class="fas fa-futbol"></i> ${data ? 'Sửa sân' : 'Thêm sân mới'}</h3><input type="text" id="sanTen" placeholder="Tên sân" value="${data ? data.ten : ''}"><select id="sanLoai"><option value="caulong" ${data && data.loai === 'caulong' ? 'selected' : ''}>🏸 Cầu lông</option><option value="pickleball" ${data && data.loai === 'pickleball' ? 'selected' : ''}>🎾 Pickleball</option><option value="bongda" ${data && data.loai === 'bongda' ? 'selected' : ''}>⚽ Bóng đá</option></select><input type="number" id="sanGia" placeholder="Giá mỗi giờ (VNĐ)" value="${data ? data.gia : ''}"><input type="text" id="sanDiaChi" placeholder="Địa chỉ" value="${data ? data.diachi : ''}"><textarea id="sanMoTa" rows="3" placeholder="Mô tả sân">${data ? data.mota : ''}</textarea><div class="modal-buttons"><button class="btn-save" id="saveSanBtn"><i class="fas fa-save"></i> Lưu</button><button class="btn-cancel" id="cancelModalBtn"><i class="fas fa-times"></i> Hủy</button></div></div>`;
+            modal.innerHTML = `<div class="modal-content"><h3>${data ? 'Sửa sân' : 'Thêm sân mới'}</h3>
+                <input type="text" id="sanTen" placeholder="Tên sân" value="${data ? data.ten : ''}">
+                <select id="sanLoai"><option value="caulong" ${data && data.loai === 'caulong' ? 'selected' : ''}>Cầu lông</option><option value="pickleball" ${data && data.loai === 'pickleball' ? 'selected' : ''}>Pickleball</option><option value="bongda" ${data && data.loai === 'bongda' ? 'selected' : ''}>Bóng đá</option></select>
+                <input type="number" id="sanGia" placeholder="Giá mỗi giờ (VNĐ)" value="${data ? data.gia : ''}">
+                <input type="text" id="sanDiaChi" placeholder="Địa chỉ" value="${data ? data.diachi : ''}">
+                <textarea id="sanMoTa" rows="3" placeholder="Mô tả sân">${data ? data.mota : ''}</textarea>
+                <div class="modal-buttons"><button class="btn-save" id="saveSanBtn">Lưu</button><button class="btn-cancel" id="cancelModalBtn">Hủy</button></div></div>`;
             document.body.appendChild(modal);
             document.getElementById('saveSanBtn').onclick = async () => {
                 const sanData = { ten: document.getElementById('sanTen').value, loai: document.getElementById('sanLoai').value, gia: parseInt(document.getElementById('sanGia').value), diaChi: document.getElementById('sanDiaChi').value, moTa: document.getElementById('sanMoTa').value, hinhAnh: "https://images.unsplash.com/photo-1534158914592-062992fbea52" };
@@ -524,15 +619,204 @@
             document.getElementById('cancelModalBtn').onclick = () => modal.remove();
         }
 
-        // Kiểm tra đăng nhập và role, nếu chưa đăng nhập thì chuyển về dangnhap.html
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                isAdmin = await checkAdminRole(user);
-                renderAdminPanel();
+        function showAddUserModal() {
+            const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>Thêm tài khoản mới</h3>
+                    <input type="text" id="newFullName" placeholder="Họ và tên">
+                    <input type="email" id="newEmail" placeholder="Email">
+                    <input type="tel" id="newPhone" placeholder="Số điện thoại">
+                    <input type="password" id="newPassword" placeholder="Mật khẩu (6 ký tự)">
+                    <select id="newRole">
+                        <option value="user">Người dùng</option>
+                        <option value="staff">Nhân viên</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <div class="modal-buttons">
+                        <button class="btn-save" id="confirmAddUserBtn">Thêm</button>
+                        <button class="btn-cancel" id="cancelAddUserBtn">Hủy</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById('confirmAddUserBtn').onclick = async () => {
+                const fullName = document.getElementById('newFullName').value;
+                const email = document.getElementById('newEmail').value;
+                const phone = document.getElementById('newPhone').value;
+                const password = document.getElementById('newPassword').value;
+                const role = document.getElementById('newRole').value;
+                
+                if (!email || !password) { alert('Vui lòng nhập email và mật khẩu!'); return; }
+                if (password.length < 6) { alert('Mật khẩu phải có ít nhất 6 ký tự!'); return; }
+                
+                try {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const newUser = userCredential.user;
+                    await updateProfile(newUser, { displayName: fullName });
+                    await setDoc(doc(db, "users", newUser.uid), {
+                        fullName: fullName,
+                        email: email,
+                        phone: phone,
+                        role: role,
+                        isActive: true,
+                        createdAt: new Date().toISOString()
+                    });
+                    alert('Thêm tài khoản thành công!');
+                    modal.remove();
+                    loadUsers();
+                } catch (error) {
+                    alert('Lỗi: ' + error.message);
+                }
+            };
+            document.getElementById('cancelAddUserBtn').onclick = () => modal.remove();
+        }
+
+        async function showUserHistory(userId, userName) {
+            const bookingsRef = collection(db, "donDat");
+            const q = query(bookingsRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+            
+            let html = `<div class="user-history"><h4>Lịch sử đặt sân của ${userName}</h4>`;
+            if (snapshot.empty) {
+                html += '<p>Chưa có đơn đặt sân nào.</p>';
             } else {
-                // Chưa đăng nhập -> chuyển về trang đăng nhập
-                window.location.href = 'dangnhap.html';
+                snapshot.forEach(doc => {
+                    const b = doc.data();
+                    html += `<div class="history-item"><strong>${b.tenSan}</strong> - Ngày: ${b.ngayDat} - Giờ: ${b.gioBatDau}:00 - ${b.gioKetThuc}:00 - ${b.tongTien.toLocaleString()}đ - Trạng thái: ${b.trangThai}</div>`;
+                });
+            }
+            html += `<button class="btn-add" id="closeHistoryBtn" style="margin-top:10px;">Đóng</button></div>`;
+            
+            const existingModal = document.querySelector('.modal');
+            if (existingModal) existingModal.remove();
+            
+            const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
+            modal.innerHTML = `<div class="modal-content" style="max-width:600px;">${html}</div>`;
+            document.body.appendChild(modal);
+            
+            document.getElementById('closeHistoryBtn').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        }
+
+        async function loadUsers() {
+            const snapshot = await getDocs(collection(db, "users"));
+            let users = [];
+            snapshot.forEach(doc => { users.push({ id: doc.id, ...doc.data() }); });
+            
+            let html = `<div class="card-header"><h2><i class="fas fa-users"></i> Quản lý người dùng</h2>
+                        <button class="btn-add" id="addUserBtn">+ Thêm tài khoản</button>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                            <div class="search-box">
+                                <input type="text" id="searchUserInput" placeholder="Tìm kiếm email, tên...">
+                                <button id="searchUserBtn">Tìm kiếm</button>
+                            </div>
+                            <select id="filterRoleSelect" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="all">Tất cả vai trò</option>
+                                <option value="user">Người dùng</option>
+                                <option value="staff">Nhân viên</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <select id="filterStatusSelect" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="active">Hoạt động</option>
+                                <option value="inactive">Bị khóa</option>
+                            </select>
+                        </div>
+                        <div class="data-table"><table><thead><tr><th>STT</th><th>Email</th><th>Họ tên</th><th>SĐT</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="userTableBody"></tbody></table></div>`;
+            
+            document.getElementById('usersTab').innerHTML = html;
+            
+            function renderUserTable(userList) {
+                const tbody = document.getElementById('userTableBody');
+                let tableHtml = '';
+                let stt = 1;
+                for (const u of userList) {
+                    const statusClass = u.isActive !== false ? 'status-active' : 'status-inactive';
+                    const statusText = u.isActive !== false ? 'Hoạt động' : 'Bị khóa';
+                    tableHtml += `<tr>
+                        <td>${stt++}</td>
+                        <td>${u.email}</td>
+                        <td>${u.fullName || '---'}</td>
+                        <td>${u.phone || '---'}</td>
+                        <td><select class="role-select" data-id="${u.id}" data-email="${u.email}"><option value="user" ${u.role === 'user' ? 'selected' : ''}>Người dùng</option><option value="staff" ${u.role === 'staff' ? 'selected' : ''}>Nhân viên</option><option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option></select></td>
+                        <td><select class="status-select" data-id="${u.id}" data-email="${u.email}"><option value="active" ${u.isActive !== false ? 'selected' : ''}>Hoạt động</option><option value="inactive" ${u.isActive === false ? 'selected' : ''}>Bị khóa</option></select></td>
+                        <td>
+                            <button class="btn-view" data-id="${u.id}" data-name="${u.fullName || u.email}"><i class="fas fa-eye"></i></button>
+                            <button class="btn-delete" data-id="${u.id}" data-email="${u.email}"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                }
+                tbody.innerHTML = tableHtml;
+                
+                document.querySelectorAll('.role-select').forEach(select => { 
+                    select.onchange = async () => { 
+                        if (select.dataset.email === currentUser?.email) { alert('Bạn không thể thay đổi vai trò của chính mình!'); loadUsers(); return; } 
+                        if (confirm('Cập nhật vai trò?')) { await updateDoc(doc(db, "users", select.dataset.id), { role: select.value }); loadUsers(); } 
+                    }; 
+                });
+                
+                document.querySelectorAll('.status-select').forEach(select => { 
+                    select.onchange = async () => { 
+                        if (select.dataset.email === currentUser?.email) { alert('Bạn không thể khóa tài khoản của chính mình!'); loadUsers(); return; } 
+                        const isActive = select.value === 'active';
+                        if (confirm(isActive ? 'Mở khóa tài khoản này?' : 'Khóa tài khoản này?')) { 
+                            await updateDoc(doc(db, "users", select.dataset.id), { isActive: isActive }); 
+                            loadUsers(); 
+                        } 
+                    }; 
+                });
+                
+                document.querySelectorAll('.btn-view').forEach(btn => { 
+                    btn.onclick = () => showUserHistory(btn.dataset.id, btn.dataset.name); 
+                });
+                
+                document.querySelectorAll('.btn-delete').forEach(btn => { 
+                    btn.onclick = async () => { 
+                        if (btn.dataset.email === currentUser?.email) { alert('Bạn không thể xóa tài khoản của chính mình!'); return; }
+                        if (confirm('Xóa người dùng này?')) { await deleteDoc(doc(db, "users", btn.dataset.id)); loadUsers(); } 
+                    }; 
+                });
+            }
+            
+            document.getElementById('addUserBtn').onclick = () => showAddUserModal();
+            document.getElementById('searchUserBtn').onclick = () => {
+                const keyword = document.getElementById('searchUserInput').value.toLowerCase();
+                const filtered = users.filter(u => u.email.toLowerCase().includes(keyword) || (u.fullName && u.fullName.toLowerCase().includes(keyword)));
+                renderUserTable(filtered);
+            };
+            document.getElementById('filterRoleSelect').onchange = () => {
+                const roleFilter = document.getElementById('filterRoleSelect').value;
+                let filtered = [...users];
+                if (roleFilter !== 'all') filtered = filtered.filter(u => u.role === roleFilter);
+                const keyword = document.getElementById('searchUserInput').value.toLowerCase();
+                if (keyword) filtered = filtered.filter(u => u.email.toLowerCase().includes(keyword) || (u.fullName && u.fullName.toLowerCase().includes(keyword)));
+                renderUserTable(filtered);
+            };
+            document.getElementById('filterStatusSelect').onchange = () => {
+                const statusFilter = document.getElementById('filterStatusSelect').value;
+                let filtered = [...users];
+                if (statusFilter !== 'all') {
+                    const isActive = statusFilter === 'active';
+                    filtered = filtered.filter(u => (u.isActive !== false) === isActive);
+                }
+                const keyword = document.getElementById('searchUserInput').value.toLowerCase();
+                if (keyword) filtered = filtered.filter(u => u.email.toLowerCase().includes(keyword) || (u.fullName && u.fullName.toLowerCase().includes(keyword)));
+                renderUserTable(filtered);
+            };
+            document.getElementById('searchUserInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('searchUserBtn').click(); });
+            
+            renderUserTable(users);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) { 
+                currentUser = user; 
+                await renderAdminPanel(); 
+            } else { 
+                window.location.href = 'dangnhap.html'; 
             }
         });
     </script>

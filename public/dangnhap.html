@@ -70,9 +70,12 @@
 <body>
     <header>
         <div class="logo">
-            <h1> SportBooking</h1>
+            <a href="index.html" style="text-decoration: none; color: white;">
+                <h1>SportBooking</h1>
+            </a>
         </div>
         <nav>
+            <a href="index.html">Trang chủ</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
             <a href="dangky.html">Đăng ký</a>
@@ -80,7 +83,7 @@
     </header>
 
     <div class="auth-container">
-        <h2> Đăng nhập</h2>
+        <h2>🔐 Đăng nhập</h2>
         
         <div id="errorMessage" class="error-message"></div>
         
@@ -138,11 +141,8 @@
             }
             
             try {
-                // Đăng nhập Firebase Auth
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
-                
-                console.log("Đăng nhập thành công:", user.email);
                 
                 // Kiểm tra role trong Firestore
                 const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -150,24 +150,20 @@
                 
                 if (userDoc.exists()) {
                     role = userDoc.data().role || "user";
-                    console.log("Role:", role);
-                } else {
-                    console.log("Không tìm thấy user document");
                 }
                 
+                console.log("User role after login:", role);
+                
                 // Chuyển hướng dựa theo role
-                if (role === "admin") {
-                    alert('Đăng nhập thành công! Chào mừng Admin.');
-                    console.log("Chuyển hướng đến admin.html");
+                if (role === "admin" || role === "staff") {
+                    alert('Đăng nhập thành công! Chào mừng Quản trị viên/Nhân viên.');
                     window.location.href = 'admin.html';
                 } else {
                     alert('Đăng nhập thành công!');
-                    console.log("Chuyển hướng đến index.html");
                     window.location.href = 'index.html';
                 }
                 
             } catch (error) {
-                console.error("Lỗi đăng nhập:", error);
                 let errorMessage = '';
                 switch (error.code) {
                     case 'auth/invalid-credential':
