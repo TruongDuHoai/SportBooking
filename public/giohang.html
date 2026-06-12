@@ -5,60 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Giỏ hàng - SportBooking</title>
     <link rel="stylesheet" href="css/style.css">
+
     <style>
         .cart-container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 50px auto;
             padding: 0 20px;
         }
+
         .cart-title {
             color: #1a6b30;
             margin-bottom: 20px;
         }
+
         .cart-empty {
             text-align: center;
             padding: 50px;
             background: white;
             border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         }
+
         .cart-table {
             width: 100%;
             background: white;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-collapse: collapse;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
-        .cart-table th, .cart-table td {
+
+        .cart-table th,
+        .cart-table td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
+
         .cart-table th {
             background: #f5f5f5;
+            color: #333;
         }
+
         .cart-item-info h4 {
             margin-bottom: 5px;
+            color: #1a6b30;
         }
+
+        .cart-item-info small {
+            color: #666;
+        }
+
         .cart-remove {
             color: #e74c3c;
             cursor: pointer;
             background: none;
             border: none;
-            font-size: 18px;
+            font-size: 15px;
+            font-weight: bold;
         }
+
+        .cart-remove:hover {
+            text-decoration: underline;
+        }
+
         .cart-total {
             text-align: right;
             padding: 20px;
             background: white;
             margin-top: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
+
         .cart-total .total-price {
-            font-size: 24px;
+            font-size: 26px;
             color: #e74c3c;
             font-weight: bold;
         }
+
         .btn-checkout {
             background: #1a6b30;
             color: white;
@@ -69,26 +94,50 @@
             cursor: pointer;
             margin-top: 15px;
         }
+
         .btn-checkout:hover {
             background: #0d4620;
         }
+
         .btn-continue {
             background: #ff9800;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 22px;
             border-radius: 5px;
             cursor: pointer;
             margin-right: 10px;
+            margin-top: 15px;
         }
+
+        .btn-continue:hover {
+            background: #e68900;
+        }
+
         @media (max-width: 768px) {
-            .cart-table th, .cart-table td {
+            .cart-table {
+                font-size: 13px;
+            }
+
+            .cart-table th,
+            .cart-table td {
                 padding: 8px;
-                font-size: 12px;
+            }
+
+            .cart-total {
+                text-align: left;
+            }
+
+            .btn-continue,
+            .btn-checkout {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
             }
         }
     </style>
 </head>
+
 <body>
     <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
         <div class="logo">
@@ -96,14 +145,19 @@
                 <h1>SportBooking</h1>
             </a>
         </div>
+
         <nav>
+            <a href="san.html">Đặt sân</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
+
             <div style="position:relative; display:inline-block;" id="userMenu">
                 <a href="#" id="loginBtn">Đăng nhập</a>
+
                 <div id="userDropdownArea" style="display:none; position:relative;">
                     <a href="#" id="userInfoBtn">Tài khoản</a>
-                    <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:white; min-width:120px; box-shadow:0 2px 5px rgba(0,0,0,0.2); border-radius:5px; z-index:100;">
+
+                    <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:white; min-width:130px; box-shadow:0 2px 5px rgba(0,0,0,0.2); border-radius:5px; z-index:100;">
                         <a href="taikhoan.html" style="display:block; padding:10px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">Thông tin</a>
                         <a href="#" id="logoutDropdownBtn" style="display:block; padding:10px; color:#e74c3c; text-decoration:none;">Đăng xuất</a>
                     </div>
@@ -114,17 +168,27 @@
 
     <div class="cart-container">
         <h2 class="cart-title">Giỏ hàng của bạn</h2>
+
         <div id="cartContent">
             <div class="cart-empty">
-                <p>Đang tải...</p>
+                <p>Đang tải giỏ hàng...</p>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
@@ -143,97 +207,157 @@
 
         function hienThiGioHang(cartItems) {
             const container = document.getElementById('cartContent');
-            
+
             if (!cartItems || cartItems.length === 0) {
                 container.innerHTML = `
                     <div class="cart-empty">
                         <p>Giỏ hàng của bạn đang trống.</p>
-                        <a href="san.html" style="color: #1a6b30;">Tiếp tục mua sắm</a>
+                        <br>
+                        <a href="san.html" style="color:#1a6b30; font-weight:bold;">Tiếp tục đặt sân</a>
                     </div>
                 `;
                 return;
             }
-            
+
             let total = 0;
+
             let html = `
                 <table class="cart-table">
                     <thead>
-                        <tr><th>Sản phẩm</th><th>Đơn giá</th><th>Ngày</th><th>Giờ</th><th>Thao tác</th></tr>
+                        <tr>
+                            <th>Sân</th>
+                            <th>Ngày đặt</th>
+                            <th>Khung giờ</th>
+                            <th>Đơn giá</th>
+                            <th>Thao tác</th>
+                        </tr>
                     </thead>
                     <tbody>
             `;
-            
+
             cartItems.forEach(item => {
-                total += item.gia;
+                const gia = Number(item.gia || 0);
+                total += gia;
+
                 html += `
                     <tr>
                         <td>
                             <div class="cart-item-info">
-                                <h4>${item.tenSan}</h4>
+                                <h4>${item.tenSan || 'Sân thể thao'}</h4>
+                                <small>${item.diaChi || ''}</small>
                             </div>
                         </td>
-                        <td>${item.gia.toLocaleString()}đ</td>
                         <td>${item.ngayDat || 'Chưa chọn'}</td>
-                        <td>${item.gioBatDau ? item.gioBatDau + ':00' : 'Chưa chọn'}</td>
-                        <td><button class="cart-remove" data-id="${item.id}">Xóa</button></td>
+                        <td>${item.gioBatDau}:00 - ${item.gioKetThuc}:00</td>
+                        <td>${gia.toLocaleString()}đ</td>
+                        <td>
+                            <button class="cart-remove" data-id="${item.id}">
+                                Xóa
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
-            
+
             html += `
                     </tbody>
                 </table>
+
                 <div class="cart-total">
                     <h3>Tổng tiền: <span class="total-price">${total.toLocaleString()}đ</span></h3>
-                    <button class="btn-continue" onclick="window.location.href='san.html'">Tiếp tục đặt sân</button>
-                    <button class="btn-checkout" onclick="window.location.href='thanhtoan.html'">Thanh toán</button>
+
+                    <button class="btn-continue" id="btnContinue">
+                        Tiếp tục đặt sân
+                    </button>
+
+                    <button class="btn-checkout" id="btnCheckout">
+                        Thanh toán
+                    </button>
                 </div>
             `;
-            
+
             container.innerHTML = html;
-            
-            // Xóa item
+
+            document.getElementById('btnContinue').onclick = () => {
+                window.location.href = 'san.html';
+            };
+
+            document.getElementById('btnCheckout').onclick = () => {
+                window.location.href = 'thanhtoan.html';
+            };
+
             document.querySelectorAll('.cart-remove').forEach(btn => {
-                btn.onclick = async () => {
+                btn.addEventListener('click', async () => {
                     const itemId = btn.dataset.id;
-                    const cartRef = doc(db, "carts", currentUser.uid);
-                    const cartSnap = await getDoc(cartRef);
-                    if (cartSnap.exists()) {
-                        let items = cartSnap.data().items || [];
-                        items = items.filter(i => i.id !== itemId);
-                        await setDoc(cartRef, { items: items, updatedAt: new Date().toISOString() });
-                        loadGioHang();
+
+                    if (!confirm('Bạn có chắc muốn xóa khung giờ này khỏi giỏ hàng?')) {
+                        return;
                     }
-                };
+
+                    await xoaKhoiGioHang(itemId);
+                });
             });
         }
 
+        async function xoaKhoiGioHang(itemId) {
+            if (!currentUser) return;
+
+            try {
+                const cartRef = doc(db, "carts", currentUser.uid);
+                const cartSnap = await getDoc(cartRef);
+
+                if (!cartSnap.exists()) return;
+
+                let items = cartSnap.data().items || [];
+                items = items.filter(item => item.id !== itemId);
+
+                await setDoc(cartRef, {
+                    items: items,
+                    updatedAt: new Date().toISOString()
+                });
+
+                alert('Đã xóa khỏi giỏ hàng!');
+                loadGioHang();
+
+            } catch (error) {
+                console.error('Lỗi xóa giỏ hàng:', error);
+                alert('Xóa thất bại: ' + error.message);
+            }
+        }
+
         async function loadGioHang() {
+            const container = document.getElementById('cartContent');
+
             if (!currentUser) {
-                document.getElementById('cartContent').innerHTML = `
+                container.innerHTML = `
                     <div class="cart-empty">
                         <p>Vui lòng đăng nhập để xem giỏ hàng.</p>
-                        <a href="dangnhap.html" style="color: #1a6b30;">Đăng nhập ngay</a>
+                        <br>
+                        <a href="dangnhap.html" style="color:#1a6b30; font-weight:bold;">Đăng nhập ngay</a>
                     </div>
                 `;
                 return;
             }
-            
+
             try {
                 const cartRef = doc(db, "carts", currentUser.uid);
                 const cartSnap = await getDoc(cartRef);
-                
-                if (!cartSnap.exists() || !cartSnap.data().items || cartSnap.data().items.length === 0) {
+
+                if (!cartSnap.exists()) {
                     hienThiGioHang([]);
                     return;
                 }
-                
-                const items = cartSnap.data().items;
+
+                const items = cartSnap.data().items || [];
                 hienThiGioHang(items);
-                
+
             } catch (error) {
-                console.error("Lỗi:", error);
-                document.getElementById('cartContent').innerHTML = '<p style="color:red;">Lỗi tải giỏ hàng: ' + error.message + '</p>';
+                console.error("Lỗi tải giỏ hàng:", error);
+                container.innerHTML = `
+                    <div class="cart-empty">
+                        <p style="color:red;">Không thể tải giỏ hàng. Vui lòng thử lại.</p>
+                    </div>
+                `;
             }
         }
 
@@ -243,43 +367,52 @@
             const userInfoBtn = document.getElementById('userInfoBtn');
             const dropdownMenu = document.getElementById('dropdownMenu');
             const logoutDropdownBtn = document.getElementById('logoutDropdownBtn');
-            
+
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     currentUser = user;
+
                     loginBtn.style.display = 'none';
                     userDropdownArea.style.display = 'inline-block';
-                    
+
                     userInfoBtn.onclick = (e) => {
                         e.preventDefault();
-                        dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+                        dropdownMenu.style.display =
+                            dropdownMenu.style.display === 'none' ? 'block' : 'none';
                     };
-                    
-                    document.addEventListener('click', function closeDropdown(e) {
-                        if (!userDropdownArea.contains(e.target)) {
-                            dropdownMenu.style.display = 'none';
-                        }
-                    });
-                    
-                    if (logoutDropdownBtn) {
-                        logoutDropdownBtn.onclick = async (e) => {
-                            e.preventDefault();
-                            await signOut(auth);
-                            alert('Đã đăng xuất!');
-                            window.location.reload();
-                        };
-                    }
-                    
+
+                    logoutDropdownBtn.onclick = async (e) => {
+                        e.preventDefault();
+
+                        await signOut(auth);
+                        alert('Đã đăng xuất!');
+                        window.location.href = 'index.html';
+                    };
+
                     loadGioHang();
+
                 } else {
                     currentUser = null;
+
                     loginBtn.style.display = 'inline-block';
                     userDropdownArea.style.display = 'none';
+
                     loginBtn.onclick = (e) => {
                         e.preventDefault();
                         window.location.href = 'dangnhap.html';
                     };
+
                     loadGioHang();
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (
+                    userDropdownArea &&
+                    dropdownMenu &&
+                    !userDropdownArea.contains(e.target)
+                ) {
+                    dropdownMenu.style.display = 'none';
                 }
             });
         }

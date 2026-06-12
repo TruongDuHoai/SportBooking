@@ -1,3 +1,18 @@
+:root {
+    --primary: #1a6b30;
+    --primary-dark: #0d4620;
+    --accent: #ff9800;
+    --accent-dark: #e68900;
+    --danger: #e74c3c;
+    --bg: #f6f7f5;
+    --card: #ffffff;
+    --text: #1f2933;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 8px 24px rgba(0,0,0,0.08);
+    --radius: 14px;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,131 +21,213 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
 }
 
-/* ============= HEADER ============= */
+/* HEADER */
 header {
-    background: linear-gradient(135deg, #1a6b30, #0d4620);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+
+}
+
+.logo a {
+    color: white;
+    text-decoration: none;
 }
 
 .logo h1 {
-    font-size: 1.5rem;
+    font-size: 1.55rem;
+    letter-spacing: 0.3px;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
 }
 
 nav a {
     color: white;
     text-decoration: none;
-    margin-left: 1.5rem;
-    padding: 0.5rem;
-    transition: 0.3s;
+    padding: 0.55rem 0.8rem;
+    border-radius: 8px;
+    transition: 0.25s;
+    font-weight: 500;
 }
 
 nav a:hover {
-    background-color: #ff9800;
-    border-radius: 5px;
+    background: var(--accent);
 }
 
-/* ============= HERO SECTION ============= */
+/* BUTTONS */
+button,
+.btn-dat,
+.btn-book,
+.btn-submit,
+.action-btn,
+.btn-primary,
+.btn-secondary {
+    transition: 0.25s;
+}
+
+.btn-dat,
+.btn-book,
+.btn-submit,
+.btn-primary,
+.action-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.btn-dat:hover,
+.btn-book:hover,
+.btn-submit:hover,
+.btn-primary:hover,
+.action-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--accent);
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: var(--accent-dark);
+}
+
+/* FORM */
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(26,107,48,0.12);
+}
+
+/* HERO CŨ */
 .hero {
-    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1534158914592-062992fbea52');
+    background:
+        linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+        url('https://images.unsplash.com/photo-1534158914592-062992fbea52');
     background-size: cover;
     background-position: center;
-    height: 300px;
+    min-height: 320px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     color: white;
     text-align: center;
+    padding: 2rem;
 }
 
 .hero h2 {
-    font-size: 2.5rem;
+    font-size: 2.4rem;
     margin-bottom: 1rem;
 }
 
 .search-box {
     margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
 }
 
 .search-box input {
-    padding: 0.8rem;
-    width: 300px;
+    padding: 0.85rem;
+    width: 320px;
     border: none;
-    border-radius: 5px 0 0 5px;
+    border-radius: 8px 0 0 8px;
 }
 
 .search-box button {
-    padding: 0.8rem 1.5rem;
-    background-color: #ff9800;
+    padding: 0.85rem 1.5rem;
+    background: var(--accent);
     border: none;
     color: white;
     cursor: pointer;
-    border-radius: 0 5px 5px 0;
+    border-radius: 0 8px 8px 0;
 }
 
 .search-box button:hover {
-    background-color: #e68900;
+    background: var(--accent-dark);
 }
 
-/* ============= FILTERS ============= */
+/* FILTERS */
 .filters {
     display: flex;
     justify-content: center;
     gap: 1rem;
     padding: 1.5rem;
-    background-color: white;
-    margin: 1rem 2rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: var(--card);
+    margin: 1.2rem 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
     flex-wrap: wrap;
 }
 
 .filters select {
-    padding: 0.5rem 1rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     cursor: pointer;
 }
 
-/* ============= DANH SÁCH SÂN ============= */
+/* DANH SÁCH SÂN */
 .san-list {
     padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .san-list h2 {
     margin-bottom: 1.5rem;
-    color: #1a6b30;
+    color: var(--primary);
 }
 
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.6rem;
 }
 
-/* Card sân */
 .san-card {
-    background: white;
-    border-radius: 10px;
+    background: var(--card);
+    border-radius: var(--radius);
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
+    box-shadow: var(--shadow);
+    transition: 0.25s;
+    border: 1px solid var(--border);
 }
 
 .san-card:hover {
     transform: translateY(-5px);
 }
 
-/* HÌNH ẢNH - QUAN TRỌNG: sửa ảnh bị to */
 .san-card img {
     width: 100%;
     height: 200px;
@@ -138,62 +235,103 @@ nav a:hover {
 }
 
 .san-card .info {
-    padding: 1rem;
+    padding: 1.1rem;
 }
 
 .san-card .ten-san {
     font-size: 1.2rem;
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 0.5rem;
-    color: #333;
 }
 
 .san-card .loai-san {
-    color: #ff9800;
+    color: var(--accent);
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
 }
 
 .san-card .gia-san {
-    color: #e74c3c;
-    font-size: 1.3rem;
+    color: var(--danger);
+    font-size: 1.25rem;
     font-weight: bold;
     margin: 0.5rem 0;
 }
 
 .san-card .dia-chi {
-    color: #666;
-    font-size: 0.9rem;
+    color: var(--muted);
+    font-size: 0.92rem;
     margin-bottom: 1rem;
 }
 
 .btn-dat {
-    background-color: #1a6b30;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    cursor: pointer;
+    padding: 0.75rem 1rem;
     width: 100%;
     font-size: 1rem;
-    transition: background 0.3s;
 }
 
-.btn-dat:hover {
-    background-color: #0d4620;
+/* CARD CHUNG */
+.card,
+.checkout-card,
+.profile-card,
+.contact-info,
+.contact-form,
+.booking-item,
+.cart-table,
+.cart-total,
+.empty-history,
+.empty-cart {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
 
-/* ============= FOOTER ============= */
-footer {
-    background-color: #2c3e50;
+/* STATUS */
+.status-pending,
+.status-confirmed,
+.status-cancelled {
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.status-pending {
+    background: var(--accent);
     color: white;
-    padding: 2rem;
-    margin-top: 2rem;
+}
+
+.status-confirmed {
+    background: var(--primary);
+    color: white;
+}
+
+.status-cancelled {
+    background: var(--danger);
+    color: white;
+}
+
+/* DROPDOWN */
+#userDropdownArea {
+    position: relative;
+    display: inline-block;
+}
+
+#dropdownMenu a:hover {
+    background: #f5f5f5;
+}
+
+/* FOOTER */
+footer {
+    background: #20352a;
+    color: white;
+    padding: 2.2rem 2rem;
+    margin-top: 3rem;
 }
 
 .footer-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 2rem;
     max-width: 1200px;
     margin: 0 auto;
@@ -201,15 +339,16 @@ footer {
 
 footer h4 {
     margin-bottom: 1rem;
-    color: #ff9800;
+    color: var(--accent);
 }
 
 footer p {
     margin: 0.5rem 0;
+    color: #e5e7eb;
 }
 
 footer a {
-    color: #ff9800;
+    color: var(--accent);
     text-decoration: none;
 }
 
@@ -221,85 +360,102 @@ footer a:hover {
     text-align: center;
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid #555;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    color: #d1d5db;
 }
 
-/* ============= RESPONSIVE ============= */
-/* Tablet và điện thoại */
+/* RESPONSIVE */
+@media (max-width: 992px) {
+    header {
+        gap: 1rem;
+    }
+
+    nav {
+        justify-content: center;
+    }
+}
+
 @media (max-width: 768px) {
     header {
         flex-direction: column;
         text-align: center;
+        padding: 1rem;
     }
-    
+
+    nav {
+        width: 100%;
+        justify-content: center;
+    }
+
     nav a {
-        display: inline-block;
-        margin: 0.5rem;
+        margin: 0.2rem;
+        padding: 0.5rem 0.65rem;
+        font-size: 0.95rem;
     }
-    
+
+    .hero {
+        min-height: 260px;
+        padding: 1.5rem;
+    }
+
+    .hero h2 {
+        font-size: 1.7rem;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    .search-box input {
+        width: 65%;
+    }
+
     .filters {
         flex-direction: column;
         margin: 1rem;
     }
-    
+
     .filters select {
         width: 100%;
     }
-    
-    .search-box input {
-        width: 180px;
+
+    .san-list {
+        padding: 1rem;
     }
-    
-    .hero h2 {
-        font-size: 1.5rem;
-    }
-    
-    .hero {
-        height: 250px;
-        padding: 0 1rem;
-    }
-    
-    /* Giảm chiều cao ảnh trên mobile */
-    .san-card img {
-        height: 160px;
-    }
-    
+
     .grid-container {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-}
 
-/* Màn hình rất nhỏ (điện thoại nhỏ) */
-@media (max-width: 480px) {
-    .hero h2 {
-        font-size: 1.2rem;
-    }
-    
-    .hero p {
-        font-size: 0.9rem;
-    }
-    
-    .search-box input {
-        width: 140px;
-        padding: 0.5rem;
-    }
-    
-    .search-box button {
-        padding: 0.5rem 1rem;
-    }
-    
     .san-card img {
-        height: 140px;
+        height: 170px;
     }
 }
-/* Dropdown menu */
-#userDropdownArea {
-    position: relative;
-    display: inline-block;
-}
 
-#dropdownMenu a:hover {
-    background: #f5f5f5;
-}
+@media (max-width: 480px) {
+    .logo h1 {
+        font-size: 1.3rem;
+    }
 
+    .hero h2 {
+        font-size: 1.35rem;
+    }
+
+    .hero p {
+        font-size: 0.95rem;
+    }
+
+    .search-box input {
+        width: 60%;
+        padding: 0.65rem;
+    }
+
+    .search-box button {
+        padding: 0.65rem 0.9rem;
+    }
+
+    .san-card img {
+        height: 145px;
+    }
+}

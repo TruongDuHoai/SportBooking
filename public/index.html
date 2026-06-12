@@ -3,27 +3,445 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thuê Sân Thể Thao - Cầu Lông, Pickleball, Bóng Đá</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>SportBooking - Đặt sân bóng & đồ ăn</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f6f7f5;
+            color: #1f2933;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(12, 35, 23, 0.96);
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 16px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+        }
+
+        nav a:hover {
+            color: #d6b56d;
+        }
+
+        .hero {
+            min-height: 650px;
+            padding: 70px 7%;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 50px;
+            align-items: center;
+            background:
+                linear-gradient(90deg, rgba(11,35,22,0.93), rgba(11,35,22,0.72)),
+                url("https://images.unsplash.com/photo-1459865264687-595d652de67e") center/cover;
+            color: white;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: rgba(214, 181, 109, 0.16);
+            border: 1px solid rgba(214, 181, 109, 0.45);
+            color: #f1d18a;
+            border-radius: 999px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .hero h2 {
+            font-size: 56px;
+            line-height: 1.08;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #e5e7eb;
+            line-height: 1.7;
+            margin-bottom: 30px;
+            max-width: 620px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.25s;
+        }
+
+        .btn-primary {
+            background: #d6b56d;
+            color: #102015;
+        }
+
+        .btn-primary:hover {
+            background: #f0ca78;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.12);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.22);
+        }
+
+        .booking-card {
+            background: rgba(255,255,255,0.96);
+            color: #1f2933;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.28);
+        }
+
+        .booking-card h3 {
+            color: #0c2317;
+            font-size: 25px;
+            margin-bottom: 18px;
+        }
+
+        .booking-row {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .booking-row span:first-child {
+            color: #6b7280;
+        }
+
+        .booking-row span:last-child {
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .booking-card .btn-primary {
+            width: 100%;
+            justify-content: center;
+            margin-top: 24px;
+        }
+
+        .section {
+            padding: 70px 7%;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section-title span {
+            color: #d6b56d;
+            font-weight: bold;
+        }
+
+        .section-title h2 {
+            font-size: 36px;
+            color: #0c2317;
+            margin-top: 8px;
+        }
+
+        .quick-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 28px;
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+
+        .quick-card {
+            background: white;
+            padding: 36px;
+            border-radius: 22px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+            transition: 0.25s;
+            border: 1px solid #edf0ec;
+        }
+
+        .quick-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 18px 45px rgba(0,0,0,0.12);
+        }
+
+        .quick-icon {
+            width: 64px;
+            height: 64px;
+            background: #f8f0dc;
+            color: #0c2317;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .quick-card h3 {
+            color: #0c2317;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .quick-card p {
+            color: #6b7280;
+            line-height: 1.7;
+            margin-bottom: 22px;
+        }
+
+        .field-showcase {
+            background: #0c2317;
+            color: white;
+        }
+
+        .field-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 45px;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .field-layout img {
+            width: 100%;
+            height: 360px;
+            object-fit: cover;
+            border-radius: 24px;
+        }
+
+        .field-content h2 {
+            font-size: 36px;
+            margin-bottom: 18px;
+        }
+
+        .field-content p {
+            color: #d1d5db;
+            line-height: 1.8;
+            margin-bottom: 14px;
+        }
+
+        .feature-list {
+            display: grid;
+            gap: 12px;
+            margin: 25px 0;
+        }
+
+        .feature-list div {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .feature-list i {
+            color: #d6b56d;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            max-width: 1050px;
+            margin: 0 auto;
+        }
+
+        .step-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+        }
+
+        .step-number {
+            width: 44px;
+            height: 44px;
+            background: #0c2317;
+            color: #d6b56d;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .step-card h3 {
+            color: #0c2317;
+            margin-bottom: 10px;
+        }
+
+        .step-card p {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        footer {
+            background: #08170f;
+            color: white;
+            padding: 45px 7% 20px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 35px;
+            margin-bottom: 25px;
+        }
+
+        .footer-content h4 {
+            color: #d6b56d;
+            margin-bottom: 12px;
+        }
+
+        .footer-content p,
+        .footer-content a {
+            color: #d1d5db;
+            text-decoration: none;
+            margin: 7px 0;
+            display: block;
+        }
+
+        .copyright {
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.12);
+            padding-top: 18px;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 992px) {
+            .hero,
+            .field-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h2 {
+                font-size: 44px;
+            }
+
+            .booking-card {
+                max-width: 600px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 14px 5%;
+                gap: 15px;
+            }
+
+            nav {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .hero {
+                padding: 50px 5%;
+                min-height: auto;
+            }
+
+            .hero h2 {
+                font-size: 34px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .quick-grid,
+            .steps,
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 55px 5%;
+            }
+
+            .section-title h2,
+            .field-content h2 {
+                font-size: 28px;
+            }
+
+            .field-layout img {
+                height: 260px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-    <!-- Header -->
-    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+    <header>
         <div class="logo">
-            <a href="index.html" style="text-decoration: none; color: white;">
-                <h1> SportBooking</h1>
-            </a>
+            <a href="index.html"><h1>SportBooking</h1></a>
         </div>
+
         <nav>
-            <!--<a href="san.html">Sân</a>-->
+            <a href="chitiet.html?id=san1">Đặt sân</a>
+            <a href="doan.html">Đặt đồ ăn</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
+            <a href="lienhe.html">Liên hệ</a>
+
             <div style="position:relative; display:inline-block;" id="userMenu">
                 <a href="#" id="loginBtn">Đăng nhập</a>
+
                 <div id="userDropdownArea" style="display:none; position:relative;">
                     <a href="#" id="userInfoBtn">Tài khoản</a>
-                    <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:white; min-width:120px; box-shadow:0 2px 5px rgba(0,0,0,0.2); border-radius:5px; z-index:100;">
+
+                    <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:white; min-width:130px; box-shadow:0 2px 8px rgba(0,0,0,0.2); border-radius:8px; z-index:100;">
                         <a href="taikhoan.html" style="display:block; padding:10px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">Thông tin</a>
                         <a href="#" id="logoutDropdownBtn" style="display:block; padding:10px; color:#e74c3c; text-decoration:none;">Đăng xuất</a>
                     </div>
@@ -32,68 +450,162 @@
         </nav>
     </header>
 
-    <!-- Hero Section -->
     <section class="hero">
-        <h2>Đặt Sân Thể Thao Dễ Dàng</h2>
-        <p>Cầu lông | Pickleball | Bóng đá</p>
-        <div class="search-box">
-            <input type="text" placeholder="Tìm sân theo tên, địa chỉ...">
-            <button>Tìm kiếm</button>
+        <div>
+            <div class="hero-badge">Sân bóng mini cao cấp tại Quận 12</div>
+            <h2>Đặt sân nhanh, chơi bóng đúng giờ</h2>
+            <p>
+                Trải nghiệm đặt sân bóng hiện đại, dễ thao tác, chọn khung giờ trực quan,
+                thanh toán linh hoạt và có thể đặt thêm đồ ăn, nước uống ngay trên hệ thống.
+            </p>
+
+            <div class="hero-actions">
+                <a href="chitiet.html?id=san1" class="btn-primary">
+                    <i class="fa-solid fa-calendar-check"></i>
+                    Đặt sân ngay
+                </a>
+
+                <a href="doan.html" class="btn-secondary">
+                    <i class="fa-solid fa-burger"></i>
+                    Đặt đồ ăn
+                </a>
+            </div>
+        </div>
+
+        <div class="booking-card">
+            <h3>Thông tin sân</h3>
+
+            <div class="booking-row">
+                <span>Tên sân</span>
+                <span>Sân Bóng Đá Quận 12</span>
+            </div>
+
+            <div class="booking-row">
+                <span>Loại sân</span>
+                <span>Sân bóng đá 5 người</span>
+            </div>
+
+            <div class="booking-row">
+                <span>Giá thuê</span>
+                <span>380.000đ / giờ</span>
+            </div>
+
+            <div class="booking-row">
+                <span>Thời gian</span>
+                <span>06:00 - 22:00</span>
+            </div>
+
+            <div class="booking-row">
+                <span>Dịch vụ</span>
+                <span>Nước uống, đồ ăn nhẹ</span>
+            </div>
+
+            <a href="chitiet.html?id=san1" class="btn-primary">
+                Xem khung giờ trống
+            </a>
         </div>
     </section>
 
-    <!-- Bộ lọc -->
-    <section class="filters">
-        <select id="locLoaiSan">
-            <option value="">Tất cả loại sân</option>
-            <option value="caulong"> Cầu lông</option>
-            <option value="pickleball"> Pickleball</option>
-            <option value="bongda"> Bóng đá</option>
-        </select>
-        <select id="locKhuVuc">
-            <option value="">Tất cả khu vực</option>
-            <option value="quan1">Quận 1</option>
-            <option value="quan2">Quận 2</option>
-            <option value="quan3">Quận 3</option>
-            <option value="quan10">Quận 10</option>
-            <option value="tanbinh">Tân Bình</option>
-        </select>
-        <select id="sapXep">
-            <option value="giaTang"> Giá tăng dần</option>
-            <option value="giaGiam"> Giá giảm dần</option>
-            <option value="tenAZ"> Tên A-Z</option>
-        </select>
-    </section>
+    <section class="section">
+        <div class="section-title">
+            <span>Dịch vụ chính</span>
+            <h2>Chọn nhanh thao tác bạn cần</h2>
+        </div>
 
-    <!-- Danh sách sân -->
-    <section class="san-list">
-        <h2>Danh sách sân</h2>
-        <div id="danhSachSan" class="grid-container">
-            <!-- Sẽ load dữ liệu từ Firebase -->
+        <div class="quick-grid">
+            <div class="quick-card">
+                <div class="quick-icon">
+                    <i class="fa-solid fa-futbol"></i>
+                </div>
+                <h3>Đặt sân bóng</h3>
+                <p>Xem lịch trống, chọn ngày giờ, thêm vào giỏ hàng và gửi yêu cầu đặt sân trong vài bước.</p>
+                <a href="chitiet.html?id=san1" class="btn-primary">Đặt sân</a>
+            </div>
+
+            <div class="quick-card">
+                <div class="quick-icon">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <h3>Đặt đồ ăn & thức uống</h3>
+                <p>Gọi nhanh nước uống, đồ ăn nhẹ để phục vụ trong quá trình chơi bóng.</p>
+                <a href="doan.html" class="btn-primary">Đặt đồ ăn</a>
+            </div>
         </div>
     </section>
 
-    <!-- Footer -->
+    <section class="section field-showcase">
+        <div class="field-layout">
+            <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e" alt="Sân bóng">
+
+            <div class="field-content">
+                <h2>Sân bóng chất lượng, đặt lịch minh bạch</h2>
+                <p>
+                    SportBooking giúp khách hàng chủ động xem khung giờ còn trống,
+                    đặt sân nhanh chóng và theo dõi trạng thái đơn đặt sân trực tuyến.
+                </p>
+
+                <div class="feature-list">
+                    <div><i class="fa-solid fa-check"></i> Xem lịch trống theo ngày</div>
+                    <div><i class="fa-solid fa-check"></i> Chọn khung giờ trực quan</div>
+                    <div><i class="fa-solid fa-check"></i> Theo dõi trạng thái đơn đặt</div>
+                    <div><i class="fa-solid fa-check"></i> Gửi đánh giá và phản hồi dịch vụ</div>
+                </div>
+
+                <a href="chitiet.html?id=san1" class="btn-primary">Đặt sân ngay</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-title">
+            <span>Quy trình</span>
+            <h2>Đặt sân chỉ với 3 bước</h2>
+        </div>
+
+        <div class="steps">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Chọn ngày giờ</h3>
+                <p>Truy cập trang đặt sân và chọn ngày, khung giờ còn trống.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Thêm vào giỏ</h3>
+                <p>Kiểm tra thông tin sân, khung giờ và tổng tiền trước khi thanh toán.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Chờ xác nhận</h3>
+                <p>Hệ thống lưu đơn đặt sân và cập nhật trạng thái trong lịch sử.</p>
+            </div>
+        </div>
+    </section>
+
     <footer>
         <div class="footer-content">
             <div>
-                <h4>Liên hệ</h4>
-                <p> Hotline: 1900 1234</p>
-                <p> Email: info@sportbooking.com</p>
+                <h4>SportBooking</h4>
+                <p>Hệ thống đặt sân bóng trực tuyến hiện đại, nhanh chóng và dễ sử dụng.</p>
             </div>
+
+            <div>
+                <h4>Liên hệ</h4>
+                <p>Hotline: 1900 1234</p>
+                <p>Email: info@sportbooking.com</p>
+                <p>Địa chỉ: Quận 12, TP.HCM</p>
+            </div>
+
             <div>
                 <h4>Chính sách</h4>
                 <p><a href="chinhsach.html">Chính sách đặt sân</a></p>
                 <p><a href="chinhsach.html#hoantien">Chính sách hủy đặt</a></p>
-                <p><a href="chinhsach.html#baohanh">Chính sách bảo hành</a></p>
-            </div>
-            <div>
-                <h4>Theo dõi</h4>
-                <p><i class="fab fa-facebook"></i> Facebook</p>
-                <p><i class="fab fa-instagram"></i> Instagram</p>
+                <p><a href="lienhe.html">Liên hệ hỗ trợ</a></p>
             </div>
         </div>
-        <p class="copyright">&copy; 2025 SportBooking - Thuê sân thể thao trực tuyến</p>
+
+        <p class="copyright">&copy; 2025 SportBooking - Đặt sân bóng trực tuyến</p>
     </footer>
 
     <script type="module" src="js/main.js"></script>

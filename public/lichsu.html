@@ -6,95 +6,19 @@
     <title>Lịch sử đặt sân - SportBooking</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
         .history-container {
             max-width: 1000px;
             margin: 50px auto;
             padding: 0 20px;
         }
+
         .history-title {
             color: #1a6b30;
             margin-bottom: 20px;
         }
-        .booking-item {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            transition: transform 0.2s;
-        }
-        .booking-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-        }
-        .booking-info h3 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-        .booking-info p {
-            margin: 5px 0;
-            color: #666;
-        }
-        .booking-status {
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .status-pending {
-            background: #ff9800;
-            color: white;
-        }
-        .status-confirmed {
-            background: #1a6b30;
-            color: white;
-        }
-        .status-cancelled {
-            background: #e74c3c;
-            color: white;
-        }
-        .booking-actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .btn-rebook {
-            background: #1a6b30;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.3s;
-        }
-        .btn-rebook:hover {
-            background: #0d4620;
-        }
-        .btn-cancel {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .btn-cancel:hover {
-            background: #c0392b;
-        }
-        .empty-history {
-            text-align: center;
-            padding: 50px;
-            background: white;
-            border-radius: 10px;
-        }
+
         .filter-bar {
             background: white;
             padding: 15px;
@@ -104,70 +28,202 @@
             gap: 15px;
             flex-wrap: wrap;
             align-items: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         }
+
         .filter-bar select {
             padding: 8px 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+
+        .booking-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .booking-item:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .booking-info h3 {
+            margin-bottom: 10px;
+            color: #1a6b30;
+        }
+
+        .booking-info p {
+            margin: 6px 0;
+            color: #666;
+        }
+
+        .booking-status {
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .status-pending {
+            background: #ff9800;
+            color: white;
+        }
+
+        .status-confirmed {
+            background: #1a6b30;
+            color: white;
+        }
+
+        .status-cancelled {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .booking-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-rebook,
+        .btn-cancel {
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+        }
+
+        .btn-rebook {
+            background: #1a6b30;
+        }
+
+        .btn-rebook:hover {
+            background: #0d4620;
+        }
+
+        .btn-cancel {
+            background: #e74c3c;
+        }
+
+        .btn-cancel:hover {
+            background: #c0392b;
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 50px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
         @media (max-width: 768px) {
             .booking-item {
                 flex-direction: column;
-                text-align: center;
+                align-items: flex-start;
             }
+
             .booking-status {
-                margin: 10px 0;
+                width: 100%;
+            }
+
+            .booking-actions {
+                width: 100%;
+            }
+
+            .btn-rebook,
+            .btn-cancel {
+                width: 100%;
             }
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="logo">
             <a href="index.html" style="text-decoration: none; color: white;">
-                <h1> SportBooking</h1>
+                <h1>SportBooking</h1>
             </a>
         </div>
+
         <nav>
-           <!-- <a href="index.html">Trang chủ</a>
-            <a href="san.html">Sân</a>-->
+            <a href="san.html">Đặt sân</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
+
             <div style="position:relative; display:inline-block;" id="userMenu">
                 <a href="#" id="loginBtn">Đăng nhập</a>
-                <a href="#" id="userInfoBtn" style="display:none;"> Tài khoản</a>
+                <a href="#" id="userInfoBtn" style="display:none;">Tài khoản</a>
             </div>
         </nav>
     </header>
 
     <div class="history-container">
-        <h2 class="history-title"> Lịch sử đặt sân</h2>
-        
+        <h2 class="history-title">Lịch sử đặt sân</h2>
+
         <div class="filter-bar">
-            <label>🔍 Lọc theo trạng thái:</label>
+            <label>Lọc theo trạng thái:</label>
             <select id="filterStatus">
                 <option value="all">Tất cả</option>
-                <option value="chờ_xác_nhận"> Chờ xác nhận</option>
-                <option value="đã_xác_nhận"> Đã xác nhận</option>
-                <option value="đã_hủy"> Đã hủy</option>
+                <option value="Chờ xác nhận">Chờ xác nhận</option>
+                <option value="Đã xác nhận">Đã xác nhận</option>
+                <option value="Đã hủy">Đã hủy</option>
             </select>
         </div>
-        
-        <div id="bookingList"></div>
+
+        <div id="bookingList">
+            <div class="empty-history">
+                <p>Đang tải lịch sử đặt sân...</p>
+            </div>
+        </div>
     </div>
 
     <footer>
         <div class="footer-content">
-            <div><h4>Liên hệ</h4><p> 1900 1234</p></div>
-            <div><h4>Chính sách</h4><p><a href="chinhsach.html">Xem chi tiết</a></p></div>
+            <div>
+                <h4>Liên hệ</h4>
+                <p>1900 1234</p>
+            </div>
+            <div>
+                <h4>Chính sách</h4>
+                <p><a href="chinhsach.html">Xem chi tiết</a></p>
+            </div>
         </div>
         <p class="copyright">&copy; 2025 SportBooking</p>
     </footer>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, orderBy, deleteDoc, doc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        import {
+            getFirestore,
+            collection,
+            query,
+            where,
+            getDocs,
+            doc,
+            updateDoc,
+            addDoc,
+            getDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        import {
+            getAuth,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
@@ -187,190 +243,227 @@
 
         async function loadLichSu(userId) {
             const bookingList = document.getElementById('bookingList');
-            bookingList.innerHTML = '<p style="text-align:center;"> Đang tải...</p>';
-            
+
+            bookingList.innerHTML = `
+                <div class="empty-history">
+                    <p>Đang tải lịch sử đặt sân...</p>
+                </div>
+            `;
+
             try {
                 const bookingsRef = collection(db, "donDat");
                 const q = query(bookingsRef, where("userId", "==", userId));
                 const snapshot = await getDocs(q);
-                
+
                 allBookings = [];
-                snapshot.forEach(doc => {
-                    allBookings.push({ id: doc.id, ...doc.data() });
+
+                snapshot.forEach(docSnap => {
+                    allBookings.push({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    });
                 });
-                
+
+                allBookings.sort((a, b) => {
+                    const dateA = new Date(a.createdAt || a.ngayDat || 0);
+                    const dateB = new Date(b.createdAt || b.ngayDat || 0);
+                    return dateB - dateA;
+                });
+
                 filterAndDisplay();
-                
+
             } catch (error) {
-                console.error('Lỗi:', error);
-                bookingList.innerHTML = '<p style="color:red">Lỗi tải dữ liệu</p>';
+                console.error('Lỗi tải lịch sử:', error);
+
+                bookingList.innerHTML = `
+                    <div class="empty-history">
+                        <p style="color:red;">Không thể tải lịch sử đặt sân. Vui lòng thử lại.</p>
+                    </div>
+                `;
             }
         }
 
         function filterAndDisplay() {
             const filterStatus = document.getElementById('filterStatus').value;
-            let filtered = allBookings;
-            
+
+            let filtered = [...allBookings];
+
             if (filterStatus !== 'all') {
-                filtered = allBookings.filter(b => b.trangThai === filterStatus);
+                filtered = filtered.filter(booking => booking.trangThai === filterStatus);
             }
-            
+
             displayBookings(filtered);
+        }
+
+        function getStatusInfo(status) {
+            if (status === "Đã xác nhận") {
+                return {
+                    className: "status-confirmed",
+                    text: "Đã xác nhận"
+                };
+            }
+
+            if (status === "Đã hủy") {
+                return {
+                    className: "status-cancelled",
+                    text: "Đã hủy"
+                };
+            }
+
+            return {
+                className: "status-pending",
+                text: "Chờ xác nhận"
+            };
         }
 
         function displayBookings(bookings) {
             const bookingList = document.getElementById('bookingList');
-            
-            if (bookings.length === 0) {
+
+            if (!bookings || bookings.length === 0) {
                 bookingList.innerHTML = `
                     <div class="empty-history">
-                        <p> Không có đơn đặt sân nào.</p>
-                        <a href="index.html" style="color: #1a6b30;">→ Đặt sân ngay</a>
+                        <p>Không có đơn đặt sân nào.</p>
+                        <br>
+                        <a href="san.html" style="color:#1a6b30; font-weight:bold;">Đặt sân ngay</a>
                     </div>
                 `;
                 return;
             }
-            
+
             let html = '';
             const today = new Date().toISOString().split('T')[0];
-            
+
             bookings.forEach(booking => {
-                let statusClass = '';
-                let statusText = '';
-                
-                switch(booking.trangThai) {
-                    case 'chờ_xác_nhận':
-                        statusClass = 'status-pending';
-                        statusText = ' Chờ xác nhận';
-                        break;
-                    case 'đã_xác_nhận':
-                        statusClass = 'status-confirmed';
-                        statusText = ' Đã xác nhận';
-                        break;
-                    case 'đã_hủy':
-                        statusClass = 'status-cancelled';
-                        statusText = ' Đã hủy';
-                        break;
-                    default:
-                        statusClass = 'status-pending';
-                        statusText = booking.trangThai;
-                }
-                
-                const canRebook = booking.ngayDat >= today && booking.trangThai !== 'đã_hủy';
-                
+                const statusInfo = getStatusInfo(booking.trangThai);
+
+                const tongTien = Number(booking.tongTien || booking.gia || 0);
+
+                const canCancel =
+                    booking.trangThai === "Chờ xác nhận" &&
+                    booking.ngayDat >= today;
+
+                const canRebook =
+                    booking.trangThai === "Đã hủy" ||
+                    booking.ngayDat < today;
+
                 html += `
                     <div class="booking-item" data-id="${booking.id}">
                         <div class="booking-info">
-                            <h3> ${booking.tenSan}</h3>
-                            <p> Ngày: ${booking.ngayDat}</p>
-                            <p> Giờ: ${booking.gioBatDau}:00 - ${booking.gioKetThuc}:00</p>
-                            <p> ${(booking.tongTien || 0).toLocaleString()}đ</p>
+                            <h3>${booking.tenSan || 'Sân thể thao'}</h3>
+
+                            <p><i class="fa-solid fa-calendar"></i> Ngày: ${booking.ngayDat || 'Chưa cập nhật'}</p>
+
+                            <p><i class="fa-solid fa-clock"></i> Giờ: ${booking.gioBatDau}:00 - ${booking.gioKetThuc}:00</p>
+
+                            <p><i class="fa-solid fa-phone"></i> SĐT: ${booking.userPhone || 'Chưa có'}</p>
+
+                            <p><i class="fa-solid fa-money-bill"></i> Tổng tiền: ${tongTien.toLocaleString()}đ</p>
+
+                            <p><i class="fa-solid fa-credit-card"></i> Thanh toán: ${booking.phuongThucThanhToan || 'Chưa cập nhật'}</p>
+
                             <div class="booking-actions">
-                                ${canRebook ? `<button class="btn-rebook" data-sanid="${booking.sanId}" data-ngay="${booking.ngayDat}" data-gio="${booking.gioBatDau}"> Đặt lại</button>` : ''}
-                                ${booking.trangThai === 'chờ_xác_nhận' ? `<button class="btn-cancel" data-id="${booking.id}"> Hủy đơn</button>` : ''}
+                                ${
+                                    canRebook
+                                        ? `<button class="btn-rebook" data-sanid="${booking.sanId}">Đặt lại</button>`
+                                        : ''
+                                }
+
+                                ${
+                                    canCancel
+                                        ? `<button class="btn-cancel" data-id="${booking.id}">Hủy đơn</button>`
+                                        : ''
+                                }
                             </div>
                         </div>
-                        <div class="booking-status ${statusClass}">${statusText}</div>
+
+                        <div class="booking-status ${statusInfo.className}">
+                            ${statusInfo.text}
+                        </div>
                     </div>
                 `;
             });
+
             bookingList.innerHTML = html;
-            
-            // Sự kiện Đặt lại
-            document.querySelectorAll('.btn-rebook').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    const sanId = btn.dataset.sanid;
-                    const ngayDat = btn.dataset.ngay;
-                    const gioDat = parseInt(btn.dataset.gio);
-                    
-                    if (!currentUser) {
-                        alert('Vui lòng đăng nhập!');
-                        window.location.href = 'dangnhap.html';
-                        return;
-                    }
-                    
-                    // Kiểm tra lịch trống
-                    const bookingsRef = collection(db, "donDat");
-                    const q = query(bookingsRef, where("sanId", "==", sanId), where("ngayDat", "==", ngayDat), where("gioBatDau", "==", gioDat));
-                    const snapshot = await getDocs(q);
-                    
-                    if (!snapshot.empty) {
-                        alert(' Khung giờ này đã được đặt! Vui lòng chọn khung giờ khác.');
-                        return;
-                    }
-                    
-                    const sanRef = doc(db, "san", sanId);
-                    const sanSnap = await getDoc(sanRef);
-                    if (!sanSnap.exists()) {
-                        alert('Không tìm thấy sân!');
-                        return;
-                    }
-                    const sanData = sanSnap.data();
-                    
-                    if (confirm(`Xác nhận đặt lại sân:\nSân: ${sanData.ten}\nNgày: ${ngayDat}\nGiờ: ${gioDat}:00 - ${gioDat+1}:00\nThành tiền: ${sanData.gia.toLocaleString()}đ`)) {
-                        await addDoc(collection(db, "donDat"), {
-                            sanId: sanId,
-                            tenSan: sanData.ten,
-                            userId: currentUser.uid,
-                            userEmail: currentUser.email,
-                            userName: currentUser.displayName || currentUser.email,
-                            ngayDat: ngayDat,
-                            gioBatDau: gioDat,
-                            gioKetThuc: gioDat + 1,
-                            gia: sanData.gia,
-                            tongTien: sanData.gia,
-                            trangThai: "chờ_xác_nhận",
-                            createdAt: new Date().toISOString()
-                        });
-                        alert(' Đặt lại sân thành công!');
-                        loadLichSu(currentUser.uid);
-                    }
-                });
-            });
-            
-            // Sự kiện Hủy đơn
+
+            ganSuKienHuyDon();
+            ganSuKienDatLai();
+        }
+
+        function ganSuKienHuyDon() {
             document.querySelectorAll('.btn-cancel').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    if (confirm('Bạn có chắc muốn hủy đơn đặt sân này?')) {
-                        await deleteDoc(doc(db, "donDat", btn.dataset.id));
+                btn.addEventListener('click', async () => {
+                    const bookingId = btn.dataset.id;
+
+                    if (!confirm('Bạn có chắc muốn hủy đơn đặt sân này?')) {
+                        return;
+                    }
+
+                    try {
+                        await updateDoc(doc(db, "donDat", bookingId), {
+                            trangThai: "Đã hủy",
+                            updatedAt: new Date().toISOString(),
+                            updatedAtServer: serverTimestamp()
+                        });
+
                         alert('Đã hủy đơn đặt sân!');
                         loadLichSu(currentUser.uid);
+
+                    } catch (error) {
+                        console.error('Lỗi hủy đơn:', error);
+                        alert('Hủy đơn thất bại: ' + error.message);
                     }
                 });
             });
         }
 
-        document.getElementById('filterStatus').addEventListener('change', () => {
-            filterAndDisplay();
-        });
+        function ganSuKienDatLai() {
+            document.querySelectorAll('.btn-rebook').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sanId = btn.dataset.sanid;
 
-        // Kiểm tra đăng nhập
+                    if (!sanId) {
+                        alert('Không tìm thấy thông tin sân để đặt lại.');
+                        return;
+                    }
+
+                    window.location.href = `chitiet.html?id=${sanId}`;
+                });
+            });
+        }
+
+        document.getElementById('filterStatus').addEventListener('change', filterAndDisplay);
+
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
+
             const loginBtn = document.getElementById('loginBtn');
             const userInfoBtn = document.getElementById('userInfoBtn');
-            
+
             if (user) {
                 loginBtn.style.display = 'none';
                 userInfoBtn.style.display = 'inline';
+
                 userInfoBtn.onclick = (e) => {
                     e.preventDefault();
                     window.location.href = 'taikhoan.html';
                 };
+
                 loadLichSu(user.uid);
+
             } else {
                 loginBtn.style.display = 'inline';
                 userInfoBtn.style.display = 'none';
+
                 loginBtn.onclick = (e) => {
                     e.preventDefault();
                     window.location.href = 'dangnhap.html';
                 };
+
                 document.getElementById('bookingList').innerHTML = `
                     <div class="empty-history">
-                        <p> Vui lòng đăng nhập để xem lịch sử đặt sân</p>
-                        <a href="dangnhap.html" style="color: #1a6b30;">→ Đăng nhập ngay</a>
+                        <p>Vui lòng đăng nhập để xem lịch sử đặt sân.</p>
+                        <br>
+                        <a href="dangnhap.html" style="color:#1a6b30; font-weight:bold;">Đăng nhập ngay</a>
                     </div>
                 `;
             }

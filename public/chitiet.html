@@ -6,6 +6,7 @@
     <title>Chi tiết sân - SportBooking</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
     <style>
         .detail-container {
             max-width: 1200px;
@@ -15,47 +16,58 @@
             grid-template-columns: 1fr 1fr;
             gap: 30px;
         }
+
         .detail-image img {
             width: 100%;
             border-radius: 10px;
+            object-fit: cover;
         }
+
         .detail-info h2 {
             color: #1a6b30;
             margin-bottom: 15px;
         }
+
         .detail-price {
             font-size: 28px;
             color: #e74c3c;
             font-weight: bold;
             margin: 15px 0;
         }
+
         .detail-address {
             color: #666;
             margin: 10px 0;
         }
+
         .booking-form {
             background: #f9f9f9;
             padding: 20px;
             border-radius: 10px;
             margin-top: 20px;
         }
+
         .booking-form h3 {
             margin-bottom: 15px;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         .form-group label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         .form-group input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+
         .btn-book {
             width: 100%;
             background: #ff9800;
@@ -67,30 +79,46 @@
             cursor: pointer;
             margin-top: 20px;
         }
+
         .btn-book:hover {
             background: #e68900;
         }
+
+        .btn-favorite {
+            background: #e91e63;
+        }
+
+        .btn-favorite:hover {
+            background: #c2185b;
+        }
+
         .total-price {
             font-size: 20px;
             margin-top: 15px;
             text-align: center;
+            font-weight: bold;
+            color: #1a6b30;
         }
+
         .map-container {
             margin-top: 20px;
             border-radius: 10px;
             overflow: hidden;
         }
+
         .map-container iframe {
             width: 100%;
             height: 250px;
             border: 0;
         }
+
         .time-slots-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             margin-top: 10px;
         }
+
         .time-slot-label {
             padding: 10px;
             text-align: center;
@@ -98,46 +126,154 @@
             border-radius: 5px;
             cursor: pointer;
             transition: all 0.3s;
+            background: white;
         }
+
         .time-slot-label:hover {
             background: #1a6b30;
             color: white;
         }
+
         .time-slot-label.booked {
             background: #ccc;
             cursor: not-allowed;
             opacity: 0.5;
         }
+
+        .time-slot-label.selected {
+            background: #1a6b30;
+            color: white;
+            border-color: #1a6b30;
+        }
+
+        .time-slot-label input {
+            display: none;
+        }
+
+        .review-section {
+            margin-top: 30px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #eee;
+        }
+
+        .review-section h3 {
+            color: #1a6b30;
+            margin-bottom: 15px;
+        }
+
+        .review-form select,
+        .review-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .review-form textarea {
+            resize: vertical;
+        }
+
+        .review-summary {
+            margin: 15px 0;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            color: #333;
+        }
+
+        .review-item {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .review-item:last-child {
+            border-bottom: none;
+        }
+
+        .review-stars {
+            color: #ff9800;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .review-email {
+            font-weight: bold;
+            color: #1a6b30;
+        }
+
+        .review-date {
+            color: #888;
+            font-size: 13px;
+        }
+
         @media (max-width: 768px) {
             .detail-container {
                 grid-template-columns: 1fr;
             }
+
+            .time-slots-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
+
 <body>
-    <header>
+    <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
         <div class="logo">
             <a href="index.html" style="text-decoration: none; color: white;">
                 <h1>SportBooking</h1>
             </a>
         </div>
+
         <nav>
+            <a href="chitiet.html?id=san1">Đặt sân</a>
+            <a href="doan.html">Đặt đồ ăn</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
+            <a href="lienhe.html">Liên hệ</a>
+
             <div style="position:relative; display:inline-block;" id="userMenu">
-                <a href="#" id="loginBtn" style="display:inline-block;">Đăng nhập</a>
-                <a href="#" id="userInfoBtn" style="display:none;">Tài khoản</a>
+                <a href="#" id="loginBtn">Đăng nhập</a>
+
+                <div id="userDropdownArea" style="display:none; position:relative;">
+                    <a href="#" id="userInfoBtn">Tài khoản</a>
+
+                    <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:white; min-width:120px; box-shadow:0 2px 5px rgba(0,0,0,0.2); border-radius:5px; z-index:100;">
+                        <a href="taikhoan.html" style="display:block; padding:10px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">Thông tin</a>
+                        <a href="#" id="logoutDropdownBtn" style="display:block; padding:10px; color:#e74c3c; text-decoration:none;">Đăng xuất</a>
+                    </div>
+                </div>
             </div>
         </nav>
     </header>
 
-    <div class="detail-container" id="detailContainer"></div>
+    <div class="detail-container" id="detailContainer">
+        <p>Đang tải thông tin sân...</p>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            collection,
+            query,
+            where,
+            getDocs,
+            setDoc,
+            addDoc
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        import {
+            getAuth,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
@@ -163,60 +299,133 @@
         const gioTrongNgay = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
         async function loadSan() {
+            const container = document.getElementById('detailContainer');
+
             if (!sanId) {
+                alert('Thiếu mã sân!');
                 window.location.href = 'index.html';
                 return;
             }
 
-            const sanRef = doc(db, "san", sanId);
-            const sanSnap = await getDoc(sanRef);
-            
-            if (!sanSnap.exists()) {
-                alert('Không tìm thấy sân!');
-                window.location.href = 'index.html';
-                return;
-            }
+            try {
+                const sanRef = doc(db, "san", sanId);
+                const sanSnap = await getDoc(sanRef);
 
-            currentSan = { id: sanSnap.id, ...sanSnap.data() };
-            hienThiChiTietSan();
+                if (!sanSnap.exists()) {
+                    alert('Không tìm thấy sân!');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                currentSan = {
+                    id: sanSnap.id,
+                    ...sanSnap.data()
+                };
+
+                hienThiChiTietSan();
+
+            } catch (error) {
+                console.error('Lỗi tải sân:', error);
+                container.innerHTML = '<p style="color:red;">Không thể tải thông tin sân. Vui lòng thử lại sau.</p>';
+            }
         }
 
         function hienThiChiTietSan() {
             let loaiText = '';
-            if (currentSan.loai === 'caulong') loaiText = 'Cầu lông';
-            else if (currentSan.loai === 'pickleball') loaiText = 'Pickleball';
-            else loaiText = 'Bóng đá';
 
-            const address = encodeURIComponent(currentSan.diaChi + ", TP.HCM");
+            if (currentSan.loai === 'caulong') {
+                loaiText = 'Cầu lông';
+            } else if (currentSan.loai === 'pickleball') {
+                loaiText = 'Pickleball';
+            } else {
+                loaiText = 'Bóng đá';
+            }
+
+            const diaChi = currentSan.diaChi || 'Chưa cập nhật';
+            const address = encodeURIComponent(diaChi + ", TP.HCM");
             const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyAOiaqOwzYeJRRae09aM8MYyMKlbTlJ_hg&q=${address}&language=vi`;
 
             const container = document.getElementById('detailContainer');
+
             container.innerHTML = `
                 <div class="detail-image">
-                    <img src="${currentSan.hinhAnh}" alt="${currentSan.ten}">
+                    <img 
+                        src="${currentSan.hinhAnh || ''}" 
+                        alt="${currentSan.ten || 'Sân thể thao'}"
+                        onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'"
+                    >
                 </div>
+
                 <div class="detail-info">
-                    <h2>${loaiText} - ${currentSan.ten}</h2>
-                    <div class="detail-price">${currentSan.gia.toLocaleString()}đ / giờ</div>
-                    <div class="detail-address">Địa chỉ: ${currentSan.diaChi}</div>
-                    <div class="detail-address">Mô tả: ${currentSan.moTa || 'Sân đẹp, chất lượng tốt'}</div>
-                    
-                    <div class="map-container">
-                        <iframe src="${mapUrl}" allowfullscreen="" loading="lazy"></iframe>
+                    <h2>${loaiText} - ${currentSan.ten || 'Sân thể thao'}</h2>
+
+                    <div class="detail-price">
+                        ${(currentSan.gia || 0).toLocaleString()}đ / giờ
                     </div>
-                    
+
+                    <div class="detail-address">
+                        <i class="fa-solid fa-location-dot"></i>
+                        Địa chỉ: ${diaChi}
+                    </div>
+
+                    <div class="detail-address">
+                        <i class="fa-solid fa-circle-info"></i>
+                        Mô tả: ${currentSan.moTa || 'Sân đẹp, chất lượng tốt'}
+                    </div>
+
+                    <div class="map-container">
+                        <iframe src="${mapUrl}" allowfullscreen loading="lazy"></iframe>
+                    </div>
+
                     <div class="booking-form">
                         <h3>Đặt sân</h3>
+
                         <div class="form-group">
                             <label>Chọn ngày:</label>
                             <input type="date" id="ngayDat" min="${new Date().toISOString().split('T')[0]}">
                         </div>
+
                         <div class="form-group">
                             <label>Chọn giờ:</label>
-                            <div id="timeSlots"></div>
+                            <div id="timeSlots">
+                                <p>Vui lòng chọn ngày để xem lịch trống.</p>
+                            </div>
                         </div>
+
                         <div class="total-price" id="totalPrice"></div>
+
                         <button class="btn-book" id="bookBtn">Thêm vào giỏ hàng</button>
+                        <button class="btn-book btn-favorite" id="favoriteBtn">❤ Lưu sân yêu thích</button>
+                    </div>
+
+                    <div class="review-section">
+                        <h3>Đánh giá sân</h3>
+
+                        <div class="review-form">
+                            <select id="soSao">
+                                <option value="5">★★★★★ - Rất tốt</option>
+                                <option value="4">★★★★☆ - Tốt</option>
+                                <option value="3">★★★☆☆ - Bình thường</option>
+                                <option value="2">★★☆☆☆ - Chưa tốt</option>
+                                <option value="1">★☆☆☆☆ - Tệ</option>
+                            </select>
+
+                            <textarea 
+                                id="noiDungDanhGia"
+                                rows="4"
+                                placeholder="Nhập đánh giá của bạn về sân..."
+                            ></textarea>
+
+                            <button class="btn-book" id="btnGuiDanhGia">
+                                Gửi đánh giá
+                            </button>
+                        </div>
+
+                        <div class="review-summary" id="reviewSummary">
+                            Đang tải đánh giá...
+                        </div>
+
+                        <div id="danhSachDanhGia"></div>
                     </div>
                 </div>
             `;
@@ -228,6 +437,10 @@
             });
 
             document.getElementById('bookBtn').addEventListener('click', datSan);
+            document.getElementById('favoriteBtn').addEventListener('click', luuYeuThich);
+            document.getElementById('btnGuiDanhGia').addEventListener('click', guiDanhGia);
+
+            loadDanhGia();
         }
 
         async function loadLichTrong(date) {
@@ -238,58 +451,105 @@
 
             try {
                 const bookingsRef = collection(db, "donDat");
-                const q = query(bookingsRef, where("sanId", "==", sanId), where("ngayDat", "==", date));
+                const q = query(
+                    bookingsRef,
+                    where("sanId", "==", sanId),
+                    where("ngayDat", "==", date)
+                );
+
                 const snapshot = await getDocs(q);
-                
                 const bookedHours = new Set();
-                snapshot.forEach(doc => {
-                    const booking = doc.data();
-                    bookedHours.add(booking.gioBatDau);
+
+                snapshot.forEach(docSnap => {
+                    const booking = docSnap.data();
+
+                    if (booking.trangThai === "Đã hủy") return;
+
+                    if (booking.gioBatDau !== undefined) {
+                        bookedHours.add(Number(booking.gioBatDau));
+                    }
+
+                    if (Array.isArray(booking.items)) {
+                        booking.items.forEach(item => {
+                            if (item.sanId === sanId && item.ngayDat === date) {
+                                bookedHours.add(Number(item.gioBatDau));
+                            }
+                        });
+                    }
                 });
 
                 let html = '<div class="time-slots-grid">';
+
                 gioTrongNgay.forEach(gio => {
-                    let isBooked = bookedHours.has(gio);
-                    let checkedAttr = selectedHours.includes(gio) ? 'checked' : '';
+                    const isBooked = bookedHours.has(gio);
+                    const checkedAttr = selectedHours.includes(gio) ? 'checked' : '';
+
                     html += `
                         <label class="time-slot-label ${isBooked ? 'booked' : ''}">
-                            <input type="checkbox" class="time-checkbox" value="${gio}" ${checkedAttr} ${isBooked ? 'disabled' : ''}>
-                            ${gio}:00 - ${gio+1}:00
+                            <input 
+                                type="checkbox" 
+                                class="time-checkbox" 
+                                value="${gio}" 
+                                ${checkedAttr} 
+                                ${isBooked ? 'disabled' : ''}
+                            >
+                            ${gio}:00 - ${gio + 1}:00
                         </label>
                     `;
                 });
+
                 html += '</div>';
                 timeSlotsDiv.innerHTML = html;
-                
+
                 document.querySelectorAll('.time-checkbox:not([disabled])').forEach(cb => {
                     cb.addEventListener('change', (e) => {
-                        const gio = parseInt(e.target.value);
+                        const gio = Number(e.target.value);
+                        const label = e.target.closest('.time-slot-label');
+
                         if (e.target.checked) {
-                            selectedHours.push(gio);
-                            selectedHours.sort((a,b) => a-b);
+                            if (!selectedHours.includes(gio)) {
+                                selectedHours.push(gio);
+                            }
+                            label.classList.add('selected');
                         } else {
                             selectedHours = selectedHours.filter(h => h !== gio);
+                            label.classList.remove('selected');
                         }
+
+                        selectedHours.sort((a, b) => a - b);
                         updateTotalPrice();
                     });
                 });
-                
+
                 updateTotalPrice();
-                
+
             } catch (error) {
-                console.error('Lỗi:', error);
-                timeSlotsDiv.innerHTML = '<p style="color:red">Lỗi tải lịch</p>';
+                console.error('Lỗi tải lịch:', error);
+                timeSlotsDiv.innerHTML = '<p style="color:red">Không thể tải lịch sân. Vui lòng thử lại.</p>';
             }
         }
 
         function updateTotalPrice() {
+            const totalDiv = document.getElementById('totalPrice');
+
             if (selectedDate && selectedHours.length > 0) {
-                const totalDiv = document.getElementById('totalPrice');
-                const total = currentSan.gia * selectedHours.length;
-                totalDiv.innerHTML = `💰 Tổng tiền: ${total.toLocaleString()}đ (${selectedHours.length} giờ)`;
+                const total = (currentSan.gia || 0) * selectedHours.length;
+                totalDiv.innerHTML = ` Tổng tiền: ${total.toLocaleString()}đ (${selectedHours.length} giờ)`;
             } else {
-                document.getElementById('totalPrice').innerHTML = '';
+                totalDiv.innerHTML = '';
             }
+        }
+
+        function laGioLienTiep(hours) {
+            const sorted = [...hours].sort((a, b) => a - b);
+
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] !== sorted[i - 1] + 1) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         async function datSan() {
@@ -309,18 +569,29 @@
                 return;
             }
 
-            const total = currentSan.gia * selectedHours.length;
-            let gioText = selectedHours.map(h => `${h}:00-${h+1}:00`).join(', ');
-            
-            const confirmMsg = `Xác nhận thêm vào giỏ hàng:\nSân: ${currentSan.ten}\nNgày: ${selectedDate}\nGiờ: ${gioText}\nSố giờ: ${selectedHours.length}\nThành tiền: ${total.toLocaleString()}đ`;
-            
+            if (!laGioLienTiep(selectedHours)) {
+                alert('Vui lòng chọn các khung giờ liên tiếp nhau!');
+                return;
+            }
+
+            const total = (currentSan.gia || 0) * selectedHours.length;
+            const gioText = selectedHours.map(h => `${h}:00-${h + 1}:00`).join(', ');
+
+            const confirmMsg =
+                `Xác nhận thêm vào giỏ hàng:\n` +
+                `Sân: ${currentSan.ten}\n` +
+                `Ngày: ${selectedDate}\n` +
+                `Giờ: ${gioText}\n` +
+                `Số giờ: ${selectedHours.length}\n` +
+                `Thành tiền: ${total.toLocaleString()}đ`;
+
             if (!confirm(confirmMsg)) return;
 
             try {
                 const cartRef = doc(db, "carts", currentUser.uid);
                 const cartSnap = await getDoc(cartRef);
                 let items = cartSnap.exists() ? cartSnap.data().items || [] : [];
-                
+
                 for (const gio of selectedHours) {
                     const newItem = {
                         id: `${currentSan.id}_${selectedDate}_${gio}`,
@@ -329,30 +600,210 @@
                         ngayDat: selectedDate,
                         gioBatDau: gio,
                         gioKetThuc: gio + 1,
-                        gia: currentSan.gia
+                        gia: currentSan.gia,
+                        loai: currentSan.loai || '',
+                        diaChi: currentSan.diaChi || '',
+                        hinhAnh: currentSan.hinhAnh || ''
                     };
+
                     const exists = items.some(i => i.id === newItem.id);
+
                     if (!exists) {
                         items.push(newItem);
                     }
                 }
-                
-                await setDoc(cartRef, { items: items, updatedAt: new Date().toISOString() });
-                
+
+                await setDoc(cartRef, {
+                    items: items,
+                    updatedAt: new Date().toISOString()
+                });
+
                 alert(`Đã thêm ${selectedHours.length} khung giờ vào giỏ hàng!`);
                 window.location.href = 'giohang.html';
-                
+
             } catch (error) {
-                console.error('Lỗi:', error);
+                console.error('Lỗi thêm giỏ hàng:', error);
                 alert('Thêm vào giỏ hàng thất bại: ' + error.message);
+            }
+        }
+
+        async function luuYeuThich() {
+            if (!currentUser) {
+                alert("Vui lòng đăng nhập để lưu yêu thích!");
+                window.location.href = "dangnhap.html";
+                return;
+            }
+
+            try {
+                const favRef = doc(db, "favorites", currentUser.uid);
+                const favSnap = await getDoc(favRef);
+
+                let items = favSnap.exists() ? favSnap.data().items || [] : [];
+
+                const exists = items.some(item => item.sanId === currentSan.id);
+
+                if (exists) {
+                    alert("Sân này đã có trong danh sách yêu thích!");
+                    return;
+                }
+
+                items.push({
+                    sanId: currentSan.id,
+                    tenSan: currentSan.ten,
+                    gia: currentSan.gia,
+                    hinhAnh: currentSan.hinhAnh || "",
+                    diaChi: currentSan.diaChi || "",
+                    createdAt: new Date().toISOString()
+                });
+
+                await setDoc(favRef, {
+                    items,
+                    updatedAt: new Date().toISOString()
+                });
+
+                alert("Đã lưu sân vào danh sách yêu thích!");
+
+            } catch (error) {
+                console.error("Lỗi lưu yêu thích:", error);
+                alert("Lưu yêu thích thất bại!");
+            }
+        }
+
+        function formatDate(value) {
+            if (!value) return '';
+
+            try {
+                return new Date(value).toLocaleDateString('vi-VN');
+            } catch {
+                return '';
+            }
+        }
+
+        function renderStars(soSao) {
+            const stars = Number(soSao || 0);
+            return "★".repeat(stars) + "☆".repeat(5 - stars);
+        }
+
+        async function guiDanhGia() {
+            if (!currentUser) {
+                alert('Vui lòng đăng nhập để đánh giá sân!');
+                window.location.href = 'dangnhap.html';
+                return;
+            }
+
+            const soSao = Number(document.getElementById('soSao').value);
+            const noiDung = document.getElementById('noiDungDanhGia').value.trim();
+
+            if (!noiDung) {
+                alert('Vui lòng nhập nội dung đánh giá!');
+                return;
+            }
+
+            try {
+                const btn = document.getElementById('btnGuiDanhGia');
+                btn.disabled = true;
+                btn.textContent = 'Đang gửi...';
+
+                await addDoc(collection(db, "danhGia"), {
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email || '',
+                    sanId: currentSan.id,
+                    tenSan: currentSan.ten || '',
+                    soSao: soSao,
+                    noiDung: noiDung,
+                    trangThai: "Hiển thị",
+                    createdAt: new Date().toISOString()
+                });
+
+                alert('Gửi đánh giá thành công!');
+
+                document.getElementById('noiDungDanhGia').value = '';
+
+                btn.disabled = false;
+                btn.textContent = 'Gửi đánh giá';
+
+                loadDanhGia();
+
+            } catch (error) {
+                console.error('Lỗi gửi đánh giá:', error);
+                alert('Gửi đánh giá thất bại: ' + error.message);
+
+                const btn = document.getElementById('btnGuiDanhGia');
+                btn.disabled = false;
+                btn.textContent = 'Gửi đánh giá';
+            }
+        }
+
+        async function loadDanhGia() {
+            const box = document.getElementById('danhSachDanhGia');
+            const summary = document.getElementById('reviewSummary');
+
+            if (!box || !summary) return;
+
+            try {
+                const q = query(
+                    collection(db, "danhGia"),
+                    where("sanId", "==", sanId)
+                );
+
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    summary.innerHTML = 'Chưa có đánh giá nào.';
+                    box.innerHTML = '';
+                    return;
+                }
+
+                let html = '';
+                let totalStars = 0;
+                let count = 0;
+
+                snap.forEach(docSnap => {
+                    const dg = docSnap.data();
+
+                    if (dg.trangThai && dg.trangThai !== "Hiển thị") return;
+
+                    const soSao = Number(dg.soSao || 0);
+                    totalStars += soSao;
+                    count++;
+
+                    html += `
+                        <div class="review-item">
+                            <div class="review-email">${dg.userEmail || 'Người dùng'}</div>
+                            <div class="review-stars">${renderStars(soSao)}</div>
+                            <p>${dg.noiDung || ''}</p>
+                            <div class="review-date">${formatDate(dg.createdAt || dg.ngayDanhGia)}</div>
+                        </div>
+                    `;
+                });
+
+                if (count === 0) {
+                    summary.innerHTML = 'Chưa có đánh giá nào được hiển thị.';
+                    box.innerHTML = '';
+                    return;
+                }
+
+                const avg = totalStars / count;
+
+                summary.innerHTML = `
+                    Trung bình: <strong>${avg.toFixed(1)}/5</strong> 
+                    từ <strong>${count}</strong> đánh giá
+                `;
+
+                box.innerHTML = html;
+
+            } catch (error) {
+                console.error('Lỗi tải đánh giá:', error);
+                summary.innerHTML = '<span style="color:red;">Không thể tải đánh giá.</span>';
             }
         }
 
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
+
             const loginBtn = document.getElementById('loginBtn');
             const userInfoBtn = document.getElementById('userInfoBtn');
-            
+
             if (user) {
                 loginBtn.style.display = 'none';
                 userInfoBtn.style.display = 'inline';

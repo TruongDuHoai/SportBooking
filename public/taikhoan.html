@@ -5,27 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông tin tài khoản - SportBooking</title>
     <link rel="stylesheet" href="css/style.css">
+
     <style>
         .profile-container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 50px auto;
             padding: 0 20px;
         }
+
         .profile-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             overflow: hidden;
         }
+
         .profile-header {
             background: linear-gradient(135deg, #1a6b30, #0d4620);
             color: white;
             padding: 30px;
             text-align: center;
         }
-        .profile-header h2 {
-            margin-bottom: 10px;
-        }
+
         .avatar {
             width: 100px;
             height: 100px;
@@ -35,140 +36,229 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            font-size: 48px;
+            font-size: 42px;
+            font-weight: bold;
         }
+
         .profile-body {
             padding: 30px;
         }
+
         .info-group {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
             border-bottom: 1px solid #eee;
         }
+
         .info-label {
             font-weight: bold;
             color: #666;
             width: 150px;
             display: inline-block;
         }
+
         .info-value {
             color: #333;
             font-size: 16px;
         }
+
+        .edit-btn,
+        .save-btn,
+        .cancel-btn {
+            border: none;
+            padding: 10px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
         .edit-btn {
             background: #1a6b30;
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
         }
+
         .edit-btn:hover {
             background: #0d4620;
         }
+
+        .save-btn {
+            background: #ff9800;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #ccc;
+            color: #333;
+            margin-left: 10px;
+        }
+
         .edit-form {
             display: none;
             margin-top: 20px;
             padding-top: 20px;
             border-top: 2px solid #eee;
         }
+
         .edit-form input {
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 11px;
+            margin: 8px 0 14px;
             border: 1px solid #ddd;
             border-radius: 5px;
         }
-        .save-btn {
-            background: #ff9800;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .back-btn {
-            display: inline-block;
-            margin-top: 20px;
-            color: #1a6b30;
-            text-decoration: none;
-        }
+
         .order-history {
             margin-top: 30px;
         }
+
+        .order-history h3 {
+            color: #1a6b30;
+            margin-bottom: 15px;
+        }
+
         .order-item {
-            background: #f9f9f9;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
+            background: white;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: #ff9800;
+        }
+
+        .status-confirmed {
+            color: #1a6b30;
+        }
+
+        .status-cancelled {
+            color: #e74c3c;
+        }
+
+        .empty-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .info-label {
+                display: block;
+                width: auto;
+                margin-bottom: 5px;
+            }
+
+            .profile-body {
+                padding: 20px;
+            }
         }
     </style>
 </head>
+
 <body>
     <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
         <div class="logo">
             <a href="index.html" style="text-decoration: none; color: white;">
-                <h1> SportBooking</h1>
+                <h1>SportBooking</h1>
             </a>
         </div>
+
         <nav>
+            <a href="san.html">Đặt sân</a>
             <a href="giohang.html">Giỏ hàng</a>
             <a href="lichsu.html">Lịch sử</a>
-            <a href="#" id="logoutBtnInProfile" style="color: #e74c3c;">Đăng xuất</a>
+            <a href="#" id="logoutBtnInProfile" style="color:#e74c3c;">Đăng xuất</a>
         </nav>
     </header>
 
     <div class="profile-container">
         <div class="profile-card">
             <div class="profile-header">
-                <div class="avatar"></div>
-                <h2 id="displayName">Tên người dùng</h2>
-                <p id="userEmail">email@example.com</p>
+                <div class="avatar" id="avatarText">U</div>
+                <h2 id="displayName">Đang tải...</h2>
+                <p id="userEmail">---</p>
             </div>
-            
+
             <div class="profile-body">
                 <div class="info-group">
                     <span class="info-label">Họ và tên:</span>
                     <span class="info-value" id="infoFullName">---</span>
                 </div>
+
                 <div class="info-group">
                     <span class="info-label">Email:</span>
                     <span class="info-value" id="infoEmail">---</span>
                 </div>
+
                 <div class="info-group">
                     <span class="info-label">Số điện thoại:</span>
                     <span class="info-value" id="infoPhone">Chưa cập nhật</span>
                 </div>
+
+                <div class="info-group">
+                    <span class="info-label">Vai trò:</span>
+                    <span class="info-value" id="infoRole">Khách hàng</span>
+                </div>
+
                 <div class="info-group">
                     <span class="info-label">Ngày tham gia:</span>
                     <span class="info-value" id="infoCreatedAt">---</span>
                 </div>
-                
-                <button class="edit-btn" id="editBtn"> Chỉnh sửa thông tin</button>
-                
+
+                <button class="edit-btn" id="editBtn">Chỉnh sửa thông tin</button>
+
                 <div class="edit-form" id="editForm">
                     <h3>Chỉnh sửa thông tin</h3>
+
+                    <label>Họ và tên</label>
                     <input type="text" id="editFullName" placeholder="Họ và tên">
+
+                    <label>Số điện thoại</label>
                     <input type="tel" id="editPhone" placeholder="Số điện thoại">
-                    <button class="save-btn" id="saveBtn"> Lưu thay đổi</button>
-                    <button id="cancelBtn" style="margin-left:10px;">Hủy</button>
+
+                    <button class="save-btn" id="saveBtn">Lưu thay đổi</button>
+                    <button class="cancel-btn" id="cancelBtn" type="button">Hủy</button>
                 </div>
             </div>
         </div>
-        
+
         <div class="order-history">
-            <h3> Lịch sử đặt sân</h3>
+            <h3>Lịch sử đặt sân gần đây</h3>
             <div id="orderList">
-                <p>Chưa có đơn đặt sân nào.</p>
+                <div class="empty-box">
+                    <p>Đang tải lịch sử đặt sân...</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signOut,
+            updateProfile
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            updateDoc,
+            collection,
+            query,
+            where,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
@@ -183,127 +273,238 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Kiểm tra đăng nhập
-        let authChecked = false;
+        let currentUser = null;
+        let currentUserData = null;
 
-        onAuthStateChanged(auth, async (user) => {
-            console.log("Auth state changed:", user ? user.email : "No user");
-            
-            if (authChecked) return;
-            authChecked = true;
-            
-            
+        function formatDate(value) {
+            if (!value) return '---';
+
+            if (value.toDate) {
+                return value.toDate().toLocaleDateString('vi-VN');
+            }
+
+            return new Date(value).toLocaleDateString('vi-VN');
+        }
+
+        function validatePhone(phone) {
+            if (!phone) return true;
+            return /^0[0-9]{9}$/.test(phone);
+        }
+
+        function getRoleText(role) {
+            if (role === 'admin') return 'Quản trị viên';
+            if (role === 'staff') return 'Nhân viên';
+            return 'Khách hàng';
+        }
+
+        function getStatusClass(status) {
+            if (status === 'Đã xác nhận') return 'status-confirmed';
+            if (status === 'Đã hủy') return 'status-cancelled';
+            return 'status-pending';
+        }
+
+        function getAvatarText(name, email) {
+            const text = name || email || 'U';
+            return text.trim().charAt(0).toUpperCase();
+        }
+
+        async function loadUserProfile(user) {
             try {
-                // Hiển thị thông tin user
-                document.getElementById('displayName').textContent = user.displayName || user.email;
-                document.getElementById('userEmail').textContent = user.email;
-                
-                // Lấy thông tin từ Firestore
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    document.getElementById('infoFullName').textContent = userData.fullName || user.displayName || '---';
-                    document.getElementById('infoEmail').textContent = user.email;
-                    document.getElementById('infoPhone').textContent = userData.phone || 'Chưa cập nhật';
-                    document.getElementById('infoCreatedAt').textContent = userData.createdAt ? new Date(userData.createdAt).toLocaleDateString('vi-VN') : '---';
-                    
-                    document.getElementById('editFullName').value = userData.fullName || '';
-                    document.getElementById('editPhone').value = userData.phone || '';
+                currentUser = user;
+
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    currentUserData = userSnap.data();
+                } else {
+                    currentUserData = {
+                        fullName: user.displayName || '',
+                        email: user.email || '',
+                        phone: '',
+                        role: 'user',
+                        createdAt: new Date().toISOString()
+                    };
+
+                    await setDoc(userRef, currentUserData);
                 }
-                
-                // Lấy lịch sử đặt sân
+
+                const fullName = currentUserData.fullName || user.displayName || user.email || 'Người dùng';
+                const phone = currentUserData.phone || '';
+                const role = currentUserData.role || 'user';
+
+                document.getElementById('displayName').textContent = fullName;
+                document.getElementById('userEmail').textContent = user.email || '---';
+                document.getElementById('avatarText').textContent = getAvatarText(fullName, user.email);
+
+                document.getElementById('infoFullName').textContent = fullName;
+                document.getElementById('infoEmail').textContent = user.email || '---';
+                document.getElementById('infoPhone').textContent = phone || 'Chưa cập nhật';
+                document.getElementById('infoRole').textContent = getRoleText(role);
+                document.getElementById('infoCreatedAt').textContent = formatDate(currentUserData.createdAt);
+
+                document.getElementById('editFullName').value = fullName;
+                document.getElementById('editPhone').value = phone;
+
                 await loadOrderHistory(user.uid);
-                
+
             } catch (error) {
-                console.error("Lỗi load dữ liệu:", error);
-                alert('Có lỗi xảy ra khi tải dữ liệu!');
+                console.error("Lỗi tải hồ sơ:", error);
+                alert('Có lỗi xảy ra khi tải thông tin tài khoản!');
             }
-        });
-        
-        // Load lịch sử đặt sân
+        }
+
         async function loadOrderHistory(userId) {
-            const ordersRef = collection(db, "donDat");
-            const q = query(ordersRef, where("userId", "==", userId));
-            const snapshot = await getDocs(q);
-            
             const orderList = document.getElementById('orderList');
-            if (snapshot.empty) {
-                orderList.innerHTML = '<p>Chưa có đơn đặt sân nào.</p>';
-                return;
-            }
-            
-            let html = '';
-            snapshot.forEach(doc => {
-                const order = doc.data();
+
+            try {
+                const ordersRef = collection(db, "donDat");
+                const q = query(ordersRef, where("userId", "==", userId));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    orderList.innerHTML = `
+                        <div class="empty-box">
+                            <p>Chưa có đơn đặt sân nào.</p>
+                            <br>
+                            <a href="san.html" style="color:#1a6b30; font-weight:bold;">Đặt sân ngay</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let orders = [];
+
+                snapshot.forEach(docSnap => {
+                    orders.push({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    });
+                });
+
+                orders.sort((a, b) => {
+                    const dateA = new Date(a.createdAt || a.ngayDat || 0);
+                    const dateB = new Date(b.createdAt || b.ngayDat || 0);
+                    return dateB - dateA;
+                });
+
+                orders = orders.slice(0, 5);
+
+                let html = '';
+
+                orders.forEach(order => {
+                    const tongTien = Number(order.tongTien || order.gia || 0);
+                    const status = order.trangThai || 'Chờ xác nhận';
+
+                    html += `
+                        <div class="order-item">
+                            <strong>Sân:</strong> ${order.tenSan || 'Đang cập nhật'}<br>
+                            <strong>Ngày:</strong> ${order.ngayDat || '---'}<br>
+                            <strong>Giờ:</strong> ${order.gioBatDau ?? '---'}:00 - ${order.gioKetThuc ?? '---'}:00<br>
+                            <strong>Tổng tiền:</strong> ${tongTien.toLocaleString()}đ<br>
+                            <strong>Trạng thái:</strong>
+                            <span class="status ${getStatusClass(status)}">${status}</span>
+                        </div>
+                    `;
+                });
+
                 html += `
-                    <div class="order-item">
-                        <strong>Sân:</strong> ${order.tenSan || 'Đang cập nhật'}<br>
-                        <strong>Ngày:</strong> ${order.ngayDat || '---'}<br>
-                        <strong>Giờ:</strong> ${order.gioBatDau || '---'}h - ${order.gioKetThuc || '---'}h<br>
-                        <strong>Tổng tiền:</strong> ${(order.tongTien || 0).toLocaleString()}đ<br>
-                        <strong>Trạng thái:</strong> <span style="color: ${order.trangThai === 'đã_xác_nhận' ? 'green' : 'orange'}">${order.trangThai || 'chờ xác nhận'}</span>
+                    <div style="text-align:right; margin-top:15px;">
+                        <a href="lichsu.html" style="color:#1a6b30; font-weight:bold;">Xem tất cả lịch sử</a>
                     </div>
                 `;
-            });
-            orderList.innerHTML = html;
+
+                orderList.innerHTML = html;
+
+            } catch (error) {
+                console.error("Lỗi tải lịch sử:", error);
+                orderList.innerHTML = `
+                    <div class="empty-box">
+                        <p style="color:red;">Không thể tải lịch sử đặt sân.</p>
+                    </div>
+                `;
+            }
         }
-        
-        // Chỉnh sửa thông tin
-        document.getElementById('editBtn').onclick = () => {
+
+        document.getElementById('editBtn').addEventListener('click', () => {
             document.getElementById('editForm').style.display = 'block';
-        };
-        
-        document.getElementById('cancelBtn').onclick = () => {
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
             document.getElementById('editForm').style.display = 'none';
-        };
-        
-        document.getElementById('saveBtn').onclick = async () => {
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', async () => {
             const user = auth.currentUser;
-            if (!user) return;
-            
-            const newFullName = document.getElementById('editFullName').value;
-            const newPhone = document.getElementById('editPhone').value;
-            
+
+            if (!user) {
+                alert('Vui lòng đăng nhập lại!');
+                window.location.href = 'dangnhap.html';
+                return;
+            }
+
+            const newFullName = document.getElementById('editFullName').value.trim();
+            const newPhone = document.getElementById('editPhone').value.trim();
+
+            if (!newFullName) {
+                alert('Họ tên không được để trống!');
+                return;
+            }
+
+            if (!validatePhone(newPhone)) {
+                alert('Số điện thoại không hợp lệ. Vui lòng nhập 10 số và bắt đầu bằng số 0.');
+                return;
+            }
+
             try {
-                // Cập nhật Firebase Auth
-                await updateProfile(user, { displayName: newFullName });
-                
-                // Cập nhật Firestore
+                await updateProfile(user, {
+                    displayName: newFullName
+                });
+
                 const userRef = doc(db, "users", user.uid);
+
                 await updateDoc(userRef, {
                     fullName: newFullName,
                     phone: newPhone,
                     updatedAt: new Date().toISOString()
                 });
-                
-                // Cập nhật hiển thị
+
                 document.getElementById('infoFullName').textContent = newFullName;
                 document.getElementById('infoPhone').textContent = newPhone || 'Chưa cập nhật';
                 document.getElementById('displayName').textContent = newFullName;
-                
+                document.getElementById('avatarText').textContent = getAvatarText(newFullName, user.email);
+
                 alert('Cập nhật thông tin thành công!');
                 document.getElementById('editForm').style.display = 'none';
-                
+
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                console.error("Lỗi cập nhật:", error);
+                alert('Cập nhật thất bại: ' + error.message);
             }
-        };
-        
-        // Đăng xuất
-        const logoutBtn = document.getElementById('logoutBtnInProfile');
-        if (logoutBtn) {
-            logoutBtn.onclick = async (e) => {
-                e.preventDefault();
-                try {
-                    await signOut(auth);
-                    alert('Đã đăng xuất!');
-                    window.location.href = 'index.html';
-                } catch (error) {
-                    console.error('Lỗi đăng xuất:', error);
-                    alert('Đăng xuất thất bại!');
-                }
-            };
-        }
+        });
+
+        document.getElementById('logoutBtnInProfile').addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            try {
+                await signOut(auth);
+                alert('Đã đăng xuất!');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Lỗi đăng xuất:', error);
+                alert('Đăng xuất thất bại!');
+            }
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                alert('Vui lòng đăng nhập để xem thông tin tài khoản!');
+                window.location.href = 'dangnhap.html';
+                return;
+            }
+
+            await loadUserProfile(user);
+        });
     </script>
 </body>
 </html>

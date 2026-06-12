@@ -76,19 +76,51 @@ async function loadSanTuFirebase() {
     }
 }
 
-// Lọc và sắp xếp
+// ============= LỌC VÀ SẮP XẾP =============
 function locVaSapXep() {
     let ds = [...tatCaSan];
+    
+    // Lấy giá trị từ các dropdown
     const loai = document.getElementById('locLoaiSan')?.value;
-    const kv = document.getElementById('locKhuVuc')?.value;
+    const kvRaw = document.getElementById('locKhuVuc')?.value;
     const sp = document.getElementById('sapXep')?.value;
     
-    if (loai) ds = ds.filter(s => s.loai === loai);
-    if (kv) ds = ds.filter(s => s.diaChi === kv);
-    if (sp === 'giaTang') ds.sort((a,b) => a.gia - b.gia);
-    if (sp === 'giaGiam') ds.sort((a,b) => b.gia - a.gia);
-    if (sp === 'tenAZ') ds.sort((a,b) => a.ten.localeCompare(b.ten));
+    // 1. Lọc theo loại sân
+    if (loai) {
+        ds = ds.filter(s => s.loai === loai);
+    }
     
+    // 2. Lọc theo khu vực (không phân biệt chữ hoa/thường, có dấu/không dấu)
+    if (kvRaw) {
+        // Hàm đơn giản hóa chuỗi: loại bỏ dấu tiếng Việt và chuyển về chữ thường
+        function simplifyString(str) {
+            if (!str) return '';
+            return str.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Xóa dấu tiếng Việt
+                .replace(/đ/g, 'd'); // Xử lý riêng chữ 'đ'
+        }
+        
+        const kvSimplified = simplifyString(kvRaw);
+        ds = ds.filter(s => {
+            if (!s.diaChi) return false;
+            // So sánh chuỗi đã được đơn giản hóa
+            return simplifyString(s.diaChi).includes(kvSimplified);
+        });
+        
+        // Thêm log để debug (bạn có thể xem trên Console trình duyệt)
+        console.log('Đã lọc theo khu vực:', kvRaw, 'Số lượng kết quả:', ds.length);
+    }
+    
+    // 3. Sắp xếp
+    if (sp === 'giaTang') {
+        ds.sort((a,b) => a.gia - b.gia);
+    } else if (sp === 'giaGiam') {
+        ds.sort((a,b) => b.gia - a.gia);
+    } else if (sp === 'tenAZ') {
+        ds.sort((a,b) => a.ten.localeCompare(b.ten));
+    }
+    
+    // Hiển thị kết quả đã lọc và sắp xếp
     hienThiSan(ds);
 }
 

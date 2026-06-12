@@ -360,6 +360,7 @@
             renderCalendarGrid();
         }
         
+        // Thay thế hàm renderCalendarGrid bằng code sau:
         async function renderCalendarGrid() {
             if (!currentSanId) { 
                 document.getElementById('calendarGrid').innerHTML = '<p style="text-align:center; padding:40px;">Vui lòng chọn sân để xem lịch.</p>'; 
@@ -367,76 +368,271 @@
                 return; 
             }
             
+            // Lấy thông tin sân
+            const sanDoc = await getDoc(doc(db, "san", currentSanId));
+            const sanData = sanDoc.exists() ? sanDoc.data() : null;
+            if (!sanData) return;
+            
             const year = currentMonth.getFullYear(), month = currentMonth.getMonth();
-            const firstDay = new Date(year, month, 1), lastDay = new Date(year, month + 1, 0);
-            const startWeekday = firstDay.getDay(), daysInMonth = lastDay.getDate();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
             document.getElementById('monthYearDisplay').innerHTML = `${month + 1}/${year}`;
             
             // Lấy tất cả đơn đặt của sân này
             const bookingsRef = collection(db, "donDat");
             const q = query(bookingsRef, where("sanId", "==", currentSanId));
             const snapshot = await getDocs(q);
-            const bookings = {};
-            snapshot.forEach(doc => { 
-                const b = doc.data(); 
-                b.bookingId = doc.id;  // Lưu ID để xác nhận sau
-                const date = b.ngayDat; 
-                if (!bookings[date]) bookings[date] = []; 
-                bookings[date].push(b); 
+            
+            // Tạo map: "ngày_giờ" -> booking
+            const bookingMap = new Map();
+            snapshot.forEach(doc => {
+                const b = doc.data();
+                b.bookingId = doc.id;
+                const key = `${b.ngayDat}_${b.gioBatDau}`;
+                bookingMap.set(key, b);
             });
             
-            let html = `<table class="calendar-table"><thead><tr>`;
-            const weekdays = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-            weekdays.forEach(day => html += `<th>${day}</th>`);
-            html += `</tr></thead><tbody><tr>`;
+            // Các khung giờ
+            const hours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
             
-            for (let i = 0; i < startWeekday; i++) {
-                html += `<td class="empty-cell"></td>`;
+            // Tạo bảng
+            let html = `<div style="overflow-x:auto;">
+                            <table class="calendar-table" style="width:100%; border-collapse:collapse; background:white;">
+                                <thead>
+                                    <tr style="background:#1a6b30; color:white;">
+                                        <th style="padding:10px; position:sticky; left:0; background:#1a6b30; z-index:1;">Ngày</th>`;
+            for (const hour of hours) {
+                html += `<th style="padding:8px; min-width:80px;">${hour}:00<br><small>${hour+1}:00</small></th>`;
             }
+            html += `</tr></thead><tbody>`;
             
             for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-                const dayBookings = bookings[dateStr] || [];
+                const isToday = dateStr === new Date().toISOString().split('T')[0];
+                const rowStyle = isToday ? 'background:#fff8e1;' : '';
                 
-                html += `<td class="calendar-cell" style="vertical-align:top; width:120px; min-width:120px;">`;
-                html += `<div class="calendar-day-number">${day}</div>`;
+                html += `<tr style="${rowStyle} border-bottom:1px solid #ddd;">`;
+                html += `<td style="position:sticky; left:0; background:white; font-weight:bold; padding:8px; border-right:1px solid #ddd;">${day}</td>`;
                 
-                if (dayBookings.length === 0) {
-                    html += `<div class="empty-slot">Còn trống</div>`;
-                } else {
-                    dayBookings.forEach(b => {
-                        const statusClass = b.trangThai === 'đã_xác_nhận' ? 'confirmed' : 'pending';
-                        const statusText = b.trangThai === 'chờ_xác_nhận' ? '⏳ Chờ' : '✅ Đã xác nhận';
-                        html += `<div class="booking-slot ${statusClass}" 
-                                    onclick="showBookingDetail('${b.bookingId}', '${b.tenSan}', '${dateStr}', ${b.gioBatDau}, ${b.gioKetThuc}, ${b.tongTien}, '${b.trangThai}', '${b.userName || b.userEmail}')">
-                                    ${b.gioBatDau}:00 - ${b.gioKetThuc}:00<br>
-                                    <small>${statusText}</small>
-                                </div>`;
-                    });
+                for (const hour of hours) {
+                    const key = `${dateStr}_${hour}`;
+                    const booking = bookingMap.get(key);
+                    
+                    if (booking) {
+                        // Đã có đặt
+                        const statusColor = booking.trangThai === 'đã_xác_nhận' ? '#4caf50' : '#ff9800';
+                        const statusText = booking.trangThai === 'đã_xác_nhận' ? '✅' : '⏳';
+                        const shortName = booking.userName ? booking.userName.split(' ').pop() : 'KH';
+                        
+                        html += `<td style="background:${statusColor}; color:white; text-align:center; padding:8px; cursor:pointer; border:1px solid #ddd;"
+                                    onclick="showBookingDetail('${booking.bookingId}', '${booking.tenSan}', '${dateStr}', ${hour}, ${hour+1}, ${booking.tongTien}, '${booking.trangThai}', '${booking.userName || booking.userEmail}')">
+                                    ${statusText}<br>
+                                    <small>${shortName}</small>
+                                </td>`;
+                    } else {
+                        // Còn trống
+                        html += `<td style="background:#e8f5e9; text-align:center; padding:8px; cursor:pointer; border:1px solid #ddd;"
+                                    onclick="showCreateBookingModal('${currentSanId}', '${sanData.ten}', '${dateStr}', ${hour})">
+                                    📅<br>
+                                    <small style="color:#1a6b30;">Đặt</small>
+                                </td>`;
+                    }
                 }
-                html += `</td>`;
-                
-                if ((startWeekday + day) % 7 === 0) {
-                    html += `</tr><tr>`;
-                }
+                html += `</tr>`;
             }
             
-            const lastCell = (startWeekday + daysInMonth) % 7;
-            if (lastCell !== 0) {
-                for (let i = lastCell; i < 7; i++) {
-                    html += `<td class="empty-cell"></td>`;
-                }
-            }
-            html += `</tr></tbody></table>`;
-            html += `<div style="margin-top:15px; padding:10px; background:#eee; border-radius:5px;">
-                        <strong>Ghi chú:</strong> <span style="background:#ff9800; padding:2px 8px; border-radius:3px;">Cam</span> = Chờ xác nhận | 
-                        <span style="background:#1a6b30; padding:2px 8px; border-radius:3px; color:white;">Xanh</span> = Đã xác nhận | 
-                        <span style="color:#1a6b30;">Còn trống</span> = Khung giờ trống<br>
-                        <strong>Click vào ô đặt để xác nhận/hủy đơn!</strong>
+            html += `</tbody></table></div>`;
+            html += `<div style="margin-top:15px; padding:10px; background:#eee; border-radius:5px; display:flex; gap:15px; flex-wrap:wrap;">
+                        <span><span style="background:#4caf50; padding:2px 8px; border-radius:3px; color:white;">✅ Xanh</span> = Đã xác nhận</span>
+                        <span><span style="background:#ff9800; padding:2px 8px; border-radius:3px; color:white;">⏳ Cam</span> = Chờ xác nhận</span>
+                        <span><span style="background:#e8f5e9; border:1px solid #1a6b30; padding:2px 8px; border-radius:3px;">📅</span> = Còn trống (click để đặt)</span>
                     </div>`;
             
             document.getElementById('calendarGrid').innerHTML = html;
         }
+
+        window.showDaySlots = async function(sanId, ngayDat) {
+            // Lấy thông tin sân
+            const sanDoc = await getDoc(doc(db, "san", sanId));
+            const sanData = sanDoc.exists() ? sanDoc.data() : null;
+            
+            // Lấy danh sách đơn đặt trong ngày
+            const bookingsRef = collection(db, "donDat");
+            const q = query(bookingsRef, where("sanId", "==", sanId), where("ngayDat", "==", ngayDat));
+            const snapshot = await getDocs(q);
+            const bookings = {};
+            snapshot.forEach(doc => {
+                const b = doc.data();
+                b.bookingId = doc.id;
+                bookings[b.gioBatDau] = b;
+            });
+            
+            // Các khung giờ
+            const hours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
+            
+            let hoursHtml = '<div style="max-height:400px; overflow-y:auto;">';
+            for (const hour of hours) {
+                const booking = bookings[hour];
+                if (booking) {
+                    const statusText = booking.trangThai === 'chờ_xác_nhận' ? '⏳ Chờ xác nhận' : '✅ Đã xác nhận';
+                    hoursHtml += `
+                        <div style="margin:5px 0; padding:10px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#fff3cd;"
+                            onclick="showBookingDetail('${booking.bookingId}', '${booking.tenSan}', '${ngayDat}', ${hour}, ${hour+1}, ${booking.tongTien}, '${booking.trangThai}', '${booking.userName || booking.userEmail}')">
+                            <span><strong>${hour}:00 - ${hour+1}:00</strong> - ${booking.userName || booking.userEmail}</span>
+                            <span>${statusText}</span>
+                        </div>
+                    `;
+                } else {
+                    hoursHtml += `
+                        <div style="margin:5px 0; padding:10px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; background:#e8f5e9; border:1px solid #1a6b30; cursor:pointer;"
+                            onclick="showCreateBookingModal('${sanId}', '${sanData?.ten}', '${ngayDat}', ${hour})">
+                            <span><strong>${hour}:00 - ${hour+1}:00</strong></span>
+                            <span>📅 Đặt sân</span>
+                        </div>
+                    `;
+                }
+            }
+            hoursHtml += '</div>';
+            
+            const modal = document.createElement('div'); 
+            modal.className = 'modal'; 
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width:500px;">
+                    <h3>📅 ${sanData?.ten || 'Sân'}</h3>
+                    <p><strong>Ngày:</strong> ${ngayDat}</p>
+                    <hr style="margin:10px 0;">
+                    ${hoursHtml}
+                    <div class="modal-buttons" style="margin-top:15px;">
+                        <button class="btn-cancel" id="closeDaySlotsModal">Đóng</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById('closeDaySlotsModal').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        };
+
+        window.showCreateBookingModal = async function(sanId, tenSan, ngayDat) {
+            // Lấy giá sân
+            const sanDoc = await getDoc(doc(db, "san", sanId));
+            let gia = 0;
+            if (sanDoc.exists()) {
+                gia = sanDoc.data().gia;
+            }
+            
+            const modal = document.createElement('div'); 
+            modal.className = 'modal'; 
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3>Tạo đơn đặt sân</h3>
+                    <div style="margin: 15px 0;">
+                        <p><strong>Sân:</strong> ${tenSan}</p>
+                        <p><strong>Ngày:</strong> ${ngayDat}</p>
+                        <p><strong>Giá:</strong> ${gia.toLocaleString()}đ / giờ</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Chọn giờ:</label>
+                        <select id="gioSelect" style="width:100%; padding:8px; margin:10px 0;">
+                            <option value="6">6:00 - 7:00</option>
+                            <option value="7">7:00 - 8:00</option>
+                            <option value="8">8:00 - 9:00</option>
+                            <option value="9">9:00 - 10:00</option>
+                            <option value="10">10:00 - 11:00</option>
+                            <option value="11">11:00 - 12:00</option>
+                            <option value="12">12:00 - 13:00</option>
+                            <option value="13">13:00 - 14:00</option>
+                            <option value="14">14:00 - 15:00</option>
+                            <option value="15">15:00 - 16:00</option>
+                            <option value="16">16:00 - 17:00</option>
+                            <option value="17">17:00 - 18:00</option>
+                            <option value="18">18:00 - 19:00</option>
+                            <option value="19">19:00 - 20:00</option>
+                            <option value="20">20:00 - 21:00</option>
+                            <option value="21">21:00 - 22:00</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Họ tên khách hàng:</label>
+                        <input type="text" id="customerName" placeholder="Nhập họ tên" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại:</label>
+                        <input type="tel" id="customerPhone" placeholder="Nhập số điện thoại" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email (không bắt buộc):</label>
+                        <input type="email" id="customerEmail" placeholder="example@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Trạng thái:</label>
+                        <select id="bookingStatus">
+                            <option value="đã_xác_nhận">Đã xác nhận</option>
+                            <option value="chờ_xác_nhận">Chờ xác nhận</option>
+                        </select>
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn-save" id="createBookingBtn">Tạo đơn</button>
+                        <button class="btn-cancel" id="closeCreateModal">Hủy</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById('createBookingBtn').onclick = async () => {
+                const gioBatDau = parseInt(document.getElementById('gioSelect').value);
+                const customerName = document.getElementById('customerName').value;
+                const customerPhone = document.getElementById('customerPhone').value;
+                const customerEmail = document.getElementById('customerEmail').value || `${customerPhone}@guest.com`;
+                const trangThai = document.getElementById('bookingStatus').value;
+                
+                if (!customerName || !customerPhone) {
+                    alert('Vui lòng nhập đầy đủ họ tên và số điện thoại!');
+                    return;
+                }
+                
+                // Kiểm tra xem khung giờ đã có ai đặt chưa
+                const bookingsRef = collection(db, "donDat");
+                const q = query(bookingsRef, where("sanId", "==", sanId), where("ngayDat", "==", ngayDat), where("gioBatDau", "==", gioBatDau));
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    alert('Khung giờ này đã được đặt! Vui lòng chọn giờ khác.');
+                    return;
+                }
+                
+                const tempId = 'staff_' + Date.now();
+                
+                await addDoc(collection(db, "donDat"), {
+                    sanId: sanId,
+                    tenSan: tenSan,
+                    userId: tempId,
+                    userEmail: customerEmail,
+                    userName: customerName,
+                    userPhone: customerPhone,
+                    ngayDat: ngayDat,
+                    gioBatDau: gioBatDau,
+                    gioKetThuc: gioBatDau + 1,
+                    gia: gia,
+                    tongTien: gia,
+                    trangThai: trangThai,
+                    createdBy: currentUser?.email,
+                    createdAt: new Date().toISOString()
+                });
+                
+                alert('Đã tạo đơn đặt sân thành công!');
+                modal.remove();
+                renderCalendarGrid();
+                if (currentUserRole === 'admin') {
+                    loadBookings();
+                    loadDashboard();
+                }
+            };
+            
+            document.getElementById('closeCreateModal').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        };
 
         // Hàm hiển thị chi tiết đơn và xác nhận/hủy
         window.showBookingDetail = async function(bookingId, tenSan, ngayDat, gioBatDau, gioKetThuc, tongTien, trangThai, userName) {
