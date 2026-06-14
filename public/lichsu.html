@@ -4,470 +4,181 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lịch sử đặt sân - SportBooking</title>
+
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
-        .history-container {
-            max-width: 1000px;
-            margin: 50px auto;
-            padding: 0 20px;
+        .history-container{
+            max-width:1200px;
+            margin:40px auto;
+            padding:0 20px;
         }
 
-        .history-title {
-            color: #1a6b30;
-            margin-bottom: 20px;
+        .history-header{
+            margin-bottom:25px;
         }
 
-        .filter-bar {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        .history-header h2{
+            color:#1a6b30;
+            margin-bottom:10px;
         }
 
-        .filter-bar select {
-            padding: 8px 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        .filter-bar{
+            background:white;
+            padding:20px;
+            border-radius:16px;
+            box-shadow:0 8px 25px rgba(0,0,0,.06);
+            margin-bottom:25px;
         }
 
-        .booking-item {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
+        .filter-bar select{
+            width:250px;
+            padding:12px;
+            border:1px solid #ddd;
+            border-radius:8px;
         }
 
-        .booking-item:hover {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        .booking-card{
+            background:white;
+            border-radius:16px;
+            padding:20px;
+            margin-bottom:20px;
+            box-shadow:0 10px 25px rgba(0,0,0,.06);
         }
 
-        .booking-info h3 {
-            margin-bottom: 10px;
-            color: #1a6b30;
+        .booking-top{
+            display:flex;
+            justify-content:space-between;
+            flex-wrap:wrap;
+            gap:20px;
         }
 
-        .booking-info p {
-            margin: 6px 0;
-            color: #666;
+        .booking-info h3{
+            color:#1a6b30;
+            margin-bottom:10px;
         }
 
-        .booking-status {
-            padding: 7px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            text-align: center;
-            min-width: 120px;
+        .booking-info p{
+            margin:8px 0;
+            color:#666;
         }
 
-        .status-pending {
-            background: #ff9800;
-            color: white;
+        .status{
+            padding:8px 14px;
+            border-radius:999px;
+            font-weight:600;
+            color:white;
         }
 
-        .status-confirmed {
-            background: #1a6b30;
-            color: white;
+        .pending{background:#ff9800;}
+        .success{background:#1a6b30;}
+        .cancel{background:#e74c3c;}
+
+        .booking-actions{
+            margin-top:20px;
+            display:flex;
+            gap:10px;
         }
 
-        .status-cancelled {
-            background: #e74c3c;
-            color: white;
+        .btn{
+            padding:10px 16px;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:600;
         }
 
-        .booking-actions {
-            margin-top: 12px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+        .btn-rebook{
+            background:#1a6b30;
+            color:white;
         }
 
-        .btn-rebook,
-        .btn-cancel {
-            border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            color: white;
+        .btn-cancel{
+            background:#e74c3c;
+            color:white;
         }
 
-        .btn-rebook {
-            background: #1a6b30;
+        .empty-box{
+            background:white;
+            padding:40px;
+            border-radius:16px;
+            text-align:center;
+            box-shadow:0 8px 20px rgba(0,0,0,.05);
         }
 
-        .btn-rebook:hover {
-            background: #0d4620;
-        }
-
-        .btn-cancel {
-            background: #e74c3c;
-        }
-
-        .btn-cancel:hover {
-            background: #c0392b;
-        }
-
-        .empty-history {
-            text-align: center;
-            padding: 50px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-        }
-
-        @media (max-width: 768px) {
-            .booking-item {
-                flex-direction: column;
-                align-items: flex-start;
+        @media(max-width:768px){
+            .booking-top{
+                flex-direction:column;
             }
 
-            .booking-status {
-                width: 100%;
+            .booking-actions{
+                flex-direction:column;
             }
 
-            .booking-actions {
-                width: 100%;
+            .btn{
+                width:100%;
             }
 
-            .btn-rebook,
-            .btn-cancel {
-                width: 100%;
+            .filter-bar select{
+                width:100%;
             }
         }
     </style>
 </head>
-
 <body>
-    <header>
-        <div class="logo">
-            <a href="index.html" style="text-decoration: none; color: white;">
-                <h1>SportBooking</h1>
-            </a>
-        </div>
 
-        <nav>
-            <a href="san.html">Đặt sân</a>
-            <a href="giohang.html">Giỏ hàng</a>
-            <a href="lichsu.html">Lịch sử</a>
-
-            <div style="position:relative; display:inline-block;" id="userMenu">
-                <a href="#" id="loginBtn">Đăng nhập</a>
-                <a href="#" id="userInfoBtn" style="display:none;">Tài khoản</a>
-            </div>
-        </nav>
-    </header>
-
-    <div class="history-container">
-        <h2 class="history-title">Lịch sử đặt sân</h2>
-
-        <div class="filter-bar">
-            <label>Lọc theo trạng thái:</label>
-            <select id="filterStatus">
-                <option value="all">Tất cả</option>
-                <option value="Chờ xác nhận">Chờ xác nhận</option>
-                <option value="Đã xác nhận">Đã xác nhận</option>
-                <option value="Đã hủy">Đã hủy</option>
-            </select>
-        </div>
-
-        <div id="bookingList">
-            <div class="empty-history">
-                <p>Đang tải lịch sử đặt sân...</p>
-            </div>
-        </div>
+<header>
+    <div class="logo">
+        <a href="index.html" style="text-decoration:none;color:white;">
+            <h1>SportBooking</h1>
+        </a>
     </div>
 
-    <footer>
-        <div class="footer-content">
-            <div>
-                <h4>Liên hệ</h4>
-                <p>1900 1234</p>
-            </div>
-            <div>
-                <h4>Chính sách</h4>
-                <p><a href="chinhsach.html">Xem chi tiết</a></p>
+    <nav>
+        <a href="index.html">Trang chủ</a>
+        <a href="chitiet.html?id=san1">Đặt sân</a>
+        <a href="doan.html">Đặt đồ ăn</a>
+        <a href="giohang.html">Giỏ hàng</a>
+        <a href="lichsu.html">Lịch sử</a>
+        <a href="lienhe.html">Liên hệ</a>
+
+        <div id="userMenu" style="position:relative;display:inline-block;">
+            <a href="#" id="loginBtn">Đăng nhập</a>
+
+            <div id="userDropdownArea" style="display:none;position:relative;">
+                <a href="#" id="userInfoBtn">Tài khoản</a>
+
+                <div id="dropdownMenu" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;">
+                    <a href="taikhoan.html" style="display:block;padding:12px;color:#333;text-decoration:none;">Thông tin</a>
+                    <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#e74c3c;text-decoration:none;">Đăng xuất</a>
+                </div>
             </div>
         </div>
-        <p class="copyright">&copy; 2025 SportBooking</p>
-    </footer>
+    </nav>
+</header>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+<div class="history-container">
 
-        import {
-            getFirestore,
-            collection,
-            query,
-            where,
-            getDocs,
-            doc,
-            updateDoc,
-            addDoc,
-            getDoc,
-            serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <div class="history-header">
+        <h2>Lịch sử đặt sân</h2>
+        <p>Theo dõi toàn bộ đơn đặt sân của bạn</p>
+    </div>
 
-        import {
-            getAuth,
-            onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    <div class="filter-bar">
+        <select id="filterStatus">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="Chờ xác nhận">Chờ xác nhận</option>
+            <option value="Đã xác nhận">Đã xác nhận</option>
+            <option value="Đã hủy">Đã hủy</option>
+        </select>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
-            authDomain: "thue-san-the-thao.firebaseapp.com",
-            projectId: "thue-san-the-thao",
-            storageBucket: "thue-san-the-thao.firebasestorage.app",
-            messagingSenderId: "90803956356",
-            appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
-        };
+    <div id="bookingList"></div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+</div>
 
-        let allBookings = [];
-        let currentUser = null;
+<script type="module" src="js/lichsu.js"></script>
 
-        async function loadLichSu(userId) {
-            const bookingList = document.getElementById('bookingList');
-
-            bookingList.innerHTML = `
-                <div class="empty-history">
-                    <p>Đang tải lịch sử đặt sân...</p>
-                </div>
-            `;
-
-            try {
-                const bookingsRef = collection(db, "donDat");
-                const q = query(bookingsRef, where("userId", "==", userId));
-                const snapshot = await getDocs(q);
-
-                allBookings = [];
-
-                snapshot.forEach(docSnap => {
-                    allBookings.push({
-                        id: docSnap.id,
-                        ...docSnap.data()
-                    });
-                });
-
-                allBookings.sort((a, b) => {
-                    const dateA = new Date(a.createdAt || a.ngayDat || 0);
-                    const dateB = new Date(b.createdAt || b.ngayDat || 0);
-                    return dateB - dateA;
-                });
-
-                filterAndDisplay();
-
-            } catch (error) {
-                console.error('Lỗi tải lịch sử:', error);
-
-                bookingList.innerHTML = `
-                    <div class="empty-history">
-                        <p style="color:red;">Không thể tải lịch sử đặt sân. Vui lòng thử lại.</p>
-                    </div>
-                `;
-            }
-        }
-
-        function filterAndDisplay() {
-            const filterStatus = document.getElementById('filterStatus').value;
-
-            let filtered = [...allBookings];
-
-            if (filterStatus !== 'all') {
-                filtered = filtered.filter(booking => booking.trangThai === filterStatus);
-            }
-
-            displayBookings(filtered);
-        }
-
-        function getStatusInfo(status) {
-            if (status === "Đã xác nhận") {
-                return {
-                    className: "status-confirmed",
-                    text: "Đã xác nhận"
-                };
-            }
-
-            if (status === "Đã hủy") {
-                return {
-                    className: "status-cancelled",
-                    text: "Đã hủy"
-                };
-            }
-
-            return {
-                className: "status-pending",
-                text: "Chờ xác nhận"
-            };
-        }
-
-        function displayBookings(bookings) {
-            const bookingList = document.getElementById('bookingList');
-
-            if (!bookings || bookings.length === 0) {
-                bookingList.innerHTML = `
-                    <div class="empty-history">
-                        <p>Không có đơn đặt sân nào.</p>
-                        <br>
-                        <a href="san.html" style="color:#1a6b30; font-weight:bold;">Đặt sân ngay</a>
-                    </div>
-                `;
-                return;
-            }
-
-            let html = '';
-            const today = new Date().toISOString().split('T')[0];
-
-            bookings.forEach(booking => {
-                const statusInfo = getStatusInfo(booking.trangThai);
-
-                const tongTien = Number(booking.tongTien || booking.gia || 0);
-
-                const canCancel =
-                    booking.trangThai === "Chờ xác nhận" &&
-                    booking.ngayDat >= today;
-
-                const canRebook =
-                    booking.trangThai === "Đã hủy" ||
-                    booking.ngayDat < today;
-
-                html += `
-                    <div class="booking-item" data-id="${booking.id}">
-                        <div class="booking-info">
-                            <h3>${booking.tenSan || 'Sân thể thao'}</h3>
-
-                            <p><i class="fa-solid fa-calendar"></i> Ngày: ${booking.ngayDat || 'Chưa cập nhật'}</p>
-
-                            <p><i class="fa-solid fa-clock"></i> Giờ: ${booking.gioBatDau}:00 - ${booking.gioKetThuc}:00</p>
-
-                            <p><i class="fa-solid fa-phone"></i> SĐT: ${booking.userPhone || 'Chưa có'}</p>
-
-                            <p><i class="fa-solid fa-money-bill"></i> Tổng tiền: ${tongTien.toLocaleString()}đ</p>
-
-                            <p><i class="fa-solid fa-credit-card"></i> Thanh toán: ${booking.phuongThucThanhToan || 'Chưa cập nhật'}</p>
-
-                            <div class="booking-actions">
-                                ${
-                                    canRebook
-                                        ? `<button class="btn-rebook" data-sanid="${booking.sanId}">Đặt lại</button>`
-                                        : ''
-                                }
-
-                                ${
-                                    canCancel
-                                        ? `<button class="btn-cancel" data-id="${booking.id}">Hủy đơn</button>`
-                                        : ''
-                                }
-                            </div>
-                        </div>
-
-                        <div class="booking-status ${statusInfo.className}">
-                            ${statusInfo.text}
-                        </div>
-                    </div>
-                `;
-            });
-
-            bookingList.innerHTML = html;
-
-            ganSuKienHuyDon();
-            ganSuKienDatLai();
-        }
-
-        function ganSuKienHuyDon() {
-            document.querySelectorAll('.btn-cancel').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const bookingId = btn.dataset.id;
-
-                    if (!confirm('Bạn có chắc muốn hủy đơn đặt sân này?')) {
-                        return;
-                    }
-
-                    try {
-                        await updateDoc(doc(db, "donDat", bookingId), {
-                            trangThai: "Đã hủy",
-                            updatedAt: new Date().toISOString(),
-                            updatedAtServer: serverTimestamp()
-                        });
-
-                        alert('Đã hủy đơn đặt sân!');
-                        loadLichSu(currentUser.uid);
-
-                    } catch (error) {
-                        console.error('Lỗi hủy đơn:', error);
-                        alert('Hủy đơn thất bại: ' + error.message);
-                    }
-                });
-            });
-        }
-
-        function ganSuKienDatLai() {
-            document.querySelectorAll('.btn-rebook').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const sanId = btn.dataset.sanid;
-
-                    if (!sanId) {
-                        alert('Không tìm thấy thông tin sân để đặt lại.');
-                        return;
-                    }
-
-                    window.location.href = `chitiet.html?id=${sanId}`;
-                });
-            });
-        }
-
-        document.getElementById('filterStatus').addEventListener('change', filterAndDisplay);
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-
-            const loginBtn = document.getElementById('loginBtn');
-            const userInfoBtn = document.getElementById('userInfoBtn');
-
-            if (user) {
-                loginBtn.style.display = 'none';
-                userInfoBtn.style.display = 'inline';
-
-                userInfoBtn.onclick = (e) => {
-                    e.preventDefault();
-                    window.location.href = 'taikhoan.html';
-                };
-
-                loadLichSu(user.uid);
-
-            } else {
-                loginBtn.style.display = 'inline';
-                userInfoBtn.style.display = 'none';
-
-                loginBtn.onclick = (e) => {
-                    e.preventDefault();
-                    window.location.href = 'dangnhap.html';
-                };
-
-                document.getElementById('bookingList').innerHTML = `
-                    <div class="empty-history">
-                        <p>Vui lòng đăng nhập để xem lịch sử đặt sân.</p>
-                        <br>
-                        <a href="dangnhap.html" style="color:#1a6b30; font-weight:bold;">Đăng nhập ngay</a>
-                    </div>
-                `;
-            }
-        });
-    </script>
 </body>
 </html>

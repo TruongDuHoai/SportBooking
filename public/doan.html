@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt đồ ăn - SportBooking</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        .food-page {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .food-hero {
+            background: linear-gradient(135deg, #1a6b30, #0d4620);
+            color: white;
+            padding: 35px;
+            border-radius: 22px;
+            margin-bottom: 30px;
+        }
+
+        .food-hero h2 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .food-hero p {
+            color: #e8f7ed;
+        }
+
+        .food-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .food-tools {
+            background: white;
+            padding: 18px;
+            border-radius: 18px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+            margin-bottom: 22px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .food-tools input,
+        .food-tools select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .food-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 22px;
+        }
+
+        .food-card {
+            background: white;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.07);
+            transition: 0.2s;
+        }
+
+        .food-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .food-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .food-body {
+            padding: 18px;
+        }
+
+        .food-body h3 {
+            color: #1a6b30;
+            margin-bottom: 8px;
+        }
+
+        .food-body p {
+            color: #666;
+            font-size: 14px;
+            min-height: 38px;
+        }
+
+        .food-price {
+            color: #ff9800;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 12px 0;
+        }
+
+        .food-action {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .food-action input {
+            width: 70px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .btn-add {
+            flex: 1;
+            background: #1a6b30;
+            color: white;
+            border: none;
+            padding: 11px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-add:hover {
+            background: #0d4620;
+        }
+
+        .food-cart {
+            background: white;
+            padding: 22px;
+            border-radius: 18px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.07);
+            position: sticky;
+            top: 90px;
+        }
+
+        .food-cart h3 {
+            color: #1a6b30;
+            margin-bottom: 15px;
+        }
+
+        .cart-food-item {
+            border-bottom: 1px solid #eee;
+            padding: 12px 0;
+        }
+
+        .cart-food-item strong {
+            color: #333;
+        }
+
+        .cart-food-item small {
+            color: #666;
+        }
+
+        .cart-food-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .btn-remove-food {
+            background: #fdecea;
+            color: #e74c3c;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .food-cart-total {
+            margin-top: 18px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff9800;
+            text-align: right;
+        }
+
+        .btn-order-food {
+            width: 100%;
+            margin-top: 15px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-order-food:hover {
+            background: #e68900;
+        }
+
+        .empty-food {
+            color: #777;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        @media(max-width: 900px) {
+            .food-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .food-cart {
+                position: static;
+            }
+        }
+
+        @media(max-width: 600px) {
+            .food-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .food-hero h2 {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <div class="logo">
+        <a href="index.html" style="text-decoration:none;color:white;">
+            <h1>SportBooking</h1>
+        </a>
+    </div>
+
+    <nav>
+        <a href="index.html">Trang chủ</a>
+        <a href="chitiet.html?id=san1">Đặt sân</a>
+        <a href="doan.html">Đặt đồ ăn</a>
+        <a href="giohang.html">Giỏ hàng</a>
+        <a href="lichsu.html">Lịch sử</a>
+        <a href="lienhe.html">Liên hệ</a>
+
+        <div id="userMenu" style="position:relative;display:inline-block;">
+            <a href="#" id="loginBtn">Đăng nhập</a>
+
+            <div id="userDropdownArea" style="display:none;position:relative;">
+                <a href="#" id="userInfoBtn">Tài khoản</a>
+
+                <div id="dropdownMenu" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;z-index:100;">
+                    <a href="taikhoan.html" style="display:block;padding:12px;color:#333;text-decoration:none;">Thông tin</a>
+                    <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#e74c3c;text-decoration:none;">Đăng xuất</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="food-page">
+    <section class="food-hero">
+        <h2>Đặt đồ ăn & thức uống</h2>
+        <p>Chọn nhanh món ăn, nước uống để phục vụ trong quá trình sử dụng sân.</p>
+    </section>
+
+    <div class="food-layout">
+        <section>
+            <div class="food-tools">
+                <input type="text" id="searchFood" placeholder="Tìm món ăn, thức uống...">
+
+                <select id="categoryFilter">
+                    <option value="all">Tất cả danh mục</option>
+                    <option value="nuoc">Nước uống</option>
+                    <option value="doan">Đồ ăn</option>
+                    <option value="combo">Combo</option>
+                </select>
+            </div>
+
+            <div class="food-grid" id="foodGrid"></div>
+        </section>
+
+        <aside class="food-cart">
+            <h3>Giỏ đồ ăn</h3>
+            <div id="foodCartList">
+                <div class="empty-food">Chưa có món nào.</div>
+            </div>
+
+            <div class="food-cart-total" id="foodCartTotal">0đ</div>
+
+            <button class="btn-order-food" id="btnOrderFood">
+                Tạo đơn đồ ăn
+            </button>
+        </aside>
+    </div>
+</main>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+
+    import {
+        getAuth,
+        onAuthStateChanged,
+        signOut
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    import {
+        getFirestore,
+        collection,
+        addDoc,
+        serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
+        authDomain: "thue-san-the-thao.firebaseapp.com",
+        projectId: "thue-san-the-thao",
+        storageBucket: "thue-san-the-thao.firebasestorage.app",
+        messagingSenderId: "90803956356",
+        appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let foodCart = [];
+
+    const foods = [
+        {
+            id: "nuoc-suoi",
+            ten: "Nước suối Aquafina",
+            danhMuc: "nuoc",
+            gia: 10000,
+            moTa: "Nước suối đóng chai tiện lợi.",
+            hinhAnh: ""
+        },
+        {
+            id: "pepsi",
+            ten: "Pepsi lon",
+            danhMuc: "nuoc",
+            gia: 15000,
+            moTa: "Nước ngọt có gas mát lạnh.",
+            hinhAnh: ""
+        },
+        {
+            id: "coca",
+            ten: "Coca Cola lon",
+            danhMuc: "nuoc",
+            gia: 15000,
+            moTa: "Thức uống giải khát phổ biến.",
+            hinhAnh: ""
+        },
+        {
+            id: "sting",
+            ten: "Sting đỏ",
+            danhMuc: "nuoc",
+            gia: 15000,
+            moTa: "Nước tăng lực hồi phục nhanh.",
+            hinhAnh: ""
+        },
+        {
+            id: "revive",
+            ten: "Revive",
+            danhMuc: "nuoc",
+            gia: 15000,
+            moTa: "Bù khoáng nhanh sau vận động.",
+            hinhAnh: ""
+        },
+        {
+            id: "pocari",
+            ten: "Pocari ",
+            danhMuc: "nuoc",
+            gia: 18000,
+            moTa: "Nước ion bổ sung điện giải.",
+            hinhAnh: ""
+        },
+        {
+            id: "tra-xanh",
+            ten: "Trà xanh C2",
+            danhMuc: "nuoc",
+            gia: 12000,
+            moTa: "Trà đóng chai mát lạnh.",
+            hinhAnh: ""
+        },
+        {
+            id: "bo-huc",
+            ten: "Bò húc",
+            danhMuc: "nuoc",
+            gia: 18000,
+            moTa: "Tăng lực mạnh.",
+            hinhAnh: ""
+        },
+        {
+            id: "tra-da-nho",
+            ten: "Trà đá bình nhỏ (1.5L)",
+            danhMuc: "nuoc",
+            gia: 15000,
+            moTa: "Phù hợp nhóm nhỏ.",
+            hinhAnh: ""
+        },
+        {
+            id: "tra-da-lon",
+            ten: "Trà đá bình lớn (3L)",
+            danhMuc: "nuoc",
+            gia: 30000,
+            moTa: "Phù hợp nhóm đông.",
+            hinhAnh: ""
+        },
+        {
+            id: "ca-vien",
+            ten: "Cá viên chiên",
+            danhMuc: "doan",
+            gia: 25000,
+            moTa: "Phần cá viên chiên nóng hổi.",
+            hinhAnh: ""
+        },
+        {
+            id: "xuc-xich",
+            ten: "Xúc xích chiên",
+            danhMuc: "doan",
+            gia: 20000,
+            moTa: "Xúc xích nóng giòn.",
+            hinhAnh: ""
+        },
+        {
+            id: "mi-ly",
+            ten: "Mỳ ly Hảo Hảo",
+            danhMuc: "doan",
+            gia: 18000,
+            moTa: "Mỳ ly nóng tiện lợi.",
+            hinhAnh: ""
+        },
+        {
+            id: "banh-trang",
+            ten: "Bánh tráng trộn",
+            danhMuc: "doan",
+            gia: 25000,
+            moTa: "Món ăn vặt phổ biến.",
+            hinhAnh: ""
+        },
+        {
+            id: "combo-1",
+            ten: "Combo đá bóng",
+            danhMuc: "combo",
+            gia: 55000,
+            moTa: "1 trà đá nhỏ + 1 cá viên + 1 mỳ ly.",
+            hinhAnh: ""
+        }
+    ];
+
+    function renderFoods() {
+        const keyword = document.getElementById("searchFood").value.toLowerCase().trim();
+        const category = document.getElementById("categoryFilter").value;
+
+        let list = [...foods];
+
+        if (keyword) {
+            list = list.filter(item => item.ten.toLowerCase().includes(keyword));
+        }
+
+        if (category !== "all") {
+            list = list.filter(item => item.danhMuc === category);
+        }
+
+        const foodGrid = document.getElementById("foodGrid");
+
+        if (list.length === 0) {
+            foodGrid.innerHTML = `<div class="empty-food">Không tìm thấy món phù hợp.</div>`;
+            return;
+        }
+
+        foodGrid.innerHTML = list.map(item => `
+            <div class="food-card">
+                <img src="${item.hinhAnh}" alt="${item.ten}">
+                <div class="food-body">
+                    <h3>${item.ten}</h3>
+                    <p>${item.moTa}</p>
+                    <div class="food-price">${item.gia.toLocaleString()}đ</div>
+
+                    <div class="food-action">
+                        <input type="number" min="1" value="1" id="qty-${item.id}">
+                        <button class="btn-add" onclick="addFoodToCart('${item.id}')">
+                            Thêm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    window.addFoodToCart = function(foodId) {
+        const food = foods.find(item => item.id === foodId);
+        const qty = Number(document.getElementById(`qty-${foodId}`).value || 1);
+
+        if (!food || qty <= 0) return;
+
+        const existing = foodCart.find(item => item.id === foodId);
+
+        if (existing) {
+            existing.soLuong += qty;
+        } else {
+            foodCart.push({
+                ...food,
+                soLuong: qty
+            });
+        }
+
+        renderFoodCart();
+    };
+
+    function renderFoodCart() {
+        const list = document.getElementById("foodCartList");
+        const totalBox = document.getElementById("foodCartTotal");
+
+        if (foodCart.length === 0) {
+            list.innerHTML = `<div class="empty-food">Chưa có món nào.</div>`;
+            totalBox.textContent = "0đ";
+            return;
+        }
+
+        let total = 0;
+
+        list.innerHTML = foodCart.map((item, index) => {
+            const thanhTien = item.gia * item.soLuong;
+            total += thanhTien;
+
+            return `
+                <div class="cart-food-item">
+                    <strong>${item.ten}</strong><br>
+                    <small>${item.soLuong} x ${item.gia.toLocaleString()}đ</small>
+
+                    <div class="cart-food-actions">
+                        <span>${thanhTien.toLocaleString()}đ</span>
+                        <button class="btn-remove-food" onclick="removeFood(${index})">
+                            Xóa
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        totalBox.textContent = total.toLocaleString() + "đ";
+    }
+
+    window.removeFood = function(index) {
+        foodCart.splice(index, 1);
+        renderFoodCart();
+    };
+
+    document.getElementById("btnOrderFood").onclick = async () => {
+        if (!currentUser) {
+            alert("Vui lòng đăng nhập để đặt đồ ăn!");
+            window.location.href = "dangnhap.html";
+            return;
+        }
+
+        if (foodCart.length === 0) {
+            alert("Vui lòng chọn ít nhất một món!");
+            return;
+        }
+
+        const total = foodCart.reduce((sum, item) => sum + item.gia * item.soLuong, 0);
+
+        if (!confirm(`Xác nhận tạo đơn đồ ăn ${total.toLocaleString()}đ?`)) {
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "donDoAn"), {
+                userId: currentUser.uid,
+                userEmail: currentUser.email || "",
+                items: foodCart,
+                tongTien: total,
+                trangThai: "Chờ xác nhận",
+                trangThaiThanhToan: "Chưa thanh toán",
+                createdAt: new Date().toISOString(),
+                createdAtServer: serverTimestamp()
+            });
+
+            alert("Tạo đơn đồ ăn thành công!");
+            foodCart = [];
+            renderFoodCart();
+
+        } catch (error) {
+            console.error(error);
+            alert("Tạo đơn đồ ăn thất bại!");
+        }
+    };
+
+    function setupAuth() {
+        const loginBtn = document.getElementById("loginBtn");
+        const userDropdownArea = document.getElementById("userDropdownArea");
+        const userInfoBtn = document.getElementById("userInfoBtn");
+        const dropdownMenu = document.getElementById("dropdownMenu");
+        const logoutBtn = document.getElementById("logoutBtn");
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+
+            if (user) {
+                loginBtn.style.display = "none";
+                userDropdownArea.style.display = "inline-block";
+
+                userInfoBtn.onclick = (e) => {
+                    e.preventDefault();
+                    dropdownMenu.style.display =
+                        dropdownMenu.style.display === "none" ? "block" : "none";
+                };
+            } else {
+                loginBtn.style.display = "inline";
+                userDropdownArea.style.display = "none";
+
+                loginBtn.onclick = (e) => {
+                    e.preventDefault();
+                    window.location.href = "dangnhap.html";
+                };
+            }
+        });
+
+        logoutBtn.onclick = async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = "index.html";
+        };
+
+        document.addEventListener("click", (e) => {
+            if (
+                userDropdownArea &&
+                dropdownMenu &&
+                !userDropdownArea.contains(e.target)
+            ) {
+                dropdownMenu.style.display = "none";
+            }
+        });
+    }
+
+    document.getElementById("searchFood").addEventListener("input", renderFoods);
+    document.getElementById("categoryFilter").addEventListener("change", renderFoods);
+
+    renderFoods();
+    renderFoodCart();
+    setupAuth();
+</script>
+</body>
+</html>
