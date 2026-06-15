@@ -52,10 +52,10 @@ function hienThiGioHang(cartItems) {
             <table class="cart-table">
                 <thead>
                     <tr>
-                        <th>Sân</th>
-                        <th>Ngày đặt</th>
-                        <th>Khung giờ</th>
-                        <th>Đơn giá</th>
+                        <th>Dịch vụ</th>
+                        <th>Thông tin</th>
+                        <th>Số lượng / Khung giờ</th>
+                        <th>Thành tiền</th>
                         <th>Thao tác</th>
                     </tr>
                 </thead>
@@ -63,36 +63,66 @@ function hienThiGioHang(cartItems) {
     `;
 
     cartItems.forEach((item, index) => {
-        const gia = Number(item.gia || 0);
-        total += gia;
+        if (item.type === "food") {
+            const soLuong = Number(item.soLuong || 1);
+            const donGia = Number(item.gia || 0);
+            const thanhTien = donGia * soLuong;
+            total += thanhTien;
 
-        const gioBatDau = Number(item.gioBatDau || 0);
-        const gioKetThuc = item.gioKetThuc !== undefined
-            ? Number(item.gioKetThuc)
-            : gioBatDau + 1;
+            html += `
+                <tr>
+                    <td>
+                        <div class="cart-item-info">
+                            <h4>${item.tenMon || "Món ăn"}</h4>
+                            <small>Đồ ăn / Thức uống</small>
+                        </div>
+                    </td>
 
-        html += `
-            <tr>
-                <td>
-                    <div class="cart-item-info">
-                        <h4>${item.tenSan || "Sân bóng"}</h4>
-                        <small>${item.diaChi || "Quận 12"}</small>
-                    </div>
-                </td>
+                    <td>${item.danhMuc === "nuoc" ? "Nước uống" : "Đồ ăn"}</td>
 
-                <td>${item.ngayDat || "Chưa chọn"}</td>
+                    <td>${soLuong} x ${donGia.toLocaleString()}đ</td>
 
-                <td>${gioBatDau}:00 - ${gioKetThuc}:00</td>
+                    <td>${thanhTien.toLocaleString()}đ</td>
 
-                <td>${gia.toLocaleString()}đ</td>
+                    <td>
+                        <button class="cart-remove" data-index="${index}">
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            `;
+        } else {
+            const gia = Number(item.gia || 0);
+            total += gia;
 
-                <td>
-                    <button class="cart-remove" data-index="${index}">
-                        Xóa
-                    </button>
-                </td>
-            </tr>
-        `;
+            const gioBatDau = Number(item.gioBatDau || 0);
+            const gioKetThuc = item.gioKetThuc !== undefined
+                ? Number(item.gioKetThuc)
+                : gioBatDau + 1;
+
+            html += `
+                <tr>
+                    <td>
+                        <div class="cart-item-info">
+                            <h4>${item.tenSan || "Sân bóng"}</h4>
+                            <small>${item.diaChi || "Quận 12"}</small>
+                        </div>
+                    </td>
+
+                    <td>${item.ngayDat || "Chưa chọn ngày"}</td>
+
+                    <td>${gioBatDau}:00 - ${gioKetThuc}:00</td>
+
+                    <td>${gia.toLocaleString()}đ</td>
+
+                    <td>
+                        <button class="cart-remove" data-index="${index}">
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
     });
 
     html += `
@@ -107,6 +137,10 @@ function hienThiGioHang(cartItems) {
                 Tiếp tục đặt sân
             </button>
 
+            <button class="btn-food" id="btnFood" style="background:#ff9800;color:white;border:none;padding:13px 24px;border-radius:9px;font-weight:bold;margin-top:18px;margin-right:10px;cursor:pointer;">
+                Đặt thêm đồ ăn
+            </button>
+
             <button class="btn-checkout" id="btnCheckout">
                 Thanh toán
             </button>
@@ -119,6 +153,10 @@ function hienThiGioHang(cartItems) {
         window.location.href = "chitiet.html?id=san1";
     };
 
+    document.getElementById("btnFood").onclick = () => {
+        window.location.href = "doan.html";
+    };
+
     document.getElementById("btnCheckout").onclick = () => {
         window.location.href = "thanhtoan.html";
     };
@@ -127,7 +165,7 @@ function hienThiGioHang(cartItems) {
         btn.addEventListener("click", async () => {
             const index = Number(btn.dataset.index);
 
-            if (!confirm("Bạn có chắc muốn xóa khung giờ này khỏi giỏ hàng?")) {
+            if (!confirm("Bạn có chắc muốn xóa mục này khỏi giỏ hàng?")) {
                 return;
             }
 
@@ -208,41 +246,49 @@ function kiemTraDangNhap() {
     const userDropdownArea = document.getElementById("userDropdownArea");
     const userInfoBtn = document.getElementById("userInfoBtn");
     const dropdownMenu = document.getElementById("dropdownMenu");
-    const logoutDropdownBtn = document.getElementById("logoutDropdownBtn");
+    const logoutDropdownBtn =
+        document.getElementById("logoutDropdownBtn") ||
+        document.getElementById("logoutBtn");
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
 
-            loginBtn.style.display = "none";
-            userDropdownArea.style.display = "inline-block";
+            if (loginBtn) loginBtn.style.display = "none";
+            if (userDropdownArea) userDropdownArea.style.display = "inline-block";
 
-            userInfoBtn.onclick = (e) => {
-                e.preventDefault();
-                dropdownMenu.style.display =
-                    dropdownMenu.style.display === "none" ? "block" : "none";
-            };
+            if (userInfoBtn && dropdownMenu) {
+                userInfoBtn.onclick = (e) => {
+                    e.preventDefault();
+                    dropdownMenu.style.display =
+                        dropdownMenu.style.display === "none" ? "block" : "none";
+                };
+            }
 
-            logoutDropdownBtn.onclick = async (e) => {
-                e.preventDefault();
+            if (logoutDropdownBtn) {
+                logoutDropdownBtn.onclick = async (e) => {
+                    e.preventDefault();
 
-                await signOut(auth);
-                alert("Đã đăng xuất!");
-                window.location.href = "index.html";
-            };
+                    await signOut(auth);
+                    alert("Đã đăng xuất!");
+                    window.location.href = "index.html";
+                };
+            }
 
             loadGioHang();
 
         } else {
             currentUser = null;
 
-            loginBtn.style.display = "inline-block";
-            userDropdownArea.style.display = "none";
+            if (loginBtn) loginBtn.style.display = "inline-block";
+            if (userDropdownArea) userDropdownArea.style.display = "none";
 
-            loginBtn.onclick = (e) => {
-                e.preventDefault();
-                window.location.href = "dangnhap.html";
-            };
+            if (loginBtn) {
+                loginBtn.onclick = (e) => {
+                    e.preventDefault();
+                    window.location.href = "dangnhap.html";
+                };
+            }
 
             loadGioHang();
         }

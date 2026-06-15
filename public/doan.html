@@ -61,61 +61,67 @@
 
         .food-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 22px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            align-items: start;
         }
 
         .food-card {
             background: white;
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: 0 8px 22px rgba(0,0,0,0.07);
-            transition: 0.2s;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 460px;
+            transition: 0.3s ease;
         }
 
         .food-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-5px);
         }
 
         .food-card img {
             width: 100%;
-            height: 180px;
-            object-fit: cover;
+            height: 220px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #f8f8f8;
+            padding: 10px;
         }
 
-        .food-body {
-            padding: 18px;
-        }
-
-        .food-body h3 {
+        .food-card h3 {
+            font-size: 24px;
             color: #1a6b30;
-            margin-bottom: 8px;
+            margin: 16px 0 8px;
         }
 
-        .food-body p {
+        .food-card p {
             color: #666;
-            font-size: 14px;
-            min-height: 38px;
+            min-height: 50px;
+            line-height: 1.5;
         }
 
         .food-price {
-            color: #ff9800;
-            font-size: 20px;
+            font-size: 30px;
             font-weight: bold;
-            margin: 12px 0;
+            color: #ff9800;
+            margin: 16px 0;
         }
 
         .food-action {
             display: flex;
             gap: 10px;
-            align-items: center;
+            margin-top: auto;
         }
 
         .food-action input {
-            width: 70px;
-            padding: 10px;
+            width: 80px;
+            height: 42px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            text-align: center;
         }
 
         .btn-add {
@@ -262,7 +268,7 @@
 <main class="food-page">
     <section class="food-hero">
         <h2>Đặt đồ ăn & thức uống</h2>
-        <p>Chọn nhanh món ăn, nước uống để phục vụ trong quá trình sử dụng sân.</p>
+        <p>Chọn nhanh món ăn, nước uống và thêm vào giỏ hàng chung.</p>
     </section>
 
     <div class="food-layout">
@@ -274,7 +280,6 @@
                     <option value="all">Tất cả danh mục</option>
                     <option value="nuoc">Nước uống</option>
                     <option value="doan">Đồ ăn</option>
-                    <option value="combo">Combo</option>
                 </select>
             </div>
 
@@ -282,15 +287,16 @@
         </section>
 
         <aside class="food-cart">
-            <h3>Giỏ đồ ăn</h3>
+            <h3>Giỏ đồ ăn tạm</h3>
+
             <div id="foodCartList">
                 <div class="empty-food">Chưa có món nào.</div>
             </div>
 
             <div class="food-cart-total" id="foodCartTotal">0đ</div>
 
-            <button class="btn-order-food" id="btnOrderFood">
-                Tạo đơn đồ ăn
+            <button class="btn-order-food" id="btnAddFoodToMainCart">
+                Thêm vào giỏ hàng chung
             </button>
         </aside>
     </div>
@@ -307,9 +313,9 @@
 
     import {
         getFirestore,
-        collection,
-        addDoc,
-        serverTimestamp
+        doc,
+        getDoc,
+        setDoc
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -335,7 +341,7 @@
             danhMuc: "nuoc",
             gia: 10000,
             moTa: "Nước suối đóng chai tiện lợi.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/nuoc-suoi-aquafina-chai-500ml-2.jpg"
         },
         {
             id: "pepsi",
@@ -343,7 +349,7 @@
             danhMuc: "nuoc",
             gia: 15000,
             moTa: "Nước ngọt có gas mát lạnh.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/pepsi.jpg"
         },
         {
             id: "coca",
@@ -351,7 +357,7 @@
             danhMuc: "nuoc",
             gia: 15000,
             moTa: "Thức uống giải khát phổ biến.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/coca-cola.png"
         },
         {
             id: "sting",
@@ -359,7 +365,7 @@
             danhMuc: "nuoc",
             gia: 15000,
             moTa: "Nước tăng lực hồi phục nhanh.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/sting.jpg"
         },
         {
             id: "revive",
@@ -367,15 +373,15 @@
             danhMuc: "nuoc",
             gia: 15000,
             moTa: "Bù khoáng nhanh sau vận động.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/revive.jpg"
         },
         {
             id: "pocari",
-            ten: "Pocari ",
+            ten: "Pocari Sweat",
             danhMuc: "nuoc",
             gia: 18000,
             moTa: "Nước ion bổ sung điện giải.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/pocari.jpg"
         },
         {
             id: "tra-xanh",
@@ -383,7 +389,7 @@
             danhMuc: "nuoc",
             gia: 12000,
             moTa: "Trà đóng chai mát lạnh.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/traxanh-c2.jpg"
         },
         {
             id: "bo-huc",
@@ -391,7 +397,7 @@
             danhMuc: "nuoc",
             gia: 18000,
             moTa: "Tăng lực mạnh.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/bo-huc.png"
         },
         {
             id: "tra-da-nho",
@@ -399,7 +405,7 @@
             danhMuc: "nuoc",
             gia: 15000,
             moTa: "Phù hợp nhóm nhỏ.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/binh-tra-da-nho.jpg"
         },
         {
             id: "tra-da-lon",
@@ -407,7 +413,7 @@
             danhMuc: "nuoc",
             gia: 30000,
             moTa: "Phù hợp nhóm đông.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/binh-dung-da-lon.jpg"
         },
         {
             id: "ca-vien",
@@ -415,7 +421,7 @@
             danhMuc: "doan",
             gia: 25000,
             moTa: "Phần cá viên chiên nóng hổi.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/ca-vien-chien.jpg"
         },
         {
             id: "xuc-xich",
@@ -423,7 +429,7 @@
             danhMuc: "doan",
             gia: 20000,
             moTa: "Xúc xích nóng giòn.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/XucXich-chien.png"
         },
         {
             id: "mi-ly",
@@ -431,23 +437,7 @@
             danhMuc: "doan",
             gia: 18000,
             moTa: "Mỳ ly nóng tiện lợi.",
-            hinhAnh: ""
-        },
-        {
-            id: "banh-trang",
-            ten: "Bánh tráng trộn",
-            danhMuc: "doan",
-            gia: 25000,
-            moTa: "Món ăn vặt phổ biến.",
-            hinhAnh: ""
-        },
-        {
-            id: "combo-1",
-            ten: "Combo đá bóng",
-            danhMuc: "combo",
-            gia: 55000,
-            moTa: "1 trà đá nhỏ + 1 cá viên + 1 mỳ ly.",
-            hinhAnh: ""
+            hinhAnh: "images/foods/my-ly.jpg"
         }
     ];
 
@@ -474,7 +464,8 @@
 
         foodGrid.innerHTML = list.map(item => `
             <div class="food-card">
-                <img src="${item.hinhAnh}" alt="${item.ten}">
+                <img src="${item.hinhAnh}" alt="${item.ten}" onerror="this.src='images/foods/default-food.jpg'">
+
                 <div class="food-body">
                     <h3>${item.ten}</h3>
                     <p>${item.moTa}</p>
@@ -503,8 +494,13 @@
             existing.soLuong += qty;
         } else {
             foodCart.push({
-                ...food,
-                soLuong: qty
+                type: "food",
+                id: food.id,
+                tenMon: food.ten,
+                gia: food.gia,
+                soLuong: qty,
+                hinhAnh: food.hinhAnh,
+                danhMuc: food.danhMuc
             });
         }
 
@@ -529,7 +525,7 @@
 
             return `
                 <div class="cart-food-item">
-                    <strong>${item.ten}</strong><br>
+                    <strong>${item.tenMon}</strong><br>
                     <small>${item.soLuong} x ${item.gia.toLocaleString()}đ</small>
 
                     <div class="cart-food-actions">
@@ -550,9 +546,9 @@
         renderFoodCart();
     };
 
-    document.getElementById("btnOrderFood").onclick = async () => {
+    document.getElementById("btnAddFoodToMainCart").onclick = async () => {
         if (!currentUser) {
-            alert("Vui lòng đăng nhập để đặt đồ ăn!");
+            alert("Vui lòng đăng nhập để thêm đồ ăn vào giỏ hàng!");
             window.location.href = "dangnhap.html";
             return;
         }
@@ -562,31 +558,39 @@
             return;
         }
 
-        const total = foodCart.reduce((sum, item) => sum + item.gia * item.soLuong, 0);
-
-        if (!confirm(`Xác nhận tạo đơn đồ ăn ${total.toLocaleString()}đ?`)) {
-            return;
-        }
-
         try {
-            await addDoc(collection(db, "donDoAn"), {
-                userId: currentUser.uid,
-                userEmail: currentUser.email || "",
-                items: foodCart,
-                tongTien: total,
-                trangThai: "Chờ xác nhận",
-                trangThaiThanhToan: "Chưa thanh toán",
-                createdAt: new Date().toISOString(),
-                createdAtServer: serverTimestamp()
+            const cartRef = doc(db, "carts", currentUser.uid);
+            const cartSnap = await getDoc(cartRef);
+
+            let items = cartSnap.exists() ? cartSnap.data().items || [] : [];
+
+            foodCart.forEach(foodItem => {
+                const existing = items.find(
+                    item => item.type === "food" && item.id === foodItem.id
+                );
+
+                if (existing) {
+                    existing.soLuong += foodItem.soLuong;
+                } else {
+                    items.push(foodItem);
+                }
             });
 
-            alert("Tạo đơn đồ ăn thành công!");
+            await setDoc(cartRef, {
+                items,
+                updatedAt: new Date().toISOString()
+            });
+
+            alert("Đã thêm đồ ăn vào giỏ hàng chung!");
+
             foodCart = [];
             renderFoodCart();
 
+            window.location.href = "giohang.html";
+
         } catch (error) {
             console.error(error);
-            alert("Tạo đơn đồ ăn thất bại!");
+            alert("Thêm vào giỏ hàng thất bại!");
         }
     };
 
