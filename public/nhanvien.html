@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhân Viên - SportBooking</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h2>Staff Role</h2>
+            <nav>
+                <ul>
+                    <li><a href="#calendar-section">Xem lịch sân</a></li>
+                    <li><a href="#booking-section">Đơn đặt sân (Hotline)</a></li>
+                    <li><a href="#contact-section">Phản hồi khách hàng</a></li>
+                    <li><a href="#food-section">Đơn đồ ăn & Kho</a></li>
+                </ul>
+            </nav>
+            <button id="btnLogout">Đăng xuất</button>
+        </aside>
+
+        <main class="main-content">
+            <section id="calendar-section" class="card">
+                <h3>Calendar - Lịch Sân</h3>
+                <div id="calendarView"></div>
+            </section>
+
+            <section id="booking-section" class="card">
+                <h3>Quản Lý Đặt Sân</h3>
+                <button id="btnCreateBooking" class="btn-primary">Tạo Đơn Đặt Sân (Hotline)</button>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn</th>
+                            <th>Khách Hàng</th>
+                            <th>Ngày Giờ</th>
+                            <th>Trạng Thái</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingList"></tbody>
+                </table>
+            </section>
+
+            <section id="contact-section" class="card">
+                <h3>Liên Hệ & Phản Hồi (Contact)</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Khách Hàng</th>
+                            <th>Nội Dung</th>
+                            <th>Phản Hồi (Reply)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contactList"></tbody>
+                </table>
+            </section>
+
+            <section id="food-section" class="card">
+                <h3>Quản Lý Đồ Ăn & Kho (Inventory)</h3>
+                <div class="flex-actions">
+                    <button id="btnCounterOrder" class="btn-primary">Tạo Đơn Tại Quầy (Counter)</button>
+                </div>
+                <h4>Danh Sách Đơn Đồ Ăn (Food Order)</h4>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn</th>
+                            <th>Loại Đơn</th>
+                            <th>Trạng Thái</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foodOrderList"></tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/nhanvien.js"></script>
+</body>
+</html>
