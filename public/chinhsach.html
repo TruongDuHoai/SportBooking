@@ -126,79 +126,12 @@
     </header>
 
     <div class="policy-container">
-        <div class="policy-card">
-            <h2> Chính sách đặt sân</h2>
 
-            <p><strong>Đặt sân trực tuyến:</strong> Khách hàng có thể chọn ngày và khung giờ còn trống để đặt sân trực tiếp trên hệ thống.</p>
+    <div id="policyList">
 
-            <p><strong>Thêm vào giỏ hàng:</strong> Sau khi chọn khung giờ, sân sẽ được thêm vào giỏ hàng để kiểm tra lại trước khi thanh toán.</p>
-
-            <p><strong>Xác nhận đơn:</strong> Sau khi thanh toán hoặc xác nhận đơn, hệ thống sẽ lưu đơn ở trạng thái <strong>Chờ xác nhận</strong>.</p>
-
-            <p><strong>Duyệt đơn:</strong> Quản trị viên sẽ kiểm tra và cập nhật trạng thái đơn thành:
-            <ul>
-                <li>Đã xác nhận</li>
-                <li>Đã hoàn thành</li>
-                <li>Đã hủy</li>
-            </ul>
-            </p>
-        </div>
-
-        <div class="policy-card" id="hoantien">
-            <h2> Chính sách hủy đơn</h2>
-
-            <p><strong>Đơn đang chờ xác nhận:</strong> Khách hàng có thể chủ động hủy trong mục lịch sử đơn.</p>
-
-            <p><strong>Đơn đã xác nhận:</strong> Không thể hủy trực tiếp trên hệ thống. Vui lòng liên hệ sân để được hỗ trợ.</p>
-
-            <p><strong>Khung giờ đã qua:</strong> Hệ thống không hỗ trợ hoàn tiền hoặc đổi lịch.</p>
-        </div>
-
-        <div class="policy-card">
-            <h2> Chính sách thanh toán</h2>
-
-            <p>Hệ thống hỗ trợ các hình thức:</p>
-
-            <ul>
-                <li>Thanh toán tiền mặt tại sân</li>
-                <li>Chuyển khoản ngân hàng</li>
-                <li>Ví điện tử (nếu có)</li>
-            </ul>
-
-            <p>Sau khi thanh toán, đơn hàng sẽ được lưu lại trong lịch sử để theo dõi.</p>
-        </div>
-
-        <div class="policy-card">
-            <h2> Chính sách đặt đồ ăn / nước uống</h2>
-
-            <p>Khách hàng có thể đặt thêm đồ ăn hoặc nước uống cùng lúc với đơn thuê sân.</p>
-
-            <p>Các món ăn sẽ được cộng chung vào giỏ hàng và thanh toán cùng đơn đặt sân.</p>
-
-            <p>Nếu món hết hàng, nhân viên sẽ liên hệ để thay đổi hoặc hoàn lại phần tiền tương ứng.</p>
-        </div>
-
-        <div class="policy-card">
-            <h2> Chính sách đánh giá</h2>
-
-            <p>Sau khi sử dụng sân, khách hàng có thể để lại đánh giá và nhận xét trực tiếp trên trang chi tiết sân.</p>
-
-            <p>Các đánh giá sẽ được hiển thị công khai sau khi gửi để giúp người dùng khác tham khảo.</p>
-        </div>
-
-        <div class="policy-card">
-            <h2> Liên hệ hỗ trợ</h2>
-
-            <p><strong>Email:</strong> support@sportbooking.com</p>
-
-            <p><strong>Hotline:</strong> 1900 1234</p>
-
-            <p><strong>Thời gian hỗ trợ:</strong> 08:00 - 21:00 hàng ngày</p>
-
-            <p><strong>Địa chỉ sân:</strong> Quận 12, TP.HCM</p>
-        </div>
     </div>
 
+</div>
     <footer>
         <div class="footer-content">
             <div>
@@ -231,6 +164,11 @@
             onAuthStateChanged,
             signOut
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
@@ -243,6 +181,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
 
         const loginBtn = document.getElementById("loginBtn");
         const userDropdownArea = document.getElementById("userDropdownArea");
@@ -276,7 +215,46 @@
             await signOut(auth);
             window.location.href = "index.html";
         };
+async function loadPolicies() {
 
+    const container =
+        document.getElementById("policyList");
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "policies"
+                )
+            );
+
+        let html = "";
+
+        snapshot.forEach(docSnap => {
+
+            const data =
+                docSnap.data();
+
+            html += `
+                <div class="policy-card">
+                    <h2>${data.title}</h2>
+                    <p>${data.content}</p>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+    } catch(error){
+
+        console.error(
+            "Lỗi tải chính sách:",
+            error
+        );
+    }
+}
         document.addEventListener("click", (e) => {
             if (
                 userDropdownArea &&
@@ -285,7 +263,7 @@
             ) {
                 dropdownMenu.style.display = "none";
             }
-        });
+        }); loadPolicies();
     </script>
 </body>
 </html>

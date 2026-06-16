@@ -272,12 +272,19 @@
             // Admin thấy đầy đủ menu, Staff chỉ thấy Lịch sân
             let sidebarHtml = '';
             if (currentUserRole === 'admin') {
-                sidebarHtml = `
-                    <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                    <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
-                    <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
-                    <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
-                    <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
+                    sidebarHtml = `
+                        <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                        <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
+                        <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
+                        <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
+                        <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
+                        <a href="#" data-tab="policies"><i class="fas fa-file-contract"></i> Quản lý chính sách</a>
+                        <a href="#" data-tab="promotions"><i class="fas fa-tags"></i> Quản lý khuyến mãi</a>
+                        <a href="#" data-tab="banners"><i class="fas fa-images"></i> Quản lý banner</a>
+                        <a href="#" data-tab="comments"><i class="fas fa-comments"></i> Duyệt bình luận</a>
+                        <a href="#" data-tab="feedback"><i class="fas fa-envelope"></i> Phản hồi khách hàng</a>
+                        <a href="#" data-tab="mostBookedReport"> <i class="fas fa-chart-bar"></i> Báo cáo sân đặt nhiều nhất </a>
+
                 `;
             } else {
                 sidebarHtml = `
@@ -295,6 +302,12 @@
                         <div id="bookingsTab" style="display:none;"></div>
                         <div id="sansTab" style="display:none;"></div>
                         <div id="usersTab" style="display:none;"></div>
+                        <div id="policiesTab" style="display:none;"></div>
+                        <div id="promotionsTab" style="display:none;"></div>
+                        <div id="bannersTab" style="display:none;"></div>
+                        <div id="commentsTab" style="display:none;"></div>
+                        <div id="feedbackTab" style="display:none;"></div>
+                        <div id="mostBookedReportTab" style="display:none;"></div>
                     </div>
                 </div>
             `;
@@ -310,11 +323,26 @@
                     document.getElementById('bookingsTab').style.display = tab === 'bookings' ? 'block' : 'none';
                     document.getElementById('sansTab').style.display = tab === 'sans' ? 'block' : 'none';
                     document.getElementById('usersTab').style.display = tab === 'users' ? 'block' : 'none';
+                    document.getElementById('policiesTab').style.display = tab === 'policies' ? 'block' : 'none';
+                    document.getElementById('promotionsTab').style.display = tab === 'promotions' ? 'block' : 'none';
+                    document.getElementById('bannersTab').style.display = tab === 'banners' ? 'block' : 'none';
+                    document.getElementById('commentsTab').style.display = tab === 'comments' ? 'block' : 'none';
+                    document.getElementById('feedbackTab').style.display = tab === 'feedback' ? 'block' : 'none';
+                    document.getElementById('mostBookedReportTab').style.display = tab === 'mostBookedReport' ? 'block' : 'none';
+
                     if (tab === 'dashboard') loadDashboard();
                     if (tab === 'calendar') loadCalendar();
                     if (tab === 'bookings') loadBookings();
                     if (tab === 'sans') loadSans();
                     if (tab === 'users') loadUsers();
+                    if (tab === 'policies') loadPolicies();
+                    if (tab === 'promotions') loadPromotions();
+                    if (tab === 'banners') loadBanners();
+                    if (tab === 'comments') loadComments();
+                    if (tab === 'feedback') loadFeedback();
+                    if (tab === 'mostBookedReport') {
+    loadMostBookedSanReport();
+}
                 };
             });
             
@@ -359,7 +387,6 @@
             document.getElementById('nextMonthBtn').onclick = () => { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendarGrid(); };
             renderCalendarGrid();
         }
-        
         // Thay thế hàm renderCalendarGrid bằng code sau:
         async function renderCalendarGrid() {
             if (!currentSanId) { 
@@ -770,50 +797,542 @@
             document.querySelectorAll('.status-pending, .status-confirmed, .status-cancelled').forEach(select => { select.onchange = async () => { if (confirm('Cập nhật trạng thái?')) { await updateDoc(doc(db, "donDat", select.dataset.id), { trangThai: select.value }); loadBookings(); } }; });
             document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa đơn này?')) { await deleteDoc(doc(db, "donDat", btn.dataset.id)); loadBookings(); } }; });
         }
+async function loadSans() {
+    const snapshot = await getDocs(
+        collection(db, "san")
+    );
 
-        async function loadSans() {
-            const snapshot = await getDocs(collection(db, "san"));
-            let html = `<div class="card-header"><h2><i class="fas fa-futbol"></i> Quản lý sân</h2><button class="btn-add" id="addSanBtn"><i class="fas fa-plus"></i> Thêm sân</button></div><div class="data-table"><table><thead><tr><th>STT</th><th>Tên sân</th><th>Loại</th><th>Giá/giờ</th><th>Địa chỉ</th><th>Thao tác</th></tr></thead><tbody>`;
-            let stt = 1;
-            for (const docSnap of snapshot.docs) {
-                const s = docSnap.data();
-                let loaiText = s.loai === 'caulong' ? 'Cầu lông' : (s.loai === 'pickleball' ? 'Pickleball' : 'Bóng đá');
-                html += `<tr>
-                    <td>${stt++}</td>
-                    <td>${s.ten}</td>
-                    <td>${loaiText}</td>
-                    <td>${s.gia.toLocaleString()}đ</td>
-                    <td>${s.diaChi || '---'}</td>
-                    <td><button class="btn-edit" data-id="${docSnap.id}" data-ten="${s.ten}" data-loai="${s.loai}" data-gia="${s.gia}" data-diachi="${s.diaChi || ''}" data-mota="${s.moTa || ''}"><i class="fas fa-edit"></i></button>
-                    <button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
-                </tr>`;
+    let html = `
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-futbol"></i>
+                Quản lý sân
+            </h2>
+
+            <button class="btn-add" id="addSanBtn">
+                <i class="fas fa-plus"></i>
+                Thêm sân
+            </button>
+        </div>
+
+        <div class="data-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Hình ảnh</th>
+                        <th>Tên sân</th>
+                        <th>Loại sân</th>
+                        <th>Giá/giờ</th>
+                        <th>Địa chỉ</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+    `;
+
+    if (snapshot.empty) {
+        html += `
+            <tr>
+                <td colspan="7" style="text-align:center; padding:30px;">
+                    Chưa có sân nào.
+                </td>
+            </tr>
+        `;
+    } else {
+        let stt = 1;
+
+        for (const docSnap of snapshot.docs) {
+            const san = docSnap.data();
+
+            let loaiText = "Bóng đá";
+
+            if (san.loai === "caulong") {
+                loaiText = "Cầu lông";
+            } else if (san.loai === "pickleball") {
+                loaiText = "Pickleball";
             }
-            html += `</tbody></table></div>`;
-            document.getElementById('sansTab').innerHTML = html;
-            document.getElementById('addSanBtn').onclick = () => showSanModal();
-            document.querySelectorAll('.btn-edit').forEach(btn => { btn.onclick = () => showSanModal(btn.dataset); });
-            document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa sân này?')) { await deleteDoc(doc(db, "san", btn.dataset.id)); loadSans(); } }; });
-        }
 
-        function showSanModal(data = null) {
-            const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
-            modal.innerHTML = `<div class="modal-content"><h3>${data ? 'Sửa sân' : 'Thêm sân mới'}</h3>
-                <input type="text" id="sanTen" placeholder="Tên sân" value="${data ? data.ten : ''}">
-                <select id="sanLoai"><option value="caulong" ${data && data.loai === 'caulong' ? 'selected' : ''}>Cầu lông</option><option value="pickleball" ${data && data.loai === 'pickleball' ? 'selected' : ''}>Pickleball</option><option value="bongda" ${data && data.loai === 'bongda' ? 'selected' : ''}>Bóng đá</option></select>
-                <input type="number" id="sanGia" placeholder="Giá mỗi giờ (VNĐ)" value="${data ? data.gia : ''}">
-                <input type="text" id="sanDiaChi" placeholder="Địa chỉ" value="${data ? data.diachi : ''}">
-                <textarea id="sanMoTa" rows="3" placeholder="Mô tả sân">${data ? data.mota : ''}</textarea>
-                <div class="modal-buttons"><button class="btn-save" id="saveSanBtn">Lưu</button><button class="btn-cancel" id="cancelModalBtn">Hủy</button></div></div>`;
-            document.body.appendChild(modal);
-            document.getElementById('saveSanBtn').onclick = async () => {
-                const sanData = { ten: document.getElementById('sanTen').value, loai: document.getElementById('sanLoai').value, gia: parseInt(document.getElementById('sanGia').value), diaChi: document.getElementById('sanDiaChi').value, moTa: document.getElementById('sanMoTa').value, hinhAnh: "https://images.unsplash.com/photo-1534158914592-062992fbea52" };
-                if (!sanData.ten || !sanData.gia) { alert('Vui lòng nhập đầy đủ!'); return; }
-                if (data && data.id) await updateDoc(doc(db, "san", data.id), sanData);
-                else await addDoc(collection(db, "san"), sanData);
-                modal.remove(); loadSans(); loadDashboard();
-            };
-            document.getElementById('cancelModalBtn').onclick = () => modal.remove();
+            const imageUrl =
+                san.hinhAnh ||
+                "https://placehold.co/160x100?text=Chua+co+anh";
+
+            html += `
+                <tr>
+                    <td>${stt++}</td>
+
+                    <td>
+                        <img
+                            src="${imageUrl}"
+                            alt="Ảnh ${san.ten || "sân"}"
+                            style="
+                                width:120px;
+                                height:80px;
+                                object-fit:cover;
+                                border-radius:8px;
+                                border:1px solid #ddd;
+                            "
+                            onerror="
+                                this.onerror=null;
+                                this.src='https://placehold.co/160x100?text=Loi+anh';
+                            "
+                        >
+                    </td>
+
+                    <td>${san.ten || "---"}</td>
+
+                    <td>${loaiText}</td>
+
+                    <td>
+                        ${(san.gia || 0).toLocaleString()}đ
+                    </td>
+
+                    <td>${san.diaChi || "---"}</td>
+
+                    <td>
+                        <button
+                            class="btn-edit"
+                            data-id="${docSnap.id}"
+                            title="Sửa sân"
+                        >
+                            <i class="fas fa-edit"></i>
+                        </button>
+
+                        <button
+                            class="btn-delete"
+                            data-id="${docSnap.id}"
+                            title="Xóa sân"
+                        >
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
         }
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    const container =
+        document.getElementById("sansTab");
+
+    container.innerHTML = html;
+
+    document
+        .getElementById("addSanBtn")
+        .onclick = () => {
+            showSanModal();
+        };
+
+    document
+        .querySelectorAll("#sansTab .btn-edit")
+        .forEach((button) => {
+            button.onclick = () => {
+                showSanModal(button.dataset.id);
+            };
+        });
+
+    document
+        .querySelectorAll("#sansTab .btn-delete")
+        .forEach((button) => {
+            button.onclick = async () => {
+                const confirmed = confirm(
+                    "Bạn có chắc muốn xóa sân này?"
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                try {
+                    await deleteDoc(
+                        doc(
+                            db,
+                            "san",
+                            button.dataset.id
+                        )
+                    );
+
+                    alert("Đã xóa sân thành công!");
+
+                    loadSans();
+                    loadDashboard();
+
+                } catch (error) {
+                    console.error(
+                        "Lỗi xóa sân:",
+                        error
+                    );
+
+                    alert(
+                        "Không thể xóa sân: " +
+                        error.message
+                    );
+                }
+            };
+        });
+}
+
+        async function showSanModal(sanId = null) {
+    const defaultImage =
+        "https://placehold.co/600x350?text=Chua+co+anh";
+
+    let sanData = null;
+
+    if (sanId) {
+        try {
+            const sanSnapshot = await getDoc(
+                doc(
+                    db,
+                    "san",
+                    sanId
+                )
+            );
+
+            if (!sanSnapshot.exists()) {
+                alert("Không tìm thấy thông tin sân!");
+                return;
+            }
+
+            sanData = sanSnapshot.data();
+
+        } catch (error) {
+            console.error(
+                "Lỗi tải thông tin sân:",
+                error
+            );
+
+            alert(
+                "Không thể tải thông tin sân: " +
+                error.message
+            );
+
+            return;
+        }
+    }
+
+    const modal =
+        document.createElement("div");
+
+    modal.className = "modal";
+    modal.style.display = "flex";
+
+    modal.innerHTML = `
+        <div
+            class="modal-content"
+            style="
+                max-height:90vh;
+                overflow-y:auto;
+            "
+        >
+            <h3 id="sanModalTitle">
+                ${sanId ? "Cập nhật sân" : "Thêm sân mới"}
+            </h3>
+
+            <label>Tên sân</label>
+
+            <input
+                type="text"
+                id="sanTen"
+                placeholder="Ví dụ: Sân bóng đá Bình Thạnh"
+            >
+
+            <label>Loại sân</label>
+
+            <select id="sanLoai">
+                <option value="caulong">
+                    Cầu lông
+                </option>
+
+                <option value="pickleball">
+                    Pickleball
+                </option>
+
+                <option value="bongda">
+                    Bóng đá
+                </option>
+            </select>
+
+            <label>Giá mỗi giờ</label>
+
+            <input
+                type="number"
+                id="sanGia"
+                min="1"
+                placeholder="Ví dụ: 200000"
+            >
+
+            <label>Địa chỉ sân</label>
+
+            <input
+                type="text"
+                id="sanDiaChi"
+                placeholder="Nhập địa chỉ sân"
+            >
+
+            <label>Mô tả sân</label>
+
+            <textarea
+                id="sanMoTa"
+                rows="4"
+                placeholder="Mô tả mặt sân, tiện ích, giờ hoạt động..."
+            ></textarea>
+
+            <label>Đường link hình ảnh sân</label>
+
+            <input
+                type="url"
+                id="sanHinhAnh"
+                placeholder="https://example.com/anh-san.jpg"
+            >
+
+            <p
+                style="
+                    color:#666;
+                    font-size:13px;
+                    margin-bottom:10px;
+                "
+            >
+                Dán đường link trực tiếp của ảnh. Không nhập đường dẫn
+                C:\\Users\\... trong máy tính.
+            </p>
+
+            <div
+                style="
+                    width:100%;
+                    margin-bottom:15px;
+                    text-align:center;
+                "
+            >
+                <img
+                    id="sanImagePreview"
+                    src="${defaultImage}"
+                    alt="Xem trước hình ảnh sân"
+                    style="
+                        width:100%;
+                        height:250px;
+                        object-fit:cover;
+                        border-radius:10px;
+                        border:1px solid #ddd;
+                    "
+                >
+            </div>
+
+            <div class="modal-buttons">
+                <button
+                    class="btn-save"
+                    id="saveSanBtn"
+                >
+                    Lưu sân
+                </button>
+
+                <button
+                    class="btn-cancel"
+                    id="cancelSanModalBtn"
+                >
+                    Hủy
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const tenInput =
+        document.getElementById("sanTen");
+
+    const loaiSelect =
+        document.getElementById("sanLoai");
+
+    const giaInput =
+        document.getElementById("sanGia");
+
+    const diaChiInput =
+        document.getElementById("sanDiaChi");
+
+    const moTaInput =
+        document.getElementById("sanMoTa");
+
+    const hinhAnhInput =
+        document.getElementById("sanHinhAnh");
+
+    const imagePreview =
+        document.getElementById("sanImagePreview");
+
+    if (sanData) {
+        tenInput.value =
+            sanData.ten || "";
+
+        loaiSelect.value =
+            sanData.loai || "caulong";
+
+        giaInput.value =
+            sanData.gia || "";
+
+        diaChiInput.value =
+            sanData.diaChi || "";
+
+        moTaInput.value =
+            sanData.moTa || "";
+
+        hinhAnhInput.value =
+            sanData.hinhAnh || "";
+
+        imagePreview.src =
+            sanData.hinhAnh || defaultImage;
+    }
+
+    hinhAnhInput.oninput = () => {
+        const imageUrl =
+            hinhAnhInput.value.trim();
+
+        imagePreview.onerror = () => {
+            imagePreview.onerror = null;
+            imagePreview.src = defaultImage;
+        };
+
+        imagePreview.src =
+            imageUrl || defaultImage;
+    };
+
+    document
+        .getElementById("saveSanBtn")
+        .onclick = async () => {
+            const ten =
+                tenInput.value.trim();
+
+            const loai =
+                loaiSelect.value;
+
+            const gia =
+                Number(giaInput.value);
+
+            const diaChi =
+                diaChiInput.value.trim();
+
+            const moTa =
+                moTaInput.value.trim();
+
+            const hinhAnh =
+                hinhAnhInput.value.trim();
+
+            if (!ten) {
+                alert("Vui lòng nhập tên sân!");
+                tenInput.focus();
+                return;
+            }
+
+            if (
+                !Number.isFinite(gia) ||
+                gia <= 0
+            ) {
+                alert(
+                    "Giá sân phải là một số lớn hơn 0!"
+                );
+
+                giaInput.focus();
+                return;
+            }
+
+            if (!diaChi) {
+                alert(
+                    "Vui lòng nhập địa chỉ sân!"
+                );
+
+                diaChiInput.focus();
+                return;
+            }
+
+            if (
+                hinhAnh &&
+                !hinhAnh.startsWith("http://") &&
+                !hinhAnh.startsWith("https://")
+            ) {
+                alert(
+                    "Link ảnh phải bắt đầu bằng http:// hoặc https://"
+                );
+
+                hinhAnhInput.focus();
+                return;
+            }
+
+            const newSanData = {
+                ten: ten,
+                loai: loai,
+                gia: gia,
+                diaChi: diaChi,
+                moTa: moTa,
+                hinhAnh: hinhAnh || defaultImage,
+                updatedAt: new Date()
+            };
+
+            try {
+                if (sanId) {
+                    await updateDoc(
+                        doc(
+                            db,
+                            "san",
+                            sanId
+                        ),
+                        newSanData
+                    );
+
+                    alert(
+                        "Cập nhật sân thành công!"
+                    );
+
+                } else {
+                    await addDoc(
+                        collection(
+                            db,
+                            "san"
+                        ),
+                        {
+                            ...newSanData,
+                            createdAt: new Date()
+                        }
+                    );
+
+                    alert(
+                        "Thêm sân thành công!"
+                    );
+                }
+
+                modal.remove();
+
+                loadSans();
+                loadDashboard();
+
+            } catch (error) {
+                console.error(
+                    "Lỗi lưu sân:",
+                    error
+                );
+
+                alert(
+                    "Không thể lưu sân: " +
+                    error.message
+                );
+            }
+        };
+
+    document
+        .getElementById("cancelSanModalBtn")
+        .onclick = () => {
+            modal.remove();
+        };
+
+    modal.onclick = (event) => {
+        if (event.target === modal) {
+            modal.remove();
+        }
+    };
+}
 
         function showAddUserModal() {
             const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
@@ -1006,15 +1525,3024 @@
             
             renderUserTable(users);
         }
+    async function loadPolicies() {
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) { 
-                currentUser = user; 
-                await renderAdminPanel(); 
-            } else { 
-                window.location.href = 'dangnhap.html'; 
+        const container =
+            document.getElementById('policiesTab');
+
+    container.innerHTML = `
+        <div class="card-header">
+            <h2>Quản lý chính sách</h2>
+        </div>
+
+        <div class="data-table" style="padding:20px">
+
+            <label>Loại chính sách</label>
+
+            <select
+                id="policySelect"
+                style="
+                    width:100%;
+                    padding:10px;
+                    margin-bottom:20px;
+                "
+            >
+                <option value="bookingPolicy">
+                    Chính sách đặt sân
+                </option>
+
+                <option value="cancelPolicy">
+                    Chính sách hủy đơn
+                </option>
+
+                <option value="paymentPolicy">
+                    Chính sách thanh toán
+                </option>
+
+                <option value="foodPolicy">
+                    Chính sách đồ ăn nước uống
+                </option>
+
+                <option value="reviewPolicy">
+                    Chính sách đánh giá
+                </option>
+
+                <option value="supportPolicy">
+                    Liên hệ hỗ trợ
+                </option>
+
+            </select>
+
+            <label>Tiêu đề</label>
+
+            <input
+                id="policyTitle"
+                style="
+                    width:100%;
+                    padding:10px;
+                    margin-bottom:20px;
+                "
+            >
+
+            <label>Nội dung</label>
+
+            <textarea
+                id="policyContent"
+                rows="10"
+                style="
+                    width:100%;
+                    padding:10px;
+                    margin-bottom:20px;
+                "
+            ></textarea>
+
+            <button
+                class="btn-add"
+                id="savePolicyBtn"
+            >
+                Lưu chính sách
+            </button>
+
+        </div>
+    `;
+        try {
+
+            const currentPolicy =
+        document.getElementById(
+            "policySelect"
+        ).value;
+
+    const snap = await getDoc(
+        doc(
+            db,
+            "policies",
+            currentPolicy
+        )
+    );
+            if (snap.exists()) {
+
+                const data =
+                    snap.data();
+
+                document
+                    .getElementById(
+                        "policyTitle"
+                    ).value =
+                    data.title || "";
+
+                document
+                    .getElementById(
+                        "policyContent"
+                    ).value =
+                    data.content || "";
+            }
+
+        } catch(error){
+
+            console.error(error);
+        }
+    document
+    .getElementById(
+        "policySelect"
+    )
+    .onchange =
+    loadPolicies;
+        document
+        .getElementById(
+            "savePolicyBtn"
+        )
+        .onclick =
+        async () => {
+
+            const title =
+                document
+                .getElementById(
+                    "policyTitle"
+                )
+                .value;
+
+            const content =
+                document
+                .getElementById(
+                    "policyContent"
+                )
+                .value;
+
+            const currentPolicy =
+        document.getElementById(
+            "policySelect"
+        ).value;
+
+    await setDoc(
+
+        doc(
+            db,
+            "policies",
+            currentPolicy
+        ),
+
+        {
+            title,
+            content,
+            updatedAt: new Date()
+        }
+
+    );
+
+            alert(
+                "Lưu chính sách thành công!"
+            );
+        };
+    }
+    async function loadPromotions() {
+
+    const container =
+        document.getElementById('promotionsTab');
+
+    container.innerHTML = `
+        <div class="card-header">
+            <h2>Quản lý khuyến mãi</h2>
+        </div>
+
+        <div class="data-table" style="padding:20px">
+
+            <label>Tiêu đề</label>
+            <input
+                id="promoTitle"
+                style="width:100%;padding:10px;margin-bottom:15px;"
+            >
+
+            <label>Mô tả</label>
+            <textarea
+                id="promoDescription"
+                rows="4"
+                style="width:100%;padding:10px;margin-bottom:15px;"
+            ></textarea>
+
+            <label>Mã khuyến mãi</label>
+            <input
+                id="promoCode"
+                style="width:100%;padding:10px;margin-bottom:15px;"
+            >
+
+            <label>Giảm giá (%)</label>
+            <input
+                type="number"
+                id="promoDiscount"
+                style="width:100%;padding:10px;margin-bottom:15px;"
+            >
+
+            <button
+                class="btn-add"
+                id="savePromoBtn"
+            >
+                Thêm khuyến mãi
+            </button>
+
+            <hr style="margin:20px 0">
+
+            <div id="promoList"></div>
+
+        </div>
+    `;
+
+    // Hiển thị danh sách khuyến mãi
+    const listContainer =
+        document.getElementById('promoList');
+
+    const snapshot =
+        await getDocs(
+            collection(
+                db,
+                "promotions"
+            )
+        );
+
+    let html = "";
+
+    snapshot.forEach(docSnap => {
+
+        const data = docSnap.data();
+
+        html += `
+            <div style="
+                border:1px solid #ddd;
+                padding:15px;
+                margin-bottom:10px;
+                border-radius:8px;
+            ">
+                <b>${data.title}</b><br>
+
+                Mã:
+                ${data.code}<br>
+
+                Giảm:
+                ${data.discount}%<br>
+
+                <button
+                    class="btn-delete"
+                    onclick="deletePromotion('${docSnap.id}')"
+                >
+                    Xóa
+                </button>
+            </div>
+        `;
+    });
+
+    listContainer.innerHTML = html;
+
+    document
+    .getElementById(
+        "savePromoBtn"
+    )
+    .onclick =
+    async () => {
+
+        await addDoc(
+            collection(
+                db,
+                "promotions"
+            ),
+            {
+                title:
+                    document.getElementById(
+                        "promoTitle"
+                    ).value,
+
+                description:
+                    document.getElementById(
+                        "promoDescription"
+                    ).value,
+
+                code:
+                    document.getElementById(
+                        "promoCode"
+                    ).value,
+
+                discount:
+                    Number(
+                        document.getElementById(
+                            "promoDiscount"
+                        ).value
+                    ),
+
+                active: true,
+
+                createdAt:
+                    new Date()
+            }
+        );
+
+        alert(
+            "Đã thêm khuyến mãi!"
+        );
+
+        loadPromotions();
+    };
+}
+window.deletePromotion =
+async function(id){
+
+    if(
+        !confirm(
+            "Xóa khuyến mãi?"
+        )
+    ) return;
+
+    await deleteDoc(
+        doc(
+            db,
+            "promotions",
+            id
+        )
+    );
+
+    loadPromotions();
+};
+async function loadBanners() {
+    const container = document.getElementById("bannersTab");
+
+    container.innerHTML = `
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-images"></i>
+                Quản lý banner
+            </h2>
+        </div>
+
+        <div class="data-table" style="padding: 20px;">
+            Đang tải danh sách banner...
+        </div>
+    `;
+
+    try {
+        const snapshot = await getDocs(
+            collection(db, "banners")
+        );
+
+        const banners = [];
+
+        snapshot.forEach((docSnap) => {
+            banners.push({
+                id: docSnap.id,
+                ...docSnap.data()
+            });
+        });
+
+        banners.sort((a, b) => {
+            const orderA = Number(a.displayOrder || 0);
+            const orderB = Number(b.displayOrder || 0);
+
+            return orderA - orderB;
+        });
+
+        let html = `
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-images"></i>
+                    Quản lý banner
+                </h2>
+
+                <button
+                    class="btn-add"
+                    id="addBannerBtn"
+                >
+                    <i class="fas fa-plus"></i>
+                    Thêm banner
+                </button>
+            </div>
+
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Hình ảnh</th>
+                            <th>Tiêu đề</th>
+                            <th>Nội dung</th>
+                            <th>Nút</th>
+                            <th>Thứ tự</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+        `;
+
+        if (banners.length === 0) {
+            html += `
+                <tr>
+                    <td
+                        colspan="8"
+                        style="
+                            text-align: center;
+                            padding: 30px;
+                        "
+                    >
+                        Chưa có banner nào trong Firebase.
+                    </td>
+                </tr>
+            `;
+        } else {
+            let stt = 1;
+
+            for (const banner of banners) {
+                const imageUrl =
+                    banner.imageUrl ||
+                    "https://placehold.co/320x140?text=Banner";
+
+                const title =
+                    banner.title || "---";
+
+                const description =
+                    banner.description || "---";
+
+                const buttonText =
+                    banner.buttonText || "---";
+
+                const displayOrder =
+                    banner.displayOrder ?? 0;
+
+                const isActive =
+                    banner.active === true;
+
+                const statusText =
+                    isActive
+                        ? "Đang hiển thị"
+                        : "Đang ẩn";
+
+                const statusClass =
+                    isActive
+                        ? "status-active"
+                        : "status-inactive";
+
+                const toggleButtonText =
+                    isActive
+                        ? "Ẩn"
+                        : "Hiện";
+
+                html += `
+                    <tr>
+                        <td>${stt++}</td>
+
+                        <td>
+                            <img
+                                src="${imageUrl}"
+                                alt="${title}"
+                                style="
+                                    width: 160px;
+                                    height: 80px;
+                                    object-fit: cover;
+                                    border-radius: 8px;
+                                    border: 1px solid #ddd;
+                                "
+                                onerror="
+                                    this.onerror = null;
+                                    this.src = 'https://placehold.co/320x140?text=Loi+anh';
+                                "
+                            >
+                        </td>
+
+                        <td>
+                            <strong>${title}</strong>
+                        </td>
+
+                        <td>${description}</td>
+
+                        <td>${buttonText}</td>
+
+                        <td>${displayOrder}</td>
+
+                        <td>
+                            <span class="${statusClass}">
+                                ${statusText}
+                            </span>
+                        </td>
+
+                        <td>
+                            <button 
+                            class="btn-edit banner-edit-btn" 
+                            data-id="${banner.id}" 
+                            title="Sửa banner"
+                            > 
+                             <i class="fas fa-edit"></i> 
+                             Sửa 
+                             </button>
+                            <button
+                                class="btn-block banner-toggle-btn"
+                                data-id="${banner.id}"
+                                data-active="${isActive}"
+                                title="${toggleButtonText} banner"
+                            >
+                                <i class="fas fa-eye"></i>
+                                ${toggleButtonText}
+                            </button>
+
+                            <button
+                                class="btn-delete banner-delete-btn"
+                                data-id="${banner.id}"
+                                title="Xóa banner"
+                            >
+                                <i class="fas fa-trash"></i>
+                                Xóa
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        document
+            .getElementById("addBannerBtn")
+            .onclick = () => {
+                showBannerModal();
+            };
+document
+    .querySelectorAll("#bannersTab .banner-edit-btn")
+    .forEach((button) => {
+        button.onclick = () => {
+            const bannerId = button.dataset.id;
+
+            console.log(
+                "Đang sửa banner có ID:",
+                bannerId
+            );
+
+            showBannerModal(bannerId);
+        };
+    });
+
+        document
+            .querySelectorAll(
+                "#bannersTab .banner-toggle-btn"
+            )
+            .forEach((button) => {
+                button.onclick = async () => {
+                    const bannerId =
+                        button.dataset.id;
+
+                    const currentActive =
+                        button.dataset.active === "true";
+
+                    const newActive =
+                        !currentActive;
+
+                    const message =
+                        newActive
+                            ? "Hiển thị banner này?"
+                            : "Ẩn banner này?";
+
+                    if (!confirm(message)) {
+                        return;
+                    }
+
+                    try {
+                        await updateDoc(
+                            doc(
+                                db,
+                                "banners",
+                                bannerId
+                            ),
+                            {
+                                active: newActive,
+                                updatedAt: new Date()
+                            }
+                        );
+
+                        alert(
+                            newActive
+                                ? "Đã hiển thị banner!"
+                                : "Đã ẩn banner!"
+                        );
+
+                        loadBanners();
+
+                    } catch (error) {
+                        console.error(
+                            "Lỗi cập nhật banner:",
+                            error
+                        );
+
+                        alert(
+                            "Không thể cập nhật banner: " +
+                            error.message
+                        );
+                    }
+                };
+            });
+
+        document
+            .querySelectorAll(
+                "#bannersTab .banner-delete-btn"
+            )
+            .forEach((button) => {
+                button.onclick = async () => {
+                    const bannerId =
+                        button.dataset.id;
+
+                    const confirmed = confirm(
+                        "Bạn có chắc muốn xóa banner này?"
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    try {
+                        await deleteDoc(
+                            doc(
+                                db,
+                                "banners",
+                                bannerId
+                            )
+                        );
+
+                        alert(
+                            "Đã xóa banner thành công!"
+                        );
+
+                        loadBanners();
+
+                    } catch (error) {
+                        console.error(
+                            "Lỗi xóa banner:",
+                            error
+                        );
+
+                        alert(
+                            "Không thể xóa banner: " +
+                            error.message
+                        );
+                    }
+                };
+            });
+
+    } catch (error) {
+        console.error(
+            "Lỗi tải danh sách banner:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-images"></i>
+                    Quản lý banner
+                </h2>
+            </div>
+
+            <div
+                class="data-table"
+                style="
+                    padding: 20px;
+                    color: red;
+                "
+            >
+                Không thể tải dữ liệu banner:
+                ${error.message}
+            </div>
+        `;
+    }
+}
+async function loadComments() {
+    const container = document.getElementById("commentsTab");
+
+    container.innerHTML = `
+        <div class="content-header">
+            <div>
+                <h2>Duyệt bình luận</h2>
+                <p>Quản lý đánh giá và bình luận của khách hàng</p>
+            </div>
+        </div>
+
+        <div style="
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        ">
+            Đang tải bình luận...
+        </div>
+    `;
+
+    try {
+        const snapshot = await getDocs(
+            collection(db, "comments")
+        );
+
+        const comments = [];
+
+        snapshot.forEach((docSnap) => {
+            comments.push({
+                ...docSnap.data(),
+                id: docSnap.id
+            });
+        });
+
+        comments.sort((a, b) => {
+            const timeA = a.createdAt?.toDate
+                ? a.createdAt.toDate().getTime()
+                : 0;
+
+            const timeB = b.createdAt?.toDate
+                ? b.createdAt.toDate().getTime()
+                : 0;
+
+            return timeB - timeA;
+        });
+
+        const escapeHTML = (value) => {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        };
+
+        const formatDate = (value) => {
+            if (!value) {
+                return "Không rõ";
+            }
+
+            let date;
+
+            if (typeof value.toDate === "function") {
+                date = value.toDate();
+            } else {
+                date = new Date(value);
+            }
+
+            if (Number.isNaN(date.getTime())) {
+                return "Không rõ";
+            }
+
+            return date.toLocaleString("vi-VN");
+        };
+
+        const getStatusInfo = (status) => {
+            if (status === "approved") {
+                return {
+                    text: "Đã duyệt",
+                    background: "#dcfce7",
+                    color: "#166534"
+                };
+            }
+
+            if (status === "rejected") {
+                return {
+                    text: "Đã từ chối",
+                    background: "#fee2e2",
+                    color: "#991b1b"
+                };
+            }
+
+            return {
+                text: "Chờ duyệt",
+                background: "#fef3c7",
+                color: "#92400e"
+            };
+        };
+
+        const pendingCount = comments.filter(
+            (item) => (item.status || "pending") === "pending"
+        ).length;
+
+        const approvedCount = comments.filter(
+            (item) => item.status === "approved"
+        ).length;
+
+        const rejectedCount = comments.filter(
+            (item) => item.status === "rejected"
+        ).length;
+
+        let html = `
+            <div class="content-header">
+                <div>
+                    <h2>Duyệt bình luận</h2>
+                    <p>Quản lý đánh giá và bình luận của khách hàng</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-add"
+                    id="reloadCommentsBtn"
+                >
+                    <i class="fas fa-rotate"></i>
+                    Tải lại
+                </button>
+            </div>
+
+            <div style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                margin-bottom: 20px;
+            ">
+                <div style="
+                    background: #fef3c7;
+                    padding: 16px;
+                    border-radius: 10px;
+                ">
+                    <div style="font-size: 13px; color: #92400e;">
+                        Chờ duyệt
+                    </div>
+
+                    <strong style="font-size: 24px; color: #92400e;">
+                        ${pendingCount}
+                    </strong>
+                </div>
+
+                <div style="
+                    background: #dcfce7;
+                    padding: 16px;
+                    border-radius: 10px;
+                ">
+                    <div style="font-size: 13px; color: #166534;">
+                        Đã duyệt
+                    </div>
+
+                    <strong style="font-size: 24px; color: #166534;">
+                        ${approvedCount}
+                    </strong>
+                </div>
+
+                <div style="
+                    background: #fee2e2;
+                    padding: 16px;
+                    border-radius: 10px;
+                ">
+                    <div style="font-size: 13px; color: #991b1b;">
+                        Đã từ chối
+                    </div>
+
+                    <strong style="font-size: 24px; color: #991b1b;">
+                        ${rejectedCount}
+                    </strong>
+                </div>
+            </div>
+        `;
+
+        if (comments.length === 0) {
+            html += `
+                <div style="
+                    background: white;
+                    padding: 40px;
+                    border-radius: 10px;
+                    text-align: center;
+                    color: #666;
+                ">
+                    <i
+                        class="fas fa-comments"
+                        style="font-size: 40px; margin-bottom: 15px;"
+                    ></i>
+
+                    <p>Chưa có bình luận nào.</p>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            document
+                .getElementById("reloadCommentsBtn")
+                .addEventListener("click", loadComments);
+
+            return;
+        }
+
+        html += `
+            <div style="
+                background: white;
+                border-radius: 10px;
+                overflow-x: auto;
+            ">
+                <table style="
+                    width: 100%;
+                    border-collapse: collapse;
+                ">
+                    <thead>
+                        <tr style="background: #f8fafc;">
+                            <th style="padding: 12px; text-align: left;">
+                                Khách hàng
+                            </th>
+
+                            <th style="padding: 12px; text-align: left;">
+                                Sân
+                            </th>
+
+                            <th style="padding: 12px; text-align: center;">
+                                Đánh giá
+                            </th>
+
+                            <th style="padding: 12px; text-align: left;">
+                                Bình luận
+                            </th>
+
+                            <th style="padding: 12px; text-align: left;">
+                                Thời gian
+                            </th>
+
+                            <th style="padding: 12px; text-align: center;">
+                                Trạng thái
+                            </th>
+
+                            <th style="padding: 12px; text-align: center;">
+                                Thao tác
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+        `;
+
+        comments.forEach((comment) => {
+            const status = comment.status || "pending";
+            const statusInfo = getStatusInfo(status);
+
+            const userName =
+                comment.userName ||
+                comment.name ||
+                "Khách hàng";
+
+            const userEmail =
+                comment.userEmail ||
+                comment.email ||
+                "";
+
+            const tenSan =
+                comment.tenSan ||
+                comment.sanName ||
+                comment.sanId ||
+                "Không rõ";
+
+            const content =
+                comment.content ||
+                comment.message ||
+                comment.comment ||
+                "";
+
+            const rating = Number(comment.rating || 0);
+
+            const stars =
+                "★".repeat(Math.min(Math.max(rating, 0), 5)) +
+                "☆".repeat(5 - Math.min(Math.max(rating, 0), 5));
+
+            html += `
+                <tr style="border-top: 1px solid #e5e7eb;">
+                    <td style="padding: 12px; min-width: 150px;">
+                        <strong>${escapeHTML(userName)}</strong>
+
+                        <div style="
+                            color: #64748b;
+                            font-size: 12px;
+                            margin-top: 4px;
+                        ">
+                            ${escapeHTML(userEmail)}
+                        </div>
+                    </td>
+
+                    <td style="padding: 12px; min-width: 140px;">
+                        ${escapeHTML(tenSan)}
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        text-align: center;
+                        color: #f59e0b;
+                        white-space: nowrap;
+                    ">
+                        ${stars}
+
+                        <div style="
+                            color: #64748b;
+                            font-size: 12px;
+                            margin-top: 3px;
+                        ">
+                            ${rating}/5
+                        </div>
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        min-width: 230px;
+                        max-width: 350px;
+                        white-space: normal;
+                        overflow-wrap: anywhere;
+                    ">
+                        ${escapeHTML(content)}
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        min-width: 140px;
+                        font-size: 13px;
+                    ">
+                        ${formatDate(comment.createdAt)}
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        text-align: center;
+                    ">
+                        <span style="
+                            display: inline-block;
+                            padding: 5px 10px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            background: ${statusInfo.background};
+                            color: ${statusInfo.color};
+                            white-space: nowrap;
+                        ">
+                            ${statusInfo.text}
+                        </span>
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        text-align: center;
+                        min-width: 210px;
+                    ">
+                        ${
+                            status !== "approved"
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="btn-save comment-approve-btn"
+                                        data-id="${comment.id}"
+                                        style="margin: 2px;"
+                                    >
+                                        <i class="fas fa-check"></i>
+                                        Duyệt
+                                    </button>
+                                `
+                                : ""
+                        }
+
+                        ${
+                            status !== "rejected"
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="btn-cancel comment-reject-btn"
+                                        data-id="${comment.id}"
+                                        style="margin: 2px;"
+                                    >
+                                        <i class="fas fa-ban"></i>
+                                        Từ chối
+                                    </button>
+                                `
+                                : ""
+                        }
+
+                        <button
+                            type="button"
+                            class="btn-delete comment-delete-btn"
+                            data-id="${comment.id}"
+                            style="margin: 2px;"
+                        >
+                            <i class="fas fa-trash"></i>
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        document
+            .getElementById("reloadCommentsBtn")
+            .addEventListener("click", loadComments);
+
+        document
+            .querySelectorAll(".comment-approve-btn")
+            .forEach((button) => {
+                button.addEventListener("click", async () => {
+                    const commentId = button.dataset.id;
+
+                    const confirmed = confirm(
+                        "Bạn có chắc muốn duyệt bình luận này?"
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    try {
+                        button.disabled = true;
+
+                        await updateDoc(
+                            doc(db, "comments", commentId),
+                            {
+                                status: "approved",
+                                approvedAt: new Date(),
+                                approvedBy:
+                                    auth.currentUser?.email || "admin",
+                                updatedAt: new Date()
+                            }
+                        );
+
+                        alert("Đã duyệt bình luận!");
+                        loadComments();
+
+                    } catch (error) {
+                        console.error(
+                            "Lỗi duyệt bình luận:",
+                            error
+                        );
+
+                        alert(
+                            "Không thể duyệt bình luận: " +
+                            error.message
+                        );
+
+                        button.disabled = false;
+                    }
+                });
+            });
+
+        document
+            .querySelectorAll(".comment-reject-btn")
+            .forEach((button) => {
+                button.addEventListener("click", async () => {
+                    const commentId = button.dataset.id;
+
+                    const confirmed = confirm(
+                        "Bạn có chắc muốn từ chối bình luận này?"
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    try {
+                        button.disabled = true;
+
+                        await updateDoc(
+                            doc(db, "comments", commentId),
+                            {
+                                status: "rejected",
+                                rejectedAt: new Date(),
+                                rejectedBy:
+                                    auth.currentUser?.email || "admin",
+                                updatedAt: new Date()
+                            }
+                        );
+
+                        alert("Đã từ chối bình luận!");
+                        loadComments();
+
+                    } catch (error) {
+                        console.error(
+                            "Lỗi từ chối bình luận:",
+                            error
+                        );
+
+                        alert(
+                            "Không thể từ chối bình luận: " +
+                            error.message
+                        );
+
+                        button.disabled = false;
+                    }
+                });
+            });
+
+        document
+            .querySelectorAll(".comment-delete-btn")
+            .forEach((button) => {
+                button.addEventListener("click", async () => {
+                    const commentId = button.dataset.id;
+
+                    const confirmed = confirm(
+                        "Bạn có chắc muốn xóa vĩnh viễn bình luận này?"
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    try {
+                        button.disabled = true;
+
+                        await deleteDoc(
+                            doc(db, "comments", commentId)
+                        );
+
+                        alert("Đã xóa bình luận!");
+                        loadComments();
+
+                    } catch (error) {
+                        console.error(
+                            "Lỗi xóa bình luận:",
+                            error
+                        );
+
+                        alert(
+                            "Không thể xóa bình luận: " +
+                            error.message
+                        );
+
+                        button.disabled = false;
+                    }
+                });
+            });
+
+    } catch (error) {
+        console.error(
+            "Lỗi tải bình luận:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="content-header">
+                <div>
+                    <h2>Duyệt bình luận</h2>
+                    <p>Quản lý đánh giá và bình luận của khách hàng</p>
+                </div>
+            </div>
+
+            <div style="
+                background: #fee2e2;
+                color: #991b1b;
+                padding: 20px;
+                border-radius: 10px;
+            ">
+                Không thể tải bình luận:
+                ${error.message}
+            </div>
+        `;
+    }
+}
+async function loadFeedback() {
+    const container = document.getElementById("feedbackTab");
+
+    container.innerHTML = `
+        <div class="content-header">
+            <div>
+                <h2>Phản hồi khách hàng</h2>
+                <p>Xem và xử lý những góp ý, yêu cầu của khách hàng</p>
+            </div>
+        </div>
+
+        <div style="
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        ">
+            Đang tải phản hồi...
+        </div>
+    `;
+
+    try {
+        const snapshot = await getDocs(
+            collection(db, "feedback")
+        );
+
+        const feedbackList = [];
+
+        snapshot.forEach((docSnap) => {
+            feedbackList.push({
+                ...docSnap.data(),
+                id: docSnap.id
+            });
+        });
+
+        const getTime = (value) => {
+            if (!value) return 0;
+
+            if (typeof value.toDate === "function") {
+                return value.toDate().getTime();
+            }
+
+            const date = new Date(value);
+            return Number.isNaN(date.getTime())
+                ? 0
+                : date.getTime();
+        };
+
+        feedbackList.sort(
+            (a, b) =>
+                getTime(b.createdAt) -
+                getTime(a.createdAt)
+        );
+
+        const escapeHTML = (value) => {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
+        const formatDate = (value) => {
+            if (!value) return "Không rõ";
+
+            const date =
+                typeof value.toDate === "function"
+                    ? value.toDate()
+                    : new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return "Không rõ";
+            }
+
+            return date.toLocaleString("vi-VN");
+        };
+
+        const normalizeStatus = (status) => {
+            const value = String(status || "new")
+                .trim()
+                .toLowerCase();
+
+            if (
+                value === "processed" ||
+                value === "đã xử lý"
+            ) {
+                return "processed";
+            }
+
+            if (
+                value === "read" ||
+                value === "đã xem"
+            ) {
+                return "read";
+            }
+
+            return "new";
+        };
+
+        const getStatusInfo = (status) => {
+            const normalizedStatus =
+                normalizeStatus(status);
+
+            if (normalizedStatus === "processed") {
+                return {
+                    text: "Đã xử lý",
+                    background: "#dcfce7",
+                    color: "#166534"
+                };
+            }
+
+            if (normalizedStatus === "read") {
+                return {
+                    text: "Đã xem",
+                    background: "#dbeafe",
+                    color: "#1e40af"
+                };
+            }
+
+            return {
+                text: "Mới",
+                background: "#fef3c7",
+                color: "#92400e"
+            };
+        };
+
+        const newCount = feedbackList.filter(
+            (item) =>
+                normalizeStatus(item.status) === "new"
+        ).length;
+
+        const readCount = feedbackList.filter(
+            (item) =>
+                normalizeStatus(item.status) === "read"
+        ).length;
+
+        const processedCount = feedbackList.filter(
+            (item) =>
+                normalizeStatus(item.status) ===
+                "processed"
+        ).length;
+
+        let html = `
+            <div class="content-header">
+                <div>
+                    <h2>Phản hồi khách hàng</h2>
+                    <p>Xem và xử lý những góp ý, yêu cầu của khách hàng</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-add"
+                    id="reloadFeedbackBtn"
+                >
+                    <i class="fas fa-rotate"></i>
+                    Tải lại
+                </button>
+            </div>
+
+            <div style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                margin-bottom: 20px;
+            ">
+                <div style="
+                    background: #fef3c7;
+                    padding: 16px;
+                    border-radius: 10px;
+                ">
+                    <div style="color: #92400e;">
+                        Phản hồi mới
+                    </div>
+
+                    <strong style="
+                        font-size: 24px;
+                        color: #92400e;
+                    ">
+                        ${newCount}
+                    </strong>
+                </div>
+
+                <div style="
+                    background: #dbeafe;
+                    padding: 16px;
+                    border-radius: 10px;
+                ">
+                    <div style="color: #1e40af;">
+                        Đã xem
+                    </div>
+
+                    <strong style="
+                        font-size: 24px;
+                        color: #1e40af;
+                    ">
+                        ${readCount}
+                    </strong>
+                </div>
+
+                <div style="
+                    background: #dcfce7;
+                    padding: 16px;
+                    border-radius: 10px;
+                ">
+                    <div style="color: #166534;">
+                        Đã xử lý
+                    </div>
+
+                    <strong style="
+                        font-size: 24px;
+                        color: #166534;
+                    ">
+                        ${processedCount}
+                    </strong>
+                </div>
+            </div>
+        `;
+
+        if (feedbackList.length === 0) {
+            html += `
+                <div style="
+                    background: white;
+                    padding: 40px;
+                    border-radius: 10px;
+                    text-align: center;
+                    color: #64748b;
+                ">
+                    <i
+                        class="fas fa-envelope-open"
+                        style="
+                            font-size: 40px;
+                            margin-bottom: 15px;
+                        "
+                    ></i>
+
+                    <p>Chưa có phản hồi khách hàng.</p>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            document
+                .getElementById("reloadFeedbackBtn")
+                .addEventListener(
+                    "click",
+                    loadFeedback
+                );
+
+            return;
+        }
+
+        html += `
+            <div style="
+                background: white;
+                border-radius: 10px;
+                overflow-x: auto;
+            ">
+                <table style="
+                    width: 100%;
+                    border-collapse: collapse;
+                ">
+                    <thead>
+                        <tr style="background: #f8fafc;">
+                            <th style="
+                                padding: 12px;
+                                text-align: left;
+                            ">
+                                Khách hàng
+                            </th>
+
+                            <th style="
+                                padding: 12px;
+                                text-align: left;
+                            ">
+                                Chủ đề
+                            </th>
+
+                            <th style="
+                                padding: 12px;
+                                text-align: left;
+                            ">
+                                Nội dung
+                            </th>
+
+                            <th style="
+                                padding: 12px;
+                                text-align: left;
+                            ">
+                                Thời gian
+                            </th>
+
+                            <th style="
+                                padding: 12px;
+                                text-align: center;
+                            ">
+                                Trạng thái
+                            </th>
+
+                            <th style="
+                                padding: 12px;
+                                text-align: center;
+                            ">
+                                Thao tác
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+        `;
+
+        feedbackList.forEach((feedback) => {
+            const statusInfo =
+                getStatusInfo(feedback.status);
+
+            const normalizedStatus =
+                normalizeStatus(feedback.status);
+
+            const userName =
+                feedback.userName ||
+                feedback.name ||
+                "Khách hàng";
+
+            const email =
+                feedback.email ||
+                feedback.userEmail ||
+                "";
+
+            const subject =
+                feedback.subject ||
+                feedback.title ||
+                "Không có chủ đề";
+
+            const message =
+                feedback.message ||
+                feedback.content ||
+                "";
+
+            const shortMessage =
+                message.length > 80
+                    ? message.substring(0, 80) + "..."
+                    : message;
+
+            html += `
+                <tr style="
+                    border-top: 1px solid #e5e7eb;
+                ">
+                    <td style="
+                        padding: 12px;
+                        min-width: 170px;
+                    ">
+                        <strong>
+                            ${escapeHTML(userName)}
+                        </strong>
+
+                        <div style="
+                            color: #64748b;
+                            font-size: 12px;
+                            margin-top: 4px;
+                        ">
+                            ${escapeHTML(email)}
+                        </div>
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        min-width: 160px;
+                    ">
+                        ${escapeHTML(subject)}
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        min-width: 250px;
+                        max-width: 350px;
+                        overflow-wrap: anywhere;
+                    ">
+                        ${escapeHTML(shortMessage)}
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        min-width: 150px;
+                        font-size: 13px;
+                    ">
+                        ${formatDate(feedback.createdAt)}
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        text-align: center;
+                    ">
+                        <span style="
+                            display: inline-block;
+                            padding: 5px 10px;
+                            border-radius: 20px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            background:
+                                ${statusInfo.background};
+                            color: ${statusInfo.color};
+                            white-space: nowrap;
+                        ">
+                            ${statusInfo.text}
+                        </span>
+                    </td>
+
+                    <td style="
+                        padding: 12px;
+                        text-align: center;
+                        min-width: 210px;
+                    ">
+                        <button
+                            type="button"
+                            class="
+                                btn-edit
+                                feedback-view-btn
+                            "
+                            data-id="${feedback.id}"
+                            style="margin: 2px;"
+                        >
+                            <i class="fas fa-eye"></i>
+                            Xem
+                        </button>
+
+                        ${
+                            normalizedStatus !== "processed"
+                                ? `
+                                    <button
+                                        type="button"
+                                        class="
+                                            btn-save
+                                            feedback-process-btn
+                                        "
+                                        data-id="${feedback.id}"
+                                        style="margin: 2px;"
+                                    >
+                                        <i class="fas fa-check"></i>
+                                        Đã xử lý
+                                    </button>
+                                `
+                                : ""
+                        }
+
+                        <button
+                            type="button"
+                            class="
+                                btn-delete
+                                feedback-delete-btn
+                            "
+                            data-id="${feedback.id}"
+                            style="margin: 2px;"
+                        >
+                            <i class="fas fa-trash"></i>
+                            Xóa
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        document
+            .getElementById("reloadFeedbackBtn")
+            .addEventListener(
+                "click",
+                loadFeedback
+            );
+
+        document
+            .querySelectorAll(".feedback-view-btn")
+            .forEach((button) => {
+                button.addEventListener(
+                    "click",
+                    async () => {
+                        const feedbackId =
+                            button.dataset.id;
+
+                        const feedback =
+                            feedbackList.find(
+                                (item) =>
+                                    item.id === feedbackId
+                            );
+
+                        if (!feedback) return;
+
+                        if (
+                            normalizeStatus(
+                                feedback.status
+                            ) === "new"
+                        ) {
+                            try {
+                                await updateDoc(
+                                    doc(
+                                        db,
+                                        "feedback",
+                                        feedbackId
+                                    ),
+                                    {
+                                        status: "read",
+                                        readAt: new Date(),
+                                        readBy:
+                                            auth.currentUser
+                                                ?.email ||
+                                            "admin",
+                                        updatedAt:
+                                            new Date()
+                                    }
+                                );
+
+                                feedback.status = "read";
+
+                            } catch (error) {
+                                console.error(
+                                    "Lỗi đánh dấu đã xem:",
+                                    error
+                                );
+                            }
+                        }
+
+                        showFeedbackDetailModal(
+                            feedbackId,
+                            feedback
+                        );
+                    }
+                );
+            });
+
+        document
+            .querySelectorAll(
+                ".feedback-process-btn"
+            )
+            .forEach((button) => {
+                button.addEventListener(
+                    "click",
+                    async () => {
+                        const feedbackId =
+                            button.dataset.id;
+
+                        const confirmed = confirm(
+                            "Đánh dấu phản hồi này là đã xử lý?"
+                        );
+
+                        if (!confirmed) return;
+
+                        try {
+                            button.disabled = true;
+
+                            await updateDoc(
+                                doc(
+                                    db,
+                                    "feedback",
+                                    feedbackId
+                                ),
+                                {
+                                    status: "processed",
+                                    processedAt:
+                                        new Date(),
+                                    processedBy:
+                                        auth.currentUser
+                                            ?.email ||
+                                        "admin",
+                                    updatedAt:
+                                        new Date()
+                                }
+                            );
+
+                            alert(
+                                "Đã đánh dấu phản hồi là đã xử lý!"
+                            );
+
+                            loadFeedback();
+
+                        } catch (error) {
+                            console.error(
+                                "Lỗi xử lý phản hồi:",
+                                error
+                            );
+
+                            alert(
+                                "Không thể cập nhật: " +
+                                error.message
+                            );
+
+                            button.disabled = false;
+                        }
+                    }
+                );
+            });
+
+        document
+            .querySelectorAll(
+                ".feedback-delete-btn"
+            )
+            .forEach((button) => {
+                button.addEventListener(
+                    "click",
+                    async () => {
+                        const feedbackId =
+                            button.dataset.id;
+
+                        const confirmed = confirm(
+                            "Bạn có chắc muốn xóa phản hồi này?"
+                        );
+
+                        if (!confirmed) return;
+
+                        try {
+                            button.disabled = true;
+
+                            await deleteDoc(
+                                doc(
+                                    db,
+                                    "feedback",
+                                    feedbackId
+                                )
+                            );
+
+                            alert(
+                                "Đã xóa phản hồi!"
+                            );
+
+                            loadFeedback();
+
+                        } catch (error) {
+                            console.error(
+                                "Lỗi xóa phản hồi:",
+                                error
+                            );
+
+                            alert(
+                                "Không thể xóa phản hồi: " +
+                                error.message
+                            );
+
+                            button.disabled = false;
+                        }
+                    }
+                );
+            });
+
+    } catch (error) {
+        console.error(
+            "Lỗi tải phản hồi:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="content-header">
+                <div>
+                    <h2>Phản hồi khách hàng</h2>
+                    <p>Không thể tải dữ liệu phản hồi</p>
+                </div>
+            </div>
+
+            <div style="
+                background: #fee2e2;
+                color: #991b1b;
+                padding: 20px;
+                border-radius: 10px;
+            ">
+                Lỗi: ${error.message}
+            </div>
+        `;
+    }
+}
+async function loadMostBookedSanReport() {
+    const container = document.getElementById(
+        "mostBookedReportTab"
+    );
+
+    container.innerHTML = `
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-chart-bar"></i>
+                Báo cáo sân được đặt nhiều nhất
+            </h2>
+        </div>
+
+        <div class="data-table">
+            <p style="padding: 20px; text-align: center;">
+                Đang tải dữ liệu báo cáo...
+            </p>
+        </div>
+    `;
+
+    try {
+        const snapshot = await getDocs(
+            collection(db, "donDat")
+        );
+
+        const bookings = snapshot.docs.map((docSnap) => {
+            return {
+                id: docSnap.id,
+                ...docSnap.data()
+            };
+        });
+
+        const confirmedBookings = bookings.filter(
+            (booking) =>
+                booking.trangThai === "đã_xác_nhận"
+        );
+
+        const reportMap = {};
+
+        confirmedBookings.forEach((booking) => {
+            const sanKey =
+                booking.sanId ||
+                booking.tenSan ||
+                "khong_xac_dinh";
+
+            if (!reportMap[sanKey]) {
+                reportMap[sanKey] = {
+                    sanId: booking.sanId || "",
+                    tenSan:
+                        booking.tenSan ||
+                        "Không xác định",
+                    soLuotDat: 0,
+                    tongSoGio: 0,
+                    doanhThu: 0
+                };
+            }
+
+            const gioBatDau = Number(
+                booking.gioBatDau
+            );
+
+            const gioKetThuc = Number(
+                booking.gioKetThuc
+            );
+
+            let soGio = gioKetThuc - gioBatDau;
+
+            if (
+                !Number.isFinite(soGio) ||
+                soGio <= 0
+            ) {
+                soGio = 1;
+            }
+
+            reportMap[sanKey].soLuotDat += 1;
+
+            reportMap[sanKey].tongSoGio +=
+                soGio;
+
+            reportMap[sanKey].doanhThu +=
+                Number(booking.tongTien || 0);
+        });
+
+        const reportList = Object.values(
+            reportMap
+        ).sort((a, b) => {
+            if (b.soLuotDat !== a.soLuotDat) {
+                return b.soLuotDat - a.soLuotDat;
+            }
+
+            return b.doanhThu - a.doanhThu;
+        });
+
+        const tongLuotDat =
+            reportList.reduce(
+                (total, item) =>
+                    total + item.soLuotDat,
+                0
+            );
+
+        const tongSoGio =
+            reportList.reduce(
+                (total, item) =>
+                    total + item.tongSoGio,
+                0
+            );
+
+        const tongDoanhThu =
+            reportList.reduce(
+                (total, item) =>
+                    total + item.doanhThu,
+                0
+            );
+
+        const sanTop = reportList[0] || null;
+
+        const formatMoney = (value) => {
+            return Number(value || 0)
+                .toLocaleString("vi-VN") + "đ";
+        };
+
+        const escapeHTML = (value) => {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
+        let html = `
+            <div class="card-header">
+                <div>
+                    <h2>
+                        <i class="fas fa-chart-bar"></i>
+                        Báo cáo sân được đặt nhiều nhất
+                    </h2>
+
+                    <p style="
+                        margin-top: 6px;
+                        color: #64748b;
+                    ">
+                        Chỉ tính những đơn đã xác nhận
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="btn-add"
+                    id="reloadMostBookedReportBtn"
+                >
+                    <i class="fas fa-sync-alt"></i>
+                    Tải lại
+                </button>
+            </div>
+
+            <div style="
+                display: grid;
+                grid-template-columns:
+                    repeat(4, minmax(180px, 1fr));
+                gap: 15px;
+                margin-bottom: 20px;
+            ">
+                <div style="
+                    background: white;
+                    padding: 18px;
+                    border-radius: 10px;
+                    border-left: 5px solid #2563eb;
+                    box-shadow: 0 2px 8px
+                        rgba(0, 0, 0, 0.06);
+                ">
+                    <div style="
+                        color: #64748b;
+                        font-size: 13px;
+                    ">
+                        Tổng lượt đặt
+                    </div>
+
+                    <strong style="
+                        display: block;
+                        margin-top: 8px;
+                        font-size: 25px;
+                        color: #1e3a8a;
+                    ">
+                        ${tongLuotDat}
+                    </strong>
+                </div>
+
+                <div style="
+                    background: white;
+                    padding: 18px;
+                    border-radius: 10px;
+                    border-left: 5px solid #16a34a;
+                    box-shadow: 0 2px 8px
+                        rgba(0, 0, 0, 0.06);
+                ">
+                    <div style="
+                        color: #64748b;
+                        font-size: 13px;
+                    ">
+                        Tổng số giờ
+                    </div>
+
+                    <strong style="
+                        display: block;
+                        margin-top: 8px;
+                        font-size: 25px;
+                        color: #166534;
+                    ">
+                        ${tongSoGio} giờ
+                    </strong>
+                </div>
+
+                <div style="
+                    background: white;
+                    padding: 18px;
+                    border-radius: 10px;
+                    border-left: 5px solid #f59e0b;
+                    box-shadow: 0 2px 8px
+                        rgba(0, 0, 0, 0.06);
+                ">
+                    <div style="
+                        color: #64748b;
+                        font-size: 13px;
+                    ">
+                        Tổng doanh thu
+                    </div>
+
+                    <strong style="
+                        display: block;
+                        margin-top: 8px;
+                        font-size: 23px;
+                        color: #92400e;
+                    ">
+                        ${formatMoney(tongDoanhThu)}
+                    </strong>
+                </div>
+
+                <div style="
+                    background: white;
+                    padding: 18px;
+                    border-radius: 10px;
+                    border-left: 5px solid #9333ea;
+                    box-shadow: 0 2px 8px
+                        rgba(0, 0, 0, 0.06);
+                ">
+                    <div style="
+                        color: #64748b;
+                        font-size: 13px;
+                    ">
+                        Sân được đặt nhiều nhất
+                    </div>
+
+                    <strong style="
+                        display: block;
+                        margin-top: 8px;
+                        font-size: 18px;
+                        color: #6b21a8;
+                    ">
+                        ${
+                            sanTop
+                                ? escapeHTML(sanTop.tenSan)
+                                : "Chưa có dữ liệu"
+                        }
+                    </strong>
+
+                    ${
+                        sanTop
+                            ? `
+                                <div style="
+                                    color: #64748b;
+                                    font-size: 13px;
+                                    margin-top: 5px;
+                                ">
+                                    ${sanTop.soLuotDat} lượt đặt
+                                </div>
+                            `
+                            : ""
+                    }
+                </div>
+            </div>
+        `;
+
+        if (reportList.length === 0) {
+            html += `
+                <div class="data-table">
+                    <div style="
+                        padding: 45px 20px;
+                        text-align: center;
+                        color: #64748b;
+                    ">
+                        <i
+                            class="fas fa-chart-bar"
+                            style="
+                                font-size: 42px;
+                                margin-bottom: 15px;
+                            "
+                        ></i>
+
+                        <p>
+                            Chưa có đơn đặt sân đã xác nhận
+                            để lập báo cáo.
+                        </p>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            document
+                .getElementById(
+                    "reloadMostBookedReportBtn"
+                )
+                .addEventListener(
+                    "click",
+                    loadMostBookedSanReport
+                );
+
+            return;
+        }
+
+        const maxBookingCount =
+            reportList[0].soLuotDat || 1;
+
+        html += `
+            <div class="data-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">
+                                Xếp hạng
+                            </th>
+
+                            <th>Tên sân</th>
+
+                            <th style="text-align: center;">
+                                Số lượt đặt
+                            </th>
+
+                            <th style="text-align: center;">
+                                Tổng số giờ
+                            </th>
+
+                            <th>Doanh thu</th>
+
+                            <th style="min-width: 220px;">
+                                Tỷ lệ lượt đặt
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+        `;
+
+        reportList.forEach((item, index) => {
+            const percentage =
+                tongLuotDat > 0
+                    ? (
+                        item.soLuotDat /
+                        tongLuotDat *
+                        100
+                    ).toFixed(1)
+                    : 0;
+
+            const barWidth =
+                item.soLuotDat /
+                maxBookingCount *
+                100;
+
+            let rankIcon = `${index + 1}`;
+
+            if (index === 0) {
+                rankIcon = "🥇";
+            } else if (index === 1) {
+                rankIcon = "🥈";
+            } else if (index === 2) {
+                rankIcon = "🥉";
+            }
+
+            html += `
+                <tr>
+                    <td style="
+                        text-align: center;
+                        font-size: 20px;
+                        font-weight: bold;
+                    ">
+                        ${rankIcon}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${escapeHTML(item.tenSan)}
+                        </strong>
+
+                        ${
+                            item.sanId
+                                ? `
+                                    <div style="
+                                        color: #64748b;
+                                        font-size: 11px;
+                                        margin-top: 4px;
+                                    ">
+                                        ID: ${escapeHTML(item.sanId)}
+                                    </div>
+                                `
+                                : ""
+                        }
+                    </td>
+
+                    <td style="
+                        text-align: center;
+                        font-weight: bold;
+                    ">
+                        ${item.soLuotDat}
+                    </td>
+
+                    <td style="text-align: center;">
+                        ${item.tongSoGio} giờ
+                    </td>
+
+                    <td style="
+                        font-weight: 600;
+                        color: #166534;
+                    ">
+                        ${formatMoney(item.doanhThu)}
+                    </td>
+
+                    <td>
+                        <div style="
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        ">
+                            <div style="
+                                flex: 1;
+                                height: 10px;
+                                background: #e5e7eb;
+                                border-radius: 20px;
+                                overflow: hidden;
+                            ">
+                                <div style="
+                                    width: ${barWidth}%;
+                                    height: 100%;
+                                    background: #2563eb;
+                                    border-radius: 20px;
+                                "></div>
+                            </div>
+
+                            <strong style="
+                                min-width: 50px;
+                                font-size: 13px;
+                            ">
+                                ${percentage}%
+                            </strong>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+
+            <p style="
+                text-align: right;
+                color: #64748b;
+                font-size: 12px;
+                margin-top: 12px;
+            ">
+                Cập nhật lúc:
+                ${new Date().toLocaleString("vi-VN")}
+            </p>
+        `;
+
+        container.innerHTML = html;
+
+        document
+            .getElementById(
+                "reloadMostBookedReportBtn"
+            )
+            .addEventListener(
+                "click",
+                loadMostBookedSanReport
+            );
+
+    } catch (error) {
+        console.error(
+            "Lỗi tạo báo cáo sân:",
+            error
+        );
+
+        container.innerHTML = `
+            <div class="card-header">
+                <h2>
+                    <i class="fas fa-chart-bar"></i>
+                    Báo cáo sân được đặt nhiều nhất
+                </h2>
+            </div>
+
+            <div style="
+                padding: 20px;
+                background: #fee2e2;
+                color: #991b1b;
+                border-radius: 10px;
+            ">
+                Không thể tải báo cáo:
+                ${error.message}
+            </div>
+        `;
+    }
+}
+
+function showFeedbackDetailModal(
+    feedbackId,
+    feedback
+) {
+    const escapeHTML = (value) => {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
+    const modal = document.createElement("div");
+
+    modal.className = "modal";
+    modal.style.display = "flex";
+
+    modal.innerHTML = `
+        <div
+            class="modal-content"
+            style="
+                max-width: 650px;
+                max-height: 90vh;
+                overflow-y: auto;
+            "
+        >
+            <h3>Chi tiết phản hồi khách hàng</h3>
+
+            <p>
+                <strong>Khách hàng:</strong>
+                ${escapeHTML(
+                    feedback.userName ||
+                    feedback.name ||
+                    "Khách hàng"
+                )}
+            </p>
+
+            <p>
+                <strong>Email:</strong>
+                ${escapeHTML(
+                    feedback.email ||
+                    feedback.userEmail ||
+                    ""
+                )}
+            </p>
+
+            <p>
+                <strong>Số điện thoại:</strong>
+                ${escapeHTML(feedback.phone || "")}
+            </p>
+
+            <p>
+                <strong>Chủ đề:</strong>
+                ${escapeHTML(
+                    feedback.subject ||
+                    feedback.title ||
+                    "Không có chủ đề"
+                )}
+            </p>
+
+            <div style="margin: 15px 0;">
+                <strong>Nội dung phản hồi:</strong>
+
+                <div style="
+                    background: #f8fafc;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin-top: 8px;
+                    white-space: pre-wrap;
+                    overflow-wrap: anywhere;
+                ">
+                    ${escapeHTML(
+                        feedback.message ||
+                        feedback.content ||
+                        ""
+                    )}
+                </div>
+            </div>
+
+            <label for="feedbackAdminNote">
+                Ghi chú của quản trị viên
+            </label>
+
+            <textarea
+                id="feedbackAdminNote"
+                rows="5"
+                placeholder="Nhập ghi chú xử lý..."
+            >${escapeHTML(feedback.adminNote || "")}</textarea>
+
+            <div class="modal-buttons">
+                <button
+                    type="button"
+                    class="btn-save"
+                    id="saveFeedbackNoteBtn"
+                >
+                    Lưu ghi chú
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-save"
+                    id="processFeedbackModalBtn"
+                >
+                    Đánh dấu đã xử lý
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-cancel"
+                    id="closeFeedbackModalBtn"
+                >
+                    Đóng
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document
+        .getElementById("saveFeedbackNoteBtn")
+        .addEventListener("click", async () => {
+            const adminNote = document
+                .getElementById("feedbackAdminNote")
+                .value
+                .trim();
+
+            try {
+                await updateDoc(
+                    doc(db, "feedback", feedbackId),
+                    {
+                        adminNote: adminNote,
+                        updatedAt: new Date()
+                    }
+                );
+
+                alert("Đã lưu ghi chú!");
+
+            } catch (error) {
+                console.error(
+                    "Lỗi lưu ghi chú:",
+                    error
+                );
+
+                alert(
+                    "Không thể lưu ghi chú: " +
+                    error.message
+                );
             }
         });
+
+    document
+        .getElementById(
+            "processFeedbackModalBtn"
+        )
+        .addEventListener("click", async () => {
+            const adminNote = document
+                .getElementById("feedbackAdminNote")
+                .value
+                .trim();
+
+            try {
+                await updateDoc(
+                    doc(db, "feedback", feedbackId),
+                    {
+                        status: "processed",
+                        adminNote: adminNote,
+                        processedAt: new Date(),
+                        processedBy:
+                            auth.currentUser?.email ||
+                            "admin",
+                        updatedAt: new Date()
+                    }
+                );
+
+                alert("Phản hồi đã được xử lý!");
+
+                modal.remove();
+                loadFeedback();
+
+            } catch (error) {
+                console.error(
+                    "Lỗi xử lý phản hồi:",
+                    error
+                );
+
+                alert(
+                    "Không thể xử lý phản hồi: " +
+                    error.message
+                );
+            }
+        });
+
+    document
+        .getElementById("closeFeedbackModalBtn")
+        .addEventListener("click", () => {
+            modal.remove();
+            loadFeedback();
+        });
+
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+            modal.remove();
+            loadFeedback();
+        }
+    });
+}
+
+async function showBannerModal(bannerId = null) {
+    const defaultImage =
+        "https://placehold.co/1200x450?text=Banner";
+let bannerData = null;
+
+if (bannerId) {
+    try {
+        const bannerSnapshot = await getDoc(
+            doc(db, "banners", bannerId)
+        );
+
+        if (!bannerSnapshot.exists()) {
+            alert("Không tìm thấy banner!");
+            return;
+        }
+
+        bannerData = bannerSnapshot.data();
+
+    } catch (error) {
+        console.error(
+            "Lỗi tải thông tin banner:",
+            error
+        );
+
+        alert(
+            "Không thể tải thông tin banner: " +
+            error.message
+        );
+
+        return;
+    }
+}
+
+    const modal = document.createElement("div");
+
+    modal.className = "modal";
+    modal.style.display = "flex";
+
+    modal.innerHTML = `
+        <div
+            class="modal-content"
+            style="max-height: 90vh; overflow-y: auto;"
+        >
+  <h3>
+    ${bannerId ? "Cập nhật banner" : "Thêm banner mới"}
+</h3>
+
+            <label>Tiêu đề banner</label>
+            <input
+                type="text"
+                id="bannerTitle"
+                placeholder="Ví dụ: Ưu đãi mùa hè"
+            >
+
+            <label>Nội dung mô tả</label>
+            <textarea
+                id="bannerDescription"
+                rows="4"
+                placeholder="Ví dụ: Giảm 10% khi đặt sân trong tháng 6"
+            ></textarea>
+
+            <label>Đường link hình ảnh</label>
+            <input
+                type="url"
+                id="bannerImageUrl"
+                placeholder="https://example.com/banner.jpg"
+            >
+
+            <p
+                style="
+                    color: #666;
+                    font-size: 13px;
+                    margin-bottom: 10px;
+                "
+            >
+                Link ảnh phải bắt đầu bằng http:// hoặc https://
+            </p>
+
+            <img
+                id="bannerImagePreview"
+                src="${defaultImage}"
+                alt="Xem trước banner"
+                style="
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    border-radius: 10px;
+                    border: 1px solid #ddd;
+                    margin-bottom: 15px;
+                "
+            >
+
+            <label>Chữ trên nút</label>
+            <input
+                type="text"
+                id="bannerButtonText"
+                placeholder="Ví dụ: Đặt sân ngay"
+            >
+
+            <label>Đường dẫn khi bấm nút</label>
+            <input
+                type="text"
+                id="bannerTargetUrl"
+                placeholder="Ví dụ: datsan.html"
+            >
+
+            <label>Thứ tự hiển thị</label>
+            <input
+                type="number"
+                id="bannerDisplayOrder"
+                min="0"
+                value="1"
+            >
+
+            <label
+                style="
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin: 10px 0;
+                "
+            >
+                <input
+                    type="checkbox"
+                    id="bannerActive"
+                    checked
+                    style="width: auto; margin: 0;"
+                >
+
+                Hiển thị banner
+            </label>
+
+            <div class="modal-buttons">
+                <button
+                    class="btn-save"
+                    id="saveBannerBtn"
+                >
+                    Lưu banner
+                </button>
+
+                <button
+                    class="btn-cancel"
+                    id="cancelBannerBtn"
+                >
+                    Hủy
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const imageInput =
+        document.getElementById("bannerImageUrl");
+
+    const imagePreview =
+        document.getElementById("bannerImagePreview");
+const titleInput =
+    document.getElementById("bannerTitle");
+
+const descriptionInput =
+    document.getElementById("bannerDescription");
+
+const buttonTextInput =
+    document.getElementById("bannerButtonText");
+
+const targetUrlInput =
+    document.getElementById("bannerTargetUrl");
+
+const displayOrderInput =
+    document.getElementById("bannerDisplayOrder");
+
+const activeInput =
+    document.getElementById("bannerActive");
+
+if (bannerData) {
+    titleInput.value =
+        bannerData.title || "";
+
+    descriptionInput.value =
+        bannerData.description || "";
+
+    imageInput.value =
+        bannerData.imageUrl || "";
+
+    imagePreview.src =
+        bannerData.imageUrl || defaultImage;
+
+    buttonTextInput.value =
+        bannerData.buttonText || "";
+
+    targetUrlInput.value =
+        bannerData.targetUrl || "";
+
+    displayOrderInput.value =
+        bannerData.displayOrder ?? 1;
+
+    activeInput.checked =
+        bannerData.active === true;
+}
+    imageInput.addEventListener("input", () => {
+        const imageUrl =
+            imageInput.value.trim();
+
+        imagePreview.src =
+            imageUrl || defaultImage;
+    });
+
+    imagePreview.addEventListener("error", () => {
+        imagePreview.src = defaultImage;
+    });
+
+    document
+        .getElementById("saveBannerBtn")
+        .addEventListener("click", async () => {
+            const title =
+                document
+                    .getElementById("bannerTitle")
+                    .value
+                    .trim();
+
+            const description =
+                document
+                    .getElementById("bannerDescription")
+                    .value
+                    .trim();
+
+            const imageUrl =
+                document
+                    .getElementById("bannerImageUrl")
+                    .value
+                    .trim();
+
+            const buttonText =
+                document
+                    .getElementById("bannerButtonText")
+                    .value
+                    .trim();
+
+            const targetUrl =
+                document
+                    .getElementById("bannerTargetUrl")
+                    .value
+                    .trim();
+
+            const displayOrder =
+                Number(
+                    document
+                        .getElementById("bannerDisplayOrder")
+                        .value
+                );
+
+            const active =
+                document
+                    .getElementById("bannerActive")
+                    .checked;
+
+            if (!title) {
+                alert("Vui lòng nhập tiêu đề banner!");
+                return;
+            }
+
+            if (!imageUrl) {
+                alert("Vui lòng nhập đường link hình ảnh!");
+                return;
+            }
+
+            if (
+                !imageUrl.startsWith("http://") &&
+                !imageUrl.startsWith("https://")
+            ) {
+                alert(
+                    "Link ảnh phải bắt đầu bằng http:// hoặc https://"
+                );
+
+                return;
+            }
+
+            if (
+                !Number.isFinite(displayOrder) ||
+                displayOrder < 0
+            ) {
+                alert(
+                    "Thứ tự hiển thị phải là số từ 0 trở lên!"
+                );
+
+                return;
+            }
+
+const bannerDataToSave = {
+    title: title,
+    description: description,
+    imageUrl: imageUrl,
+    buttonText: buttonText,
+    targetUrl: targetUrl,
+    displayOrder: displayOrder,
+    active: active,
+    updatedAt: new Date()
+};
+
+try {
+    if (bannerId) {
+        await updateDoc(
+            doc(db, "banners", bannerId),
+            bannerDataToSave
+        );
+
+        alert("Cập nhật banner thành công!");
+    } else {
+        await addDoc(
+            collection(db, "banners"),
+            {
+                ...bannerDataToSave,
+                createdAt: new Date()
+            }
+        );
+
+        alert("Thêm banner thành công!");
+    }
+
+    modal.remove();
+    loadBanners();
+
+} catch (error) {
+    console.error(
+        "Lỗi lưu banner:",
+        error
+    );
+
+    alert(
+        "Không thể lưu banner: " +
+        error.message
+    );
+}
+});
+    document
+        .getElementById("cancelBannerBtn")
+        .addEventListener("click", () => {
+            modal.remove();
+        });
+
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) { 
+                    currentUser = user; 
+                    await renderAdminPanel(); 
+                } else { 
+                    window.location.href = 'dangnhap.html'; 
+                }
+            });
     </script>
 </body>
 </html>
