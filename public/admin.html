@@ -356,6 +356,39 @@
         flex-direction: column;
     }
 }
+.slot-selected {
+    background: #2563eb !important;
+    color: white !important;
+    box-shadow: inset 0 0 0 2px #1d4ed8;
+}
+
+.multi-booking-bar {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    background: white;
+    padding: 14px 18px;
+    margin-bottom: 15px;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.multi-booking-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-clear-slots {
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    background: #e5e7eb;
+    color: #374151;
+    cursor: pointer;
+}
     </style>
 </head>
 <body>
@@ -508,6 +541,166 @@
         }
 
         let currentSanId = null;
+        let selectedCalendarSlots = [];
+
+function clearSelectedCalendarSlots() {
+    selectedCalendarSlots = [];
+
+    document
+        .querySelectorAll(".multi-book-slot")
+        .forEach((slot) => {
+            slot.classList.remove("slot-selected");
+        });
+
+    updateSelectedSlotsBar();
+}
+
+function toggleCalendarSlot(slot, tenSan) {
+    const date = slot.dataset.date;
+    const hour = Number(slot.dataset.hour);
+    const price = Number(slot.dataset.price || 0);
+
+    const existingIndex =
+        selectedCalendarSlots.findIndex(
+            (item) =>
+                item.date === date &&
+                item.hour === hour
+        );
+
+    if (existingIndex >= 0) {
+        const selectedHours =
+            selectedCalendarSlots
+                .map((item) => item.hour)
+                .sort((a, b) => a - b);
+
+        const minHour = selectedHours[0];
+        const maxHour =
+            selectedHours[selectedHours.length - 1];
+
+        if (
+            selectedHours.length > 2 &&
+            hour !== minHour &&
+            hour !== maxHour
+        ) {
+            alert(
+                "Chỉ có thể bỏ chọn khung giờ ở đầu hoặc cuối!"
+            );
+            return;
+        }
+
+        selectedCalendarSlots.splice(
+            existingIndex,
+            1
+        );
+
+        slot.classList.remove("slot-selected");
+        updateSelectedSlotsBar();
+        return;
+    }
+
+    if (selectedCalendarSlots.length > 0) {
+        const sameDate =
+            selectedCalendarSlots.every(
+                (item) => item.date === date
+            );
+
+        if (!sameDate) {
+            alert(
+                "Bạn chỉ được chọn nhiều khung giờ trong cùng một ngày!"
+            );
+            return;
+        }
+
+        const selectedHours =
+            selectedCalendarSlots
+                .map((item) => item.hour)
+                .sort((a, b) => a - b);
+
+        const minHour = selectedHours[0];
+        const maxHour =
+            selectedHours[selectedHours.length - 1];
+
+        if (
+            hour !== minHour - 1 &&
+            hour !== maxHour + 1
+        ) {
+            alert(
+                "Các khung giờ phải liên tiếp nhau. Ví dụ: 6h, 7h, 8h."
+            );
+            return;
+        }
+    }
+
+    selectedCalendarSlots.push({
+        date,
+        hour,
+        price,
+        tenSan
+    });
+
+    selectedCalendarSlots.sort(
+        (a, b) => a.hour - b.hour
+    );
+
+    slot.classList.add("slot-selected");
+    updateSelectedSlotsBar();
+}
+
+function updateSelectedSlotsBar() {
+    const bar =
+        document.getElementById(
+            "multiBookingBar"
+        );
+
+    const summary =
+        document.getElementById(
+            "selectedSlotsSummary"
+        );
+
+    if (!bar || !summary) {
+        return;
+    }
+
+    if (selectedCalendarSlots.length === 0) {
+        bar.style.display = "none";
+        summary.textContent = "";
+        return;
+    }
+
+    const slots = [...selectedCalendarSlots]
+        .sort((a, b) => a.hour - b.hour);
+
+    const startHour = slots[0].hour;
+    const endHour =
+        slots[slots.length - 1].hour + 1;
+
+    const totalPrice =
+        slots.reduce(
+            (total, item) =>
+                total + Number(item.price || 0),
+            0
+        );
+
+    const displayDate =
+        slots[0].date
+            .split("-")
+            .reverse()
+            .join("/");
+
+    summary.innerHTML = `
+        <strong>${slots[0].tenSan}</strong>
+        &nbsp;|&nbsp;
+        ${displayDate}
+        &nbsp;|&nbsp;
+        ${startHour}:00 - ${endHour}:00
+        &nbsp;|&nbsp;
+        ${slots.length} giờ
+        &nbsp;|&nbsp;
+        ${totalPrice.toLocaleString("vi-VN")}đ
+    `;
+
+    bar.style.display = "flex";
+}
         let startOfWeekDate = new Date();
         let unsubscribeCalendar = null;
 
@@ -597,38 +790,27 @@ async function loadCalendar() {
                         font-size: 13px;
                         margin-top: 6px;
                     ">
-                        Theo dõi các khung giờ đặt sân theo thời gian thực
+                        Theo dõi và đặt nhiều khung giờ liên tiếp
                     </p>
                 </div>
 
                 <div class="calendar-toolbar">
-                    <button
-                        type="button"
-                        id="prevWeekBtn"
-                        title="Tuần trước"
-                    >
+                    <button type="button" id="prevWeekBtn">
                         <i class="fas fa-chevron-left"></i>
                         Tuần trước
                     </button>
 
-                    <span
-                        id="weekDisplay"
-                        style="
-                            font-weight: 600;
-                            font-size: 14px;
-                            background: white;
-                            padding: 9px 14px;
-                            border-radius: 6px;
-                            border: 1px solid #ccd1d9;
-                            white-space: nowrap;
-                        "
-                    ></span>
+                    <span id="weekDisplay" style="
+                        font-weight: 600;
+                        font-size: 14px;
+                        background: white;
+                        padding: 9px 14px;
+                        border-radius: 6px;
+                        border: 1px solid #ccd1d9;
+                        white-space: nowrap;
+                    "></span>
 
-                    <button
-                        type="button"
-                        id="nextWeekBtn"
-                        title="Tuần sau"
-                    >
+                    <button type="button" id="nextWeekBtn">
                         Tuần sau
                         <i class="fas fa-chevron-right"></i>
                     </button>
@@ -636,21 +818,41 @@ async function loadCalendar() {
             </div>
 
             <div class="weekly-san-selector">
-                <label
-                    for="selectCalendarSan"
-                    style="
-                        display: block;
-                        margin-bottom: 7px;
-                        font-weight: 600;
-                        color: #434a54;
-                    "
-                >
+                <label for="selectCalendarSan" style="
+                    display: block;
+                    margin-bottom: 7px;
+                    font-weight: 600;
+                    color: #434a54;
+                ">
                     Chọn sân cần xem
                 </label>
 
                 <select id="selectCalendarSan">
                     ${sanOptions}
                 </select>
+            </div>
+
+            <div id="multiBookingBar" class="multi-booking-bar">
+                <div id="selectedSlotsSummary"></div>
+
+                <div class="multi-booking-actions">
+                    <button
+                        type="button"
+                        class="btn-add"
+                        id="confirmMultiBookingBtn"
+                    >
+                        <i class="fas fa-calendar-check"></i>
+                        Đặt các giờ đã chọn
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-clear-slots"
+                        id="clearMultiBookingBtn"
+                    >
+                        Hủy chọn
+                    </button>
+                </div>
             </div>
 
             <div id="calendarGrid">
@@ -662,15 +864,12 @@ async function loadCalendar() {
                     border: 1px solid #e6ebf0;
                     color: #64748b;
                 ">
-                    <i
-                        class="far fa-calendar-alt"
-                        style="
-                            display: block;
-                            font-size: 42px;
-                            margin-bottom: 15px;
-                            color: #cbd5e1;
-                        "
-                    ></i>
+                    <i class="far fa-calendar-alt" style="
+                        display: block;
+                        font-size: 42px;
+                        margin-bottom: 15px;
+                        color: #cbd5e1;
+                    "></i>
 
                     Vui lòng chọn một sân để xem lịch tuần.
                 </div>
@@ -680,7 +879,26 @@ async function loadCalendar() {
         const sanSelect =
             document.getElementById("selectCalendarSan");
 
+        document
+            .getElementById("clearMultiBookingBtn")
+            .addEventListener(
+                "click",
+                clearSelectedCalendarSlots
+            );
+
+        document
+            .getElementById("confirmMultiBookingBtn")
+            .addEventListener("click", () => {
+                if (selectedCalendarSlots.length === 0) {
+                    alert("Vui lòng chọn ít nhất một khung giờ!");
+                    return;
+                }
+
+                openMultiBookingModal();
+            });
+
         sanSelect.addEventListener("change", () => {
+            clearSelectedCalendarSlots();
             currentSanId = sanSelect.value;
             renderWeeklyGrid();
         });
@@ -688,6 +906,8 @@ async function loadCalendar() {
         document
             .getElementById("prevWeekBtn")
             .addEventListener("click", () => {
+                clearSelectedCalendarSlots();
+
                 const previousWeek =
                     new Date(startOfWeekDate);
 
@@ -704,6 +924,8 @@ async function loadCalendar() {
         document
             .getElementById("nextWeekBtn")
             .addEventListener("click", () => {
+                clearSelectedCalendarSlots();
+
                 const nextWeek =
                     new Date(startOfWeekDate);
 
@@ -718,10 +940,9 @@ async function loadCalendar() {
             });
 
         if (currentSanId) {
-            const selectedSanExists =
-                sanList.some(
-                    (san) => san.id === currentSanId
-                );
+            const selectedSanExists = sanList.some(
+                (san) => san.id === currentSanId
+            );
 
             if (selectedSanExists) {
                 sanSelect.value = currentSanId;
@@ -734,13 +955,23 @@ async function loadCalendar() {
             currentSanId = sanList[0].id;
             sanSelect.value = currentSanId;
             renderWeeklyGrid();
+        } else {
+            currentSanId = null;
+            document.getElementById("calendarGrid").innerHTML = `
+                <div style="
+                    background: white;
+                    padding: 40px;
+                    text-align: center;
+                    border-radius: 12px;
+                    color: #64748b;
+                ">
+                    Chưa có sân nào trong hệ thống.
+                </div>
+            `;
         }
 
     } catch (error) {
-        console.error(
-            "Lỗi tải danh sách sân:",
-            error
-        );
+        console.error("Lỗi tải danh sách sân:", error);
 
         container.innerHTML = `
             <div style="
@@ -749,12 +980,12 @@ async function loadCalendar() {
                 padding: 20px;
                 border-radius: 10px;
             ">
-                Không thể tải lịch sân:
-                ${error.message}
+                Không thể tải lịch sân: ${error.message}
             </div>
         `;
     }
 }
+
 async function renderWeeklyGrid() {
     const grid =
         document.getElementById("calendarGrid");
@@ -820,7 +1051,8 @@ async function renderWeeklyGrid() {
             sanData.ten ||
             sanData.tenSan ||
             "Sân chưa đặt tên";
-            const baseGia = Number(sanData.gia || 0);
+
+        const baseGia = Number(sanData.gia || 0);
 
         const daysOfWeek = [];
 
@@ -835,19 +1067,16 @@ async function renderWeeklyGrid() {
         ];
 
         for (let index = 0; index < 7; index++) {
-            const date =
-                new Date(startOfWeekDate);
+            const date = new Date(startOfWeekDate);
 
             date.setDate(
                 startOfWeekDate.getDate() + index
             );
 
             const year = date.getFullYear();
-
             const month = String(
                 date.getMonth() + 1
             ).padStart(2, "0");
-
             const day = String(
                 date.getDate()
             ).padStart(2, "0");
@@ -870,7 +1099,6 @@ async function renderWeeklyGrid() {
 
         unsubscribeCalendar = onSnapshot(
             bookingQuery,
-
             (snapshot) => {
                 const bookingMap = new Map();
 
@@ -880,9 +1108,7 @@ async function renderWeeklyGrid() {
                         id: docSnap.id
                     };
 
-                    if (
-                        booking.trangThai === "đã_hủy"
-                    ) {
+                    if (booking.trangThai === "đã_hủy") {
                         return;
                     }
 
@@ -890,7 +1116,7 @@ async function renderWeeklyGrid() {
                         booking.gioBatDau
                     );
 
-                    const endHour = Number(
+                    const endHourValue = Number(
                         booking.gioKetThuc
                     );
 
@@ -901,40 +1127,43 @@ async function renderWeeklyGrid() {
                         return;
                     }
 
-                    const safeEndHour =
-                        Number.isFinite(endHour) &&
-                        endHour > startHour
-                            ? endHour
+                    const endHour =
+                        Number.isFinite(endHourValue) &&
+                        endHourValue > startHour
+                            ? endHourValue
                             : startHour + 1;
 
                     for (
-                        let hour = startHour;
-                        hour < safeEndHour;
-                        hour++
+                        let occupiedHour = startHour;
+                        occupiedHour < endHour;
+                        occupiedHour++
                     ) {
                         bookingMap.set(
-                            `${booking.ngayDat}_${hour}`,
+                            `${booking.ngayDat}_${occupiedHour}`,
                             booking
                         );
                     }
                 });
+
+                selectedCalendarSlots =
+                    selectedCalendarSlots.filter((slot) => {
+                        return !bookingMap.has(
+                            `${slot.date}_${slot.hour}`
+                        );
+                    });
 
                 const escapeHTML = (value) => {
                     return String(value ?? "")
                         .replace(/&/g, "&amp;")
                         .replace(/</g, "&lt;")
                         .replace(/>/g, "&gt;")
-                        .replace(/"/g, "&quot;")
+                        .replace(/\"/g, "&quot;")
                         .replace(/'/g, "&#039;");
                 };
 
                 const hours = [];
 
-                for (
-                    let hour = 6;
-                    hour <= 22;
-                    hour++
-                ) {
+                for (let hour = 6; hour <= 22; hour++) {
                     hours.push(hour);
                 }
 
@@ -962,7 +1191,6 @@ async function renderWeeklyGrid() {
                     html += `
                         <th>
                             <div>${day.label}</div>
-
                             <div style="
                                 margin-top: 4px;
                                 color: #64748b;
@@ -977,7 +1205,6 @@ async function renderWeeklyGrid() {
                 html += `
                                 </tr>
                             </thead>
-
                             <tbody>
                 `;
 
@@ -990,84 +1217,81 @@ async function renderWeeklyGrid() {
                     `;
 
                     daysOfWeek.forEach((day) => {
+                        const key =
+                            `${day.dateStr}_${hour}`;
+
                         const booking =
-                            bookingMap.get(
-                                `${day.dateStr}_${hour}`
-                            );
+                            bookingMap.get(key);
 
-                       if (!booking) {
-    html += `
-        <td
-            class="slot-available quick-book-slot"
-            data-date="${day.dateStr}"
-            data-hour="${hour}"
-            data-price="${baseGia}"
-            title="Bấm để đặt sân hộ khách"
-        >
-            <i class="fas fa-plus-circle"></i>
+                        if (!booking) {
+                            const isSelected =
+                                selectedCalendarSlots.some(
+                                    (item) =>
+                                        item.date === day.dateStr &&
+                                        item.hour === hour
+                                );
 
-            <div style="
-                margin-top: 3px;
-                font-size: 10px;
-            ">
-                Đặt nhanh
-            </div>
-        </td>
-    `;
+                            html += `
+                                <td
+                                    class="slot-available multi-book-slot ${
+                                        isSelected
+                                            ? "slot-selected"
+                                            : ""
+                                    }"
+                                    data-date="${day.dateStr}"
+                                    data-hour="${hour}"
+                                    data-price="${baseGia}"
+                                    title="Chọn ${hour}:00 - ${hour + 1}:00"
+                                >
+                                    <i class="fas fa-plus-circle"></i>
+                                    <div style="
+                                        margin-top: 3px;
+                                        font-size: 10px;
+                                    ">
+                                        Chọn
+                                    </div>
+                                </td>
+                            `;
 
-    return;
-}
+                            return;
+                        }
 
-                        const isConfirmed =
+                        const isPending =
                             booking.trangThai ===
-                            "đã_xác_nhận";
+                            "chờ_xác_nhận";
+
+                        const statusClass = isPending
+                            ? "slot-pending"
+                            : "slot-confirmed";
+
+                        const statusText = isPending
+                            ? "Chờ xác nhận"
+                            : "Đã xác nhận";
 
                         const customerName =
                             booking.userName ||
-                            booking.hoTen ||
+                            booking.userEmail ||
                             "Khách hàng";
 
                         html += `
-                            <td class="${
-                                isConfirmed
-                                    ? "slot-confirmed"
-                                    : "slot-pending"
-                            }">
-                                <div>
-                                    <i class="${
-                                        isConfirmed
-                                            ? "fas fa-check-circle"
-                                            : "fas fa-clock"
-                                    }"></i>
-
-                                    ${
-                                        isConfirmed
-                                            ? "Đã xác nhận"
-                                            : "Chờ xác nhận"
-                                    }
+                            <td
+                                class="${statusClass} booked-calendar-slot"
+                                data-booking-key="${key}"
+                                title="Bấm để xem chi tiết"
+                                style="cursor:pointer;"
+                            >
+                                <div style="font-weight:700;">
+                                    ${statusText}
                                 </div>
 
                                 <div style="
-                                    margin-top: 4px;
-                                    font-size: 10px;
-                                    color: #475569;
-                                    overflow: hidden;
-                                    text-overflow: ellipsis;
-                                    white-space: nowrap;
-                                    max-width: 110px;
-                                    margin-left: auto;
-                                    margin-right: auto;
+                                    margin-top:3px;
+                                    font-size:10px;
+                                    overflow:hidden;
+                                    text-overflow:ellipsis;
+                                    white-space:nowrap;
                                 ">
                                     ${escapeHTML(customerName)}
-                                </div>
-
-                                <div style="
-                                    margin-top: 2px;
-                                    font-size: 9px;
-                                    color: #64748b;
-                                ">
-                                    ${booking.gioBatDau}:00 -
-                                    ${booking.gioKetThuc}:00
                                 </div>
                             </td>
                         `;
@@ -1080,114 +1304,489 @@ async function renderWeeklyGrid() {
                             </tbody>
                         </table>
                     </div>
-
-                    <div style="
-                        display: flex;
-                        gap: 18px;
-                        align-items: center;
-                        flex-wrap: wrap;
-                        margin-top: 14px;
-                        font-size: 13px;
-                        color: #64748b;
-                    ">
-                        <span>
-                            <span style="
-                                display: inline-block;
-                                width: 13px;
-                                height: 13px;
-                                background: #ffffff;
-                                border: 1px solid #cbd5e1;
-                                border-radius: 3px;
-                                margin-right: 5px;
-                            "></span>
-                            Còn trống
-                        </span>
-
-                        <span>
-                            <span style="
-                                display: inline-block;
-                                width: 13px;
-                                height: 13px;
-                                background: #fff9db;
-                                border: 1px solid #facc15;
-                                border-radius: 3px;
-                                margin-right: 5px;
-                            "></span>
-                            Chờ xác nhận
-                        </span>
-
-                        <span>
-                            <span style="
-                                display: inline-block;
-                                width: 13px;
-                                height: 13px;
-                                background: #ebfbee;
-                                border: 1px solid #86efac;
-                                border-radius: 3px;
-                                margin-right: 5px;
-                            "></span>
-                            Đã xác nhận
-                        </span>
-                    </div>
                 `;
 
                 grid.innerHTML = html;
+
                 grid
-    .querySelectorAll(".quick-book-slot")
-    .forEach((slot) => {
-        slot.addEventListener("click", () => {
-            const ngay = slot.dataset.date;
-            const gio = Number(slot.dataset.hour);
-            const gia = Number(slot.dataset.price || 0);
+                    .querySelectorAll(".multi-book-slot")
+                    .forEach((slot) => {
+                        slot.addEventListener("click", () => {
+                            toggleCalendarSlot(slot, tenSan);
+                        });
+                    });
 
-            openAdminQuickBooking(
-                ngay,
-                gio,
-                gia,
-                tenSan
-            );
-        });
-    });
+                grid
+                    .querySelectorAll(".booked-calendar-slot")
+                    .forEach((slot) => {
+                        slot.addEventListener("click", () => {
+                            const booking = bookingMap.get(
+                                slot.dataset.bookingKey
+                            );
+
+                            if (!booking) {
+                                return;
+                            }
+
+                            window.showBookingDetail(
+                                booking.id,
+                                booking.tenSan || tenSan,
+                                booking.ngayDat,
+                                Number(booking.gioBatDau),
+                                Number(booking.gioKetThuc) ||
+                                    Number(booking.gioBatDau) + 1,
+                                Number(booking.tongTien || 0),
+                                booking.trangThai,
+                                booking.userName ||
+                                    booking.userEmail ||
+                                    "Khách hàng"
+                            );
+                        });
+                    });
+
+                updateSelectedSlotsBar();
             },
-
             (error) => {
                 console.error(
-                    "Lỗi theo dõi lịch sân:",
+                    "Lỗi theo dõi lịch:",
                     error
                 );
 
                 grid.innerHTML = `
                     <div style="
-                        background: #fee2e2;
-                        color: #991b1b;
-                        padding: 20px;
-                        border-radius: 10px;
+                        background:#fee2e2;
+                        color:#991b1b;
+                        padding:20px;
+                        border-radius:10px;
                     ">
-                        Không thể tải lịch:
-                        ${error.message}
+                        Không thể tải dữ liệu lịch: ${error.message}
                     </div>
                 `;
             }
         );
 
     } catch (error) {
-        console.error(
-            "Lỗi hiển thị lịch tuần:",
-            error
-        );
+        console.error("Lỗi tải lịch tuần:", error);
 
         grid.innerHTML = `
             <div style="
-                background: #fee2e2;
-                color: #991b1b;
-                padding: 20px;
-                border-radius: 10px;
+                background:#fee2e2;
+                color:#991b1b;
+                padding:20px;
+                border-radius:10px;
             ">
-                Không thể hiển thị lịch tuần:
-                ${error.message}
+                Không thể tải lịch tuần: ${error.message}
             </div>
         `;
     }
+}
+
+async function openMultiBookingModal() {
+    if (!currentSanId) {
+        alert("Vui lòng chọn sân!");
+        return;
+    }
+
+    if (selectedCalendarSlots.length === 0) {
+        alert("Vui lòng chọn ít nhất một khung giờ!");
+        return;
+    }
+
+    const slots = [...selectedCalendarSlots].sort(
+        (a, b) => a.hour - b.hour
+    );
+
+    const sanIdDaChon = currentSanId;
+    const ngayDat = slots[0].date;
+    const gioBatDau = Number(slots[0].hour);
+    const gioKetThuc =
+        Number(slots[slots.length - 1].hour) + 1;
+
+    const tenSan =
+        slots[0].tenSan || "Sân chưa đặt tên";
+
+    const soGio = slots.length;
+
+    const giaMoiGio =
+        Number(slots[0].price || 0);
+
+    const tongTien = slots.reduce(
+        (total, slot) =>
+            total + Number(slot.price || 0),
+        0
+    );
+
+    const cungNgay = slots.every(
+        (slot) => slot.date === ngayDat
+    );
+
+    if (!cungNgay) {
+        alert(
+            "Các khung giờ phải thuộc cùng một ngày!"
+        );
+        return;
+    }
+
+    for (let index = 1; index < slots.length; index++) {
+        const gioTruoc =
+            Number(slots[index - 1].hour);
+
+        const gioHienTai =
+            Number(slots[index].hour);
+
+        if (gioHienTai !== gioTruoc + 1) {
+            alert(
+                "Các khung giờ phải liên tiếp nhau!"
+            );
+            return;
+        }
+    }
+
+    const escapeHTML = (value) => {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
+    const ngayHienThi = ngayDat
+        .split("-")
+        .reverse()
+        .join("/");
+
+    const modal = document.createElement("div");
+
+    modal.className = "modal";
+    modal.style.display = "flex";
+
+    modal.innerHTML = `
+        <div
+            class="modal-content"
+            style="
+                max-width: 520px;
+                max-height: 90vh;
+                overflow-y: auto;
+            "
+        >
+            <h3>
+                <i class="fas fa-calendar-plus"></i>
+                Đặt nhiều khung giờ
+            </h3>
+
+            <div style="
+                padding: 14px;
+                margin-bottom: 16px;
+                border: 1px solid #dbe3ea;
+                border-radius: 10px;
+                background: #f8fafc;
+                line-height: 1.8;
+            ">
+                <div>
+                    <strong>Sân:</strong>
+                    ${escapeHTML(tenSan)}
+                </div>
+
+                <div>
+                    <strong>Ngày:</strong>
+                    ${ngayHienThi}
+                </div>
+
+                <div>
+                    <strong>Thời gian:</strong>
+                    ${String(gioBatDau).padStart(2, "0")}:00
+                    -
+                    ${String(gioKetThuc).padStart(2, "0")}:00
+                </div>
+
+                <div>
+                    <strong>Số giờ:</strong>
+                    ${soGio} giờ
+                </div>
+
+                <div>
+                    <strong>Giá mỗi giờ:</strong>
+                    ${giaMoiGio.toLocaleString("vi-VN")}đ
+                </div>
+
+                <div style="
+                    margin-top: 5px;
+                    color: #166534;
+                    font-size: 17px;
+                ">
+                    <strong>Tổng tiền:</strong>
+                    ${tongTien.toLocaleString("vi-VN")}đ
+                </div>
+            </div>
+
+            <label>Họ tên khách hàng</label>
+            <input
+                type="text"
+                id="adminMultiBookingName"
+                placeholder="Nhập họ tên khách hàng"
+            >
+
+            <label>Số điện thoại</label>
+            <input
+                type="tel"
+                id="adminMultiBookingPhone"
+                placeholder="Nhập số điện thoại"
+            >
+
+            <label>Email</label>
+            <input
+                type="email"
+                id="adminMultiBookingEmail"
+                placeholder="Có thể để trống"
+            >
+
+            <label>Trạng thái đơn</label>
+            <select id="adminMultiBookingStatus">
+                <option value="đã_xác_nhận">
+                    Đã xác nhận
+                </option>
+
+                <option value="chờ_xác_nhận">
+                    Chờ xác nhận
+                </option>
+            </select>
+
+            <div class="modal-buttons">
+                <button
+                    type="button"
+                    class="btn-save"
+                    id="saveAdminMultiBookingBtn"
+                >
+                    Xác nhận đặt sân
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-cancel"
+                    id="cancelAdminMultiBookingBtn"
+                >
+                    Hủy
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const nameInput =
+        document.getElementById(
+            "adminMultiBookingName"
+        );
+
+    const phoneInput =
+        document.getElementById(
+            "adminMultiBookingPhone"
+        );
+
+    const emailInput =
+        document.getElementById(
+            "adminMultiBookingEmail"
+        );
+
+    const statusSelect =
+        document.getElementById(
+            "adminMultiBookingStatus"
+        );
+
+    const saveButton =
+        document.getElementById(
+            "saveAdminMultiBookingBtn"
+        );
+
+    nameInput.focus();
+
+    saveButton.addEventListener(
+        "click",
+        async () => {
+            const userName =
+                nameInput.value.trim();
+
+            const userPhone =
+                phoneInput.value.trim();
+
+            const userEmail =
+                emailInput.value.trim();
+
+            const trangThai =
+                statusSelect.value;
+
+            if (!userName) {
+                alert(
+                    "Vui lòng nhập họ tên khách hàng!"
+                );
+                nameInput.focus();
+                return;
+            }
+
+            if (!userPhone) {
+                alert(
+                    "Vui lòng nhập số điện thoại!"
+                );
+                phoneInput.focus();
+                return;
+            }
+
+            try {
+                saveButton.disabled = true;
+                saveButton.textContent =
+                    "Đang kiểm tra lịch...";
+
+                const bookingQuery = query(
+                    collection(db, "donDat"),
+                    where(
+                        "sanId",
+                        "==",
+                        sanIdDaChon
+                    )
+                );
+
+                const bookingSnapshot =
+                    await getDocs(bookingQuery);
+
+                let biTrungLich = false;
+
+                bookingSnapshot.forEach(
+                    (docSnap) => {
+                        const booking =
+                            docSnap.data();
+
+                        if (
+                            booking.trangThai ===
+                            "đã_hủy"
+                        ) {
+                            return;
+                        }
+
+                        if (
+                            booking.ngayDat !==
+                            ngayDat
+                        ) {
+                            return;
+                        }
+
+                        const oldStart = Number(
+                            booking.gioBatDau
+                        );
+
+                        const oldEndValue = Number(
+                            booking.gioKetThuc
+                        );
+
+                        const oldEnd =
+                            Number.isFinite(
+                                oldEndValue
+                            ) &&
+                            oldEndValue > oldStart
+                                ? oldEndValue
+                                : oldStart + 1;
+
+                        if (
+                            gioBatDau < oldEnd &&
+                            gioKetThuc > oldStart
+                        ) {
+                            biTrungLich = true;
+                        }
+                    }
+                );
+
+                if (biTrungLich) {
+                    alert(
+                        "Một trong các khung giờ đã có người đặt. Vui lòng tải lại lịch và chọn lại!"
+                    );
+
+                    modal.remove();
+                    clearSelectedCalendarSlots();
+                    return;
+                }
+
+                saveButton.textContent =
+                    "Đang lưu đơn...";
+
+                await addDoc(
+                    collection(db, "donDat"),
+                    {
+                        sanId: sanIdDaChon,
+                        tenSan: tenSan,
+
+                        userId:
+                            "admin_booking_" +
+                            Date.now(),
+
+                        userName: userName,
+                        userPhone: userPhone,
+                        userEmail: userEmail,
+
+                        ngayDat: ngayDat,
+                        gioBatDau: gioBatDau,
+                        gioKetThuc: gioKetThuc,
+
+                        soGio: soGio,
+                        gia: giaMoiGio,
+                        tongTien: tongTien,
+
+                        trangThai: trangThai,
+
+                        nguonDat: "admin",
+
+                        createdBy:
+                            auth.currentUser?.email ||
+                            "admin",
+
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                );
+
+                alert(
+                    `Đặt sân thành công từ ` +
+                    `${String(gioBatDau).padStart(2, "0")}:00 ` +
+                    `đến ` +
+                    `${String(gioKetThuc).padStart(2, "0")}:00!`
+                );
+
+                modal.remove();
+                clearSelectedCalendarSlots();
+
+            } catch (error) {
+                console.error(
+                    "Lỗi Admin đặt nhiều giờ:",
+                    error
+                );
+
+                alert(
+                    "Không thể tạo đơn đặt sân: " +
+                    error.message
+                );
+
+                saveButton.disabled = false;
+                saveButton.textContent =
+                    "Xác nhận đặt sân";
+            }
+        }
+    );
+
+    document
+        .getElementById(
+            "cancelAdminMultiBookingBtn"
+        )
+        .addEventListener("click", () => {
+            modal.remove();
+        });
+
+    modal.addEventListener(
+        "click",
+        (event) => {
+            if (event.target === modal) {
+                modal.remove();
+            }
+        }
+    );
 }
 function openAdminQuickBooking(
     ngay,

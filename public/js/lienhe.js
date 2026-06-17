@@ -87,25 +87,31 @@ document.getElementById("sendBtn").onclick = async ()=>{
     }
 
     try{
-        await addDoc(collection(db,"lienHeFeedback"),{
-            userId: currentUser ? currentUser.uid : null,
-            hoTen,
-            email,
-            soDienThoai,
-            chuDe,
-            noiDung,
-            loai:"Liên hệ",
-            trangThai:"Chưa xử lý",
-            createdAt:new Date().toISOString(),
-            createdAtServer: serverTimestamp()
-        });
+await addDoc(collection(db, "feedback"), {
+    userId: currentUser ? currentUser.uid : null,
+    userName: hoTen,
+    email: email,
+    phone: soDienThoai,
+    subject: chuDe,
+    message: noiDung,
+    status: "new",
+    adminNote: "",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+});
+
 
         showMessage("Gửi liên hệ thành công");
 
         document.getElementById("chuDe").value = "";
         document.getElementById("noiDung").value = "";
 
-    }catch(error){
-        showMessage("Gửi thất bại","error");
-    }
+    } catch (error) {
+    console.error("Lỗi gửi phản hồi:", error);
+
+    showMessage(
+        "Gửi thất bại: " + error.message,
+        "error"
+    );
+}
 };

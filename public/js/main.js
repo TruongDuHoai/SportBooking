@@ -18,6 +18,292 @@ const auth = getAuth(app);
 
 let tatCaSan = [];
 
+let bannerCurrentIndex = 0;
+let bannerTimer = null;
+
+function escapeBannerHTML(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function getSafeBannerLink(value) {
+    const url = String(value || "").trim();
+
+    if (!url) {
+        return "#";
+    }
+
+    if (/^https?:\/\//i.test(url)) {
+        return url;
+    }
+
+    if (/^[a-zA-Z0-9_./?=&%#-]+$/.test(url)) {
+        return url;
+    }
+
+    return "#";
+}
+
+async function loadCustomerBanners() {
+    const section = document.getElementById(
+        "customerBannerSection"
+    );
+
+    const container = document.getElementById(
+        "customerBannerContainer"
+    );
+
+    if (!section || !container) {
+        return;
+    }
+
+    try {
+        const snapshot = await getDocs(
+            collection(db, "banners")
+        );
+
+        const banners = [];
+
+        snapshot.forEach((docSnap) => {
+            const banner = {
+                ...docSnap.data(),
+                id: docSnap.id
+            };
+
+            if (banner.active === true) {
+                banners.push(banner);
+            }
+        });
+
+        banners.sort((a, b) => {
+            return (
+                Number(a.displayOrder || 0) -
+                Number(b.displayOrder || 0)
+            );
+        });
+
+        if (banners.length === 0) {
+            section.hidden = true;
+            container.innerHTML = "";
+            return;
+        }
+
+        let slidesHTML = "";
+
+        banners.forEach((banner, index) => {
+            const title = escapeBannerHTML(
+                banner.title || "SportBooking"
+            );
+
+            const description = escapeBannerHTML(
+                banner.description || ""
+            );
+
+            const buttonText = escapeBannerHTML(
+                banner.buttonText || "Xem ngay"
+            );
+
+            const targetUrl = getSafeBannerLink(
+                banner.targetUrl
+            );
+
+            const imageUrl =
+                /^https?:\/\//i.test(
+                    String(banner.imageUrl || "")
+                )
+                    ? banner.imageUrl
+                    : "https://placehold.co/1200x450?text=SportBooking";
+
+            slidesHTML += `
+                <div
+                    class="customer-banner-slide ${
+                        index === 0 ? "active" : ""
+                    }"
+                    style="
+                        background-image:
+                            linear-gradient(
+                                90deg,
+                                rgba(7, 24, 15, 0.88),
+                                rgba(7, 24, 15, 0.28)
+                            ),
+                            url('${imageUrl}');
+                    "
+                >
+                    <div class="customer-banner-content">
+                        <h2>${title}</h2>
+
+                        ${
+                            description
+                                ? `<p>${description}</p>`
+                                : ""
+                        }
+
+                        <a
+                            href="${targetUrl}"
+                            class="customer-banner-button"
+                        >
+                            ${buttonText}
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+        });
+
+        let navigationHTML = "";
+
+        if (banners.length > 1) {
+            navigationHTML = `
+                <div class="customer-banner-navigation">
+                    <button
+                        type="button"
+                        id="previousCustomerBanner"
+                        aria-label="Banner trước"
+                    >
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="nextCustomerBanner"
+                        aria-label="Banner tiếp theo"
+                    >
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="customer-banner-dots">
+                    ${banners
+                        .map(
+                            (_, index) => `
+                                <button
+                                    type="button"
+                                    class="customer-banner-dot ${
+                                        index === 0
+                                            ? "active"
+                                            : ""
+                                    }"
+                                    data-banner-index="${index}"
+                                    aria-label="Banner ${index + 1}"
+                                ></button>
+                            `
+                        )
+                        .join("")}
+                </div>
+            `;
+        }
+
+        container.innerHTML = `
+            <div class="customer-banner-wrapper">
+                ${slidesHTML}
+                ${navigationHTML}
+            </div>
+        `;
+
+        section.hidden = false;
+
+        const slides = Array.from(
+            container.querySelectorAll(
+                ".customer-banner-slide"
+            )
+        );
+
+        const dots = Array.from(
+            container.querySelectorAll(
+                ".customer-banner-dot"
+            )
+        );
+
+        function showBanner(index) {
+            if (slides.length === 0) {
+                return;
+            }
+
+            bannerCurrentIndex =
+                (index + slides.length) %
+                slides.length;
+
+            slides.forEach((slide, slideIndex) => {
+                slide.classList.toggle(
+                    "active",
+                    slideIndex === bannerCurrentIndex
+                );
+            });
+
+            dots.forEach((dot, dotIndex) => {
+                dot.classList.toggle(
+                    "active",
+                    dotIndex === bannerCurrentIndex
+                );
+            });
+        }
+
+        const previousButton =
+            document.getElementById(
+                "previousCustomerBanner"
+            );
+
+        const nextButton =
+            document.getElementById(
+                "nextCustomerBanner"
+            );
+
+        if (previousButton) {
+            previousButton.addEventListener(
+                "click",
+                () => {
+                    showBanner(
+                        bannerCurrentIndex - 1
+                    );
+                }
+            );
+        }
+
+        if (nextButton) {
+            nextButton.addEventListener(
+                "click",
+                () => {
+                    showBanner(
+                        bannerCurrentIndex + 1
+                    );
+                }
+            );
+        }
+
+        dots.forEach((dot) => {
+            dot.addEventListener("click", () => {
+                showBanner(
+                    Number(dot.dataset.bannerIndex)
+                );
+            });
+        });
+
+        if (bannerTimer) {
+            clearInterval(bannerTimer);
+        }
+
+        if (slides.length > 1) {
+            bannerTimer = setInterval(() => {
+                showBanner(
+                    bannerCurrentIndex + 1
+                );
+            }, 5000);
+        }
+
+    } catch (error) {
+        console.error(
+            "Lỗi tải banner khách hàng:",
+            error
+        );
+
+        section.hidden = true;
+    }
+}
+
 // Hiển thị danh sách sân
 function hienThiSan(danhSach) {
     const container = document.getElementById('danhSachSan');
@@ -190,6 +476,7 @@ function kiemTraDangNhap() {
 
 // Khởi tạo
 document.addEventListener('DOMContentLoaded', () => {
+    loadCustomerBanners();
     loadSanTuFirebase();
     kiemTraDangNhap();
     

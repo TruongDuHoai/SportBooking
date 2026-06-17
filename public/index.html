@@ -419,6 +419,141 @@
                 height: 260px;
             }
         }
+.customer-banner-section {
+    padding: 24px 7%;
+    background: #f6f7f5;
+}
+
+.customer-banner-wrapper {
+    position: relative;
+    max-width: 1400px;
+    min-height: 360px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 24px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+}
+
+.customer-banner-slide {
+    display: none;
+    min-height: 360px;
+    padding: 55px 70px;
+    background-position: center;
+    background-size: cover;
+    color: white;
+    align-items: center;
+}
+
+.customer-banner-slide.active {
+    display: flex;
+}
+
+.customer-banner-content {
+    max-width: 620px;
+}
+
+.customer-banner-content h2 {
+    margin-bottom: 14px;
+    font-size: 40px;
+    line-height: 1.15;
+}
+
+.customer-banner-content p {
+    margin-bottom: 24px;
+    color: #f1f5f9;
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.customer-banner-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 22px;
+    border-radius: 10px;
+    background: #d6b56d;
+    color: #102015;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.customer-banner-button:hover {
+    background: #f0ca78;
+}
+
+.customer-banner-navigation {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    padding: 0 18px;
+}
+
+.customer-banner-navigation button {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.48);
+    color: white;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.customer-banner-navigation button:hover {
+    background: rgba(0, 0, 0, 0.72);
+}
+
+.customer-banner-dots {
+    position: absolute;
+    right: 0;
+    bottom: 18px;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.customer-banner-dot {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.48);
+    cursor: pointer;
+}
+
+.customer-banner-dot.active {
+    width: 28px;
+    border-radius: 999px;
+    background: white;
+}
+
+@media (max-width: 768px) {
+    .customer-banner-section {
+        padding: 16px 5%;
+    }
+
+    .customer-banner-wrapper,
+    .customer-banner-slide {
+        min-height: 310px;
+    }
+
+    .customer-banner-slide {
+        padding: 45px 40px;
+    }
+
+    .customer-banner-content h2 {
+        font-size: 30px;
+    }
+
+    .customer-banner-content p {
+        font-size: 15px;
+    }
+}
     </style>
 </head>
 
@@ -449,7 +584,13 @@
             </div>
         </nav>
     </header>
-
+<section
+    id="customerBannerSection"
+    class="customer-banner-section"
+    hidden
+>
+    <div id="customerBannerContainer"></div>
+</section>
     <section class="hero">
         <div>
             <div class="hero-badge">Sân bóng mini cao cấp tại Quận 12</div>
@@ -608,6 +749,6 @@
         <p class="copyright">&copy; 2025 SportBooking - Đặt sân bóng trực tuyến</p>
     </footer>
 
-    <script type="module" src="js/main.js"></script>
+   <script type="module" src="js/main.js?v=2"></script>
 </body>
 </html>

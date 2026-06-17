@@ -208,41 +208,246 @@ async function luuYeuThich() {
 
     alert("Đã lưu yêu thích");
 }
-
 async function guiDanhGia() {
-    if (!currentUser) return location.href = "dangnhap.html";
+    if (!currentUser) {
+        window.location.href = "dangnhap.html";
+        return;
+    }
 
-    await addDoc(collection(db, "danhGia"), {
-        sanId,
-        userEmail: currentUser.email,
-        soSao: Number(document.getElementById("soSao").value),
-        noiDung: document.getElementById("noiDungDanhGia").value,
-        createdAt: new Date().toISOString()
-    });
+    const rating = Number(
+        document.getElementById("soSao").value
+    );
 
-    loadDanhGia();
+    const content = document
+        .getElementById("noiDungDanhGia")
+        .value
+        .trim();
+
+    if (!content) {
+        alert("Vui lòng nhập nội dung đánh giá!");
+        return;
+    }
+
+    const submitButton =
+        document.getElementById("btnGuiDanhGia");
+
+    try {
+        submitButton.disabled = true;
+        submitButton.textContent = "Đang gửi...";
+
+        await addDoc(
+            collection(db, "comments"),
+            {
+                userId: currentUser.uid,
+
+                userName:
+                    currentUser.displayName ||
+                    currentUser.email?.split("@")[0] ||
+                    "Khách hàng",
+
+                userEmail: currentUser.email || "",
+
+                sanId: sanId,
+                tenSan: currentSan.ten || "",
+
+                content: content,
+                rating: rating,
+
+                status: "pending",
+
+                approvedAt: null,
+                approvedBy: "",
+
+                createdAt: new Date(),
+                updatedAt: new Date()
+            }
+        );
+
+        document.getElementById(
+            "noiDungDanhGia"
+        ).value = "";
+
+        alert(
+            "Đã gửi đánh giá! Bình luận sẽ hiển thị sau khi quản trị viên duyệt."
+        );
+
+    } catch (error) {
+        console.error(
+            "Lỗi gửi đánh giá:",
+            error
+        );
+
+        alert(
+            "Không thể gửi đánh giá: " +
+            error.message
+        );
+
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Gửi đánh giá";
+    }
 }
-
 async function loadDanhGia() {
-    const q = query(collection(db, "danhGia"), where("sanId", "==", sanId));
-    const snap = await getDocs(q);
+    const container =
+        document.getElementById("danhSachDanhGia");
 
-    let html = "";
+    container.innerHTML = `
+        <p style="
+            text-align: center;
+            color: #777;
+            padding: 15px;
+        ">
+            Đang tải đánh giá...
+        </p>
+    `;
 
-    snap.forEach(doc => {
-        const dg = doc.data();
+    try {
+        const commentsQuery = query(
+            collection(db, "comments"),
+            where("sanId", "==", sanId)
+        );
 
-        html += `
-            <div class="review-item">
-                <div class="review-email">${dg.userEmail}</div>
-                <div class="review-stars">${"★".repeat(dg.soSao)}</div>
-                <p>${dg.noiDung}</p>
-                <div class="review-date">${new Date(dg.createdAt).toLocaleDateString("vi-VN")}</div>
-            </div>
-        `;
-    });
+        const snapshot = await getDocs(
+            commentsQuery
+        );
 
-    document.getElementById("danhSachDanhGia").innerHTML = html;
+        const comments = [];
+
+        snapshot.forEach((docSnap) => {
+            const comment = {
+                id: docSnap.id,
+                ...docSnap.data()
+            };
+
+            if (comment.status === "approved") {
+                comments.push(comment);
+            }
+        });
+
+        const getTime = (value) => {
+            if (!value) {
+                return 0;
+            }
+
+            if (typeof value.toDate === "function") {
+                return value.toDate().getTime();
+            }
+
+            const date = new Date(value);
+
+            return Number.isNaN(date.getTime())
+                ? 0
+                : date.getTime();
+        };
+
+        comments.sort(
+            (a, b) =>
+                getTime(b.createdAt) -
+                getTime(a.createdAt)
+        );
+
+        const escapeHTML = (value) => {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
+        const formatDate = (value) => {
+            if (!value) {
+                return "Không rõ ngày";
+            }
+
+            const date =
+                typeof value.toDate === "function"
+                    ? value.toDate()
+                    : new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return "Không rõ ngày";
+            }
+
+            return date.toLocaleDateString(
+                "vi-VN"
+            );
+        };
+
+        if (comments.length === 0) {
+            container.innerHTML = `
+                <p style="
+                    text-align: center;
+                    color: #777;
+                    padding: 20px;
+                ">
+                    Chưa có đánh giá nào được duyệt.
+                </p>
+            `;
+
+            return;
+        }
+
+        let html = "";
+
+        comments.forEach((comment) => {
+            const rating = Math.min(
+                Math.max(
+                    Number(comment.rating || 0),
+                    0
+                ),
+                5
+            );
+
+            const stars =
+                "★".repeat(rating) +
+                "☆".repeat(5 - rating);
+
+            html += `
+                <div class="review-item">
+                    <div class="review-email">
+                        ${escapeHTML(
+                            comment.userName ||
+                            comment.userEmail ||
+                            "Khách hàng"
+                        )}
+                    </div>
+
+                    <div class="review-stars">
+                        ${stars}
+                    </div>
+
+                    <p>
+                        ${escapeHTML(
+                            comment.content || ""
+                        )}
+                    </p>
+
+                    <div class="review-date">
+                        ${formatDate(
+                            comment.createdAt
+                        )}
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+     } catch (error) {
+        console.error(
+            "Lỗi tải đánh giá:",
+            error
+        );
+
+        container.textContent =
+            "Không thể tải đánh giá: " +
+            error.message;
+
+        container.style.color = "red";
+        container.style.textAlign = "center";
+        container.style.padding = "15px";
+    }
 }
 
 onAuthStateChanged(auth, user => {
