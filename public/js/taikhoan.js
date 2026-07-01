@@ -82,6 +82,7 @@ async function loadProfile(user){
     document.getElementById("editPhone").value = userData.phone || "";
 
     loadOrders(user.uid);
+    loadFavorite(user.uid);
 }
 
 async function loadOrders(userId){
