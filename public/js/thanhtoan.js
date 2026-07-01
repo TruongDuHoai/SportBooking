@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+
 import {
     getFirestore,
     doc,
@@ -89,27 +90,50 @@ function hienThiThanhToan() {
     let itemsHtml = "";
 
     cartItems.forEach(item => {
-        const gia = Number(item.gia || 0);
-        total += gia;
+        if (item.type === "food") {
+            const soLuong = Number(item.soLuong || 1);
+            const gia = Number(item.gia || 0);
+            const thanhTien = gia * soLuong;
+            total += thanhTien;
 
-        itemsHtml += `
-            <div class="order-item">
-                <div>
-                    <strong>${item.tenSan}</strong><br>
-                    <small>Ngày: ${item.ngayDat}</small><br>
-                    <small>Giờ: ${item.gioBatDau}:00 - ${item.gioKetThuc}:00</small>
-                </div>
+            itemsHtml += `
+                <div class="order-item">
+                    <div>
+                        <strong>${item.tenMon || item.ten || "Món ăn"}</strong><br>
+                        <small>Loại: Đồ ăn / Thức uống</small><br>
+                        <small>Số lượng: ${soLuong}</small>
+                    </div>
 
-                <div>
-                    <strong>${gia.toLocaleString()}đ</strong>
+                    <div>
+                        <strong>${thanhTien.toLocaleString()}đ</strong>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            const gia = Number(item.gia || 0);
+            total += gia;
+
+            const gioBatDau = Number(item.gioBatDau || 0);
+            const gioKetThuc = Number(item.gioKetThuc || gioBatDau + 1);
+
+            itemsHtml += `
+                <div class="order-item">
+                    <div>
+                        <strong>${item.tenSan || "Sân bóng đá quận 12"}</strong><br>
+                        <small>Ngày: ${item.ngayDat || "Không có ngày"}</small><br>
+                        <small>Giờ: ${gioBatDau}:00 - ${gioKetThuc}:00</small>
+                    </div>
+
+                    <div>
+                        <strong>${gia.toLocaleString()}đ</strong>
+                    </div>
+                </div>
+            `;
+        }
     });
 
     container.innerHTML = `
         <div class="checkout-card">
-
             <h3>Thông tin đơn hàng</h3>
 
             ${itemsHtml}
@@ -137,7 +161,6 @@ function hienThiThanhToan() {
             </div>
 
             <div class="payment-methods">
-
                 <label>
                     <input type="radio" name="paymentMethod" value="cod" checked>
                     Thanh toán tại sân
@@ -152,7 +175,6 @@ function hienThiThanhToan() {
                     <input type="radio" name="paymentMethod" value="momo">
                     Ví MoMo
                 </label>
-
             </div>
 
             <button class="btn-submit btn-main" id="submitOrderBtn">
@@ -162,28 +184,66 @@ function hienThiThanhToan() {
             <button class="btn-submit btn-back" id="backCartBtn">
                 Quay lại giỏ hàng
             </button>
-
         </div>
     `;
 
-    document.getElementById("submitOrderBtn")
-        .addEventListener("click", submitOrder);
+    document.getElementById("submitOrderBtn").addEventListener("click", submitOrder);
 
-    document.getElementById("backCartBtn")
-        .addEventListener("click", () => {
-            window.location.href = "giohang.html";
-        });
+    document.getElementById("backCartBtn").addEventListener("click", () => {
+        window.location.href = "giohang.html";
+    });
 }
 
 function validatePhone(phone) {
     return /^0[0-9]{9}$/.test(phone);
 }
 
+function showPaymentModal(methodText, total) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("paymentModal");
+        const modalText = document.getElementById("paymentModalText");
+        const paymentContent = document.getElementById("paymentContent");
+        const confirmPaidBtn = document.getElementById("confirmPaidBtn");
+        const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
+        const qrImage = document.getElementById("qrImage");
+
+        const code = "SB" + Date.now();
+
+        modalText.innerHTML = `
+            Phương thức: <strong>${methodText}</strong><br>
+            Số tiền: <strong>${total.toLocaleString()}đ</strong>
+        `;
+
+        paymentContent.textContent = code;
+
+        const qrText = `SPORTBOOKING|${methodText}|${total}|${code}`;
+        qrImage.src =
+            `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
+
+        modal.style.display = "flex";
+
+        confirmPaidBtn.onclick = () => {
+            modal.style.display = "none";
+            resolve({
+                paid: true,
+                code: code
+            });
+        };
+
+        cancelPaymentBtn.onclick = () => {
+            modal.style.display = "none";
+            resolve({
+                paid: false,
+                code: ""
+            });
+        };
+    });
+}
+
 async function submitOrder() {
     const fullName = document.getElementById("fullName").value.trim();
     const phone = document.getElementById("phone").value.trim();
-    const paymentMethod =
-        document.querySelector('input[name="paymentMethod"]:checked').value;
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
 
     if (!fullName) {
         alert("Vui lòng nhập họ tên");
@@ -211,11 +271,36 @@ async function submitOrder() {
     }
 
     const total = cartItems.reduce((sum, item) => {
+        if (item.type === "food") {
+            return sum + Number(item.gia || 0) * Number(item.soLuong || 1);
+        }
         return sum + Number(item.gia || 0);
     }, 0);
 
-    if (!confirm(`Xác nhận thanh toán ${total.toLocaleString()}đ ?`)) {
-        return;
+    if (paymentMethod === "cod") {
+        const confirmCOD = confirm(
+            `Xác nhận đặt sân ${total.toLocaleString()}đ?\nThanh toán tại sân`
+        );
+
+        if (!confirmCOD) return;
+    }
+
+    let paymentStatus = "Chưa thanh toán";
+    let orderStatus = "Chờ xác nhận";
+
+    let paymentCode = "";
+
+    if (paymentMethod === "bank" || paymentMethod === "momo") {
+        const result = await showPaymentModal(methodText, total);
+
+        if (!result.paid) {
+            alert("Bạn đã hủy thanh toán.");
+            return;
+        }
+
+        paymentCode = result.code;
+        paymentStatus = "Chờ xác nhận thanh toán";
+        orderStatus = "Chờ xác nhận";
     }
 
     const btn = document.getElementById("submitOrderBtn");
@@ -223,33 +308,84 @@ async function submitOrder() {
     btn.textContent = "Đang xử lý...";
 
     try {
-        for (const item of cartItems) {
+        const sanItems = cartItems.filter(item => item.type !== "food");
+        const foodItems = cartItems.filter(item => item.type === "food");
+
+        for (const item of sanItems) {
+            const gioBatDau = Number(item.gioBatDau || 0);
+            const gioKetThuc = Number(item.gioKetThuc || gioBatDau + 1);
+
             await addDoc(collection(db, "donDat"), {
                 userId: currentUser.uid,
-                userEmail: currentUser.email,
+                userEmail: currentUser.email || "",
                 userName: fullName,
                 userPhone: phone,
 
-                sanId: item.sanId,
-                tenSan: item.tenSan,
-                ngayDat: item.ngayDat,
-                gioBatDau: Number(item.gioBatDau),
-                gioKetThuc: Number(item.gioKetThuc),
+                sanId: item.sanId || "san1",
+                tenSan: item.tenSan || "Sân bóng đá quận 12",
+                ngayDat: item.ngayDat || "",
+                gioBatDau: gioBatDau,
+                gioKetThuc: gioKetThuc,
 
-                gia: Number(item.gia),
-                tongTien: Number(item.gia),
+                gia: Number(item.gia || 0),
+                tongTien: Number(item.gia || 0),
 
-                diaChi: item.diaChi || "",
-                loai: item.loai || "",
+                diaChi: item.diaChi || "Quận 12",
+                loai: item.loai || "bongda",
                 hinhAnh: item.hinhAnh || "",
 
-                trangThai: "Chờ xác nhận",
+                trangThai: orderStatus,
                 phuongThucThanhToan: methodText,
-                trangThaiThanhToan:
-                    paymentMethod === "cod"
-                        ? "Chưa thanh toán"
-                        : "Chờ thanh toán",
+                trangThaiThanhToan: paymentStatus,
 
+                maThanhToan: paymentCode,
+                soTienThanhToan: total,
+
+                createdAt: new Date().toISOString(),
+                createdAtServer: serverTimestamp()
+            });
+        }
+
+        if (foodItems.length > 0) {
+            const foodTotal = foodItems.reduce((sum, item) => {
+                return sum + Number(item.gia || 0) * Number(item.soLuong || 1);
+            }, 0);
+
+            const foodOrderRef = await addDoc(collection(db, "donDoAn"), {
+                userId: currentUser.uid,
+                userEmail: currentUser.email || "",
+                userName: fullName,
+                userPhone: phone,
+
+                items: foodItems.map(item => ({
+                    id: item.id || "",
+                    tenMon: item.tenMon || item.ten || "Món ăn",
+                    danhMuc: item.danhMuc || "",
+                    gia: Number(item.gia || 0),
+                    soLuong: Number(item.soLuong || 1),
+                    hinhAnh: item.hinhAnh || "",
+                    moTa: item.moTa || ""
+                })),
+
+                tongTien: foodTotal,
+                trangThai: orderStatus,
+                phuongThucThanhToan: methodText,
+                trangThaiThanhToan: paymentStatus,
+
+                createdAt: new Date().toISOString(),
+                createdAtServer: serverTimestamp()
+            });
+
+            await addDoc(collection(db, "notifications"), {
+                type: "food_order",
+                title: "Có đơn đồ ăn mới",
+                message: `${fullName} vừa đặt ${foodItems.length} món đồ ăn/nước uống.`,
+                orderId: foodOrderRef.id,
+                userId: currentUser.uid,
+                userName: fullName,
+                userPhone: phone,
+                tongTien: foodTotal,
+                isRead: false,
                 createdAt: new Date().toISOString(),
                 createdAtServer: serverTimestamp()
             });
@@ -257,12 +393,12 @@ async function submitOrder() {
 
         await deleteDoc(doc(db, "carts", currentUser.uid));
 
-        alert("Đặt sân thành công!");
+        alert("Thanh toán thành công!");
         window.location.href = "lichsu.html";
 
     } catch (error) {
-        console.error(error);
-        alert("Thanh toán thất bại");
+        console.error("LỖI THANH TOÁN:", error);
+        alert("Thanh toán thất bại: " + error.message);
 
         btn.disabled = false;
         btn.textContent = "Xác nhận thanh toán";
@@ -274,23 +410,25 @@ function setupAuthUI() {
     const userDropdownArea = document.getElementById("userDropdownArea");
     const userInfoBtn = document.getElementById("userInfoBtn");
     const dropdownMenu = document.getElementById("dropdownMenu");
-    const logoutBtn = document.getElementById("logoutBtn");
+    const logoutBtn = document.getElementById("logoutBtn") || document.getElementById("logoutDropdownBtn");
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
 
-            loginBtn.style.display = "none";
-            userDropdownArea.style.display = "inline-block";
+            if (loginBtn) loginBtn.style.display = "none";
+            if (userDropdownArea) userDropdownArea.style.display = "inline-block";
 
-            userInfoBtn.onclick = (e) => {
-                e.preventDefault();
+            if (userInfoBtn && dropdownMenu) {
+                userInfoBtn.onclick = (e) => {
+                    e.preventDefault();
 
-                dropdownMenu.style.display =
-                    dropdownMenu.style.display === "none"
-                        ? "block"
-                        : "none";
-            };
+                    dropdownMenu.style.display =
+                        dropdownMenu.style.display === "none"
+                            ? "block"
+                            : "none";
+                };
+            }
 
             loadCart();
 
@@ -299,13 +437,19 @@ function setupAuthUI() {
         }
     });
 
-    logoutBtn.onclick = async () => {
-        await signOut(auth);
-        window.location.href = "index.html";
-    };
+    if (logoutBtn) {
+        logoutBtn.onclick = async () => {
+            await signOut(auth);
+            window.location.href = "index.html";
+        };
+    }
 
     document.addEventListener("click", (e) => {
-        if (!userDropdownArea.contains(e.target)) {
+        if (
+            userDropdownArea &&
+            dropdownMenu &&
+            !userDropdownArea.contains(e.target)
+        ) {
             dropdownMenu.style.display = "none";
         }
     });

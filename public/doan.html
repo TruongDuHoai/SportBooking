@@ -315,7 +315,9 @@
         getFirestore,
         doc,
         getDoc,
-        setDoc
+        setDoc,
+        collection,
+        getDocs
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -334,7 +336,7 @@
     let currentUser = null;
     let foodCart = [];
 
-    const foods = [
+    let foods = [
         {
             id: "nuoc-suoi",
             ten: "Nước suối Aquafina",
@@ -593,6 +595,8 @@
             alert("Thêm vào giỏ hàng thất bại!");
         }
     };
+
+    
 
     function setupAuth() {
         const loginBtn = document.getElementById("loginBtn");

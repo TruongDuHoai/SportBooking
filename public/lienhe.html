@@ -7,76 +7,198 @@
 
     <link rel="stylesheet" href="css/style.css">
 
-    <style>
+<style>
+    body{
+        background:#f5f7f5;
+    }
+
+    .contact-container{
+        max-width:900px;
+        margin:40px auto;
+        padding:0 20px;
+        display:flex;
+        flex-direction:column;
+        gap:30px;
+    }
+
+    .contact-card{
+        background:white;
+        padding:30px;
+        border-radius:18px;
+        box-shadow:0 8px 20px rgba(0,0,0,.06);
+    }
+
+    .contact-card h2{
+        color:#1a6b30;
+        margin-bottom:20px;
+        font-size:28px;
+    }
+
+    .contact-card p{
+        margin:14px 0;
+        color:#555;
+        font-size:16px;
+        line-height:1.6;
+    }
+
+    .contact-info-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:20px;
+    }
+
+    .contact-form input,
+    .contact-form textarea,
+    .contact-form select{
+        width:100%;
+        padding:14px;
+        border:1px solid #ddd;
+        border-radius:10px;
+        margin-bottom:14px;
+        font-size:15px;
+        outline:none;
+        transition:.2s;
+    }
+
+    .contact-form input:focus,
+    .contact-form textarea:focus,
+    .contact-form select:focus{
+        border-color:#1a6b30;
+        box-shadow:0 0 0 3px rgba(26,107,48,.1);
+    }
+
+    .contact-form textarea{
+        resize:none;
+    }
+
+    .btn-submit{
+        width:100%;
+        padding:15px;
+        border:none;
+        border-radius:10px;
+        background:#1a6b30;
+        color:white;
+        font-size:16px;
+        font-weight:600;
+        cursor:pointer;
+        transition:.2s;
+    }
+
+    .btn-submit:hover{
+        background:#0d4620;
+    }
+
+    #resultMsg{
+        margin-top:15px;
+        text-align:center;
+        font-weight:600;
+        font-size:15px;
+    }
+
+    .map{
+        margin-top:20px;
+        overflow:hidden;
+        border-radius:14px;
+    }
+
+    .feedback-history-section{
+        max-width:900px;
+        margin:0 auto 50px;
+        padding:30px;
+        background:white;
+        border-radius:18px;
+        box-shadow:0 8px 20px rgba(0,0,0,.06);
+    }
+
+    .feedback-history-section h2{
+        color:#1a6b30;
+        margin-bottom:8px;
+        font-size:26px;
+    }
+
+    .history-desc{
+        color:#666;
+        margin-bottom:20px;
+        font-size:15px;
+    }
+
+    #responseResult{
+        margin-top:16px;
+    }
+
+    .feedback-table-wrap{
+        width:100%;
+        overflow-x:auto;
+    }
+
+    .feedback-table{
+        width:100%;
+        border-collapse:collapse;
+        min-width:850px;
+    }
+
+    .feedback-table th,
+    .feedback-table td{
+        padding:16px 14px;
+        border-bottom:1px solid #eee;
+        text-align:left;
+        vertical-align:top;
+        font-size:15px;
+    }
+
+    .feedback-table th{
+        background:#f7faf7;
+        color:#1a6b30;
+        font-weight:700;
+    }
+
+    .feedback-table tr:hover{
+        background:#fafafa;
+    }
+
+    .response-status{
+        display:inline-block;
+        padding:7px 12px;
+        border-radius:999px;
+        font-size:13px;
+        font-weight:600;
+        white-space:nowrap;
+    }
+
+    .status-pending{
+        background:#fff3cd;
+        color:#856404;
+    }
+
+    .status-done{
+        background:#d4edda;
+        color:#155724;
+    }
+
+    @media(max-width:768px){
+        .contact-info-grid{
+            grid-template-columns:1fr;
+        }
+
         .contact-container{
-            max-width:1200px;
-            margin:40px auto;
-            padding:0 20px;
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:30px;
+            padding:0 15px;
         }
 
         .contact-card{
-            background:white;
-            padding:30px;
-            border-radius:18px;
-            box-shadow:0 8px 20px rgba(0,0,0,.06);
+            padding:20px;
         }
 
-        .contact-card h2{
-            color:#1a6b30;
-            margin-bottom:20px;
+        .feedback-history-section{
+            margin:20px 15px 40px;
+            padding:20px;
         }
 
-        .contact-card p{
-            margin:14px 0;
-            color:#666;
+        .contact-card h2,
+        .feedback-history-section h2{
+            font-size:22px;
         }
-
-        .contact-form input,
-        .contact-form textarea,
-        .contact-form select{
-            width:100%;
-            padding:12px;
-            border:1px solid #ddd;
-            border-radius:8px;
-            margin-bottom:14px;
-        }
-
-        .btn-submit{
-            width:100%;
-            padding:14px;
-            border:none;
-            border-radius:8px;
-            background:#1a6b30;
-            color:white;
-            font-weight:600;
-            cursor:pointer;
-        }
-
-        .btn-submit:hover{
-            background:#0d4620;
-        }
-
-        #resultMsg{
-            margin-top:15px;
-            text-align:center;
-            font-weight:600;
-        }
-
-        .map{
-            margin-top:20px;
-            overflow:hidden;
-            border-radius:14px;
-        }
-
-        @media(max-width:768px){
-            .contact-container{
-                grid-template-columns:1fr;
-            }
-        }
-    </style>
+    }
+</style>
 </head>
 <body>
 
@@ -101,7 +223,7 @@
             <div id="userDropdownArea" style="display:none;position:relative;">
                 <a href="#" id="userInfoBtn">Tài khoản</a>
 
-                <div id="dropdownMenu" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;">
+                <div id="dropdownMenu" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;z-index:100;">
                     <a href="taikhoan.html" style="display:block;padding:12px;color:#333;text-decoration:none;">Thông tin</a>
                     <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#e74c3c;text-decoration:none;">Đăng xuất</a>
                 </div>
@@ -112,24 +234,26 @@
 
 <div class="contact-container">
 
-    <div class="contact-card">
-        <h2>Thông tin liên hệ</h2>
+<div class="contact-card">
+    <h2>Thông tin liên hệ</h2>
 
-        <p><strong>Địa chỉ:</strong> 123 Nguyễn Du, Quận 1, TP.HCM</p>
+    <div class="contact-info-grid">
+        <p><strong>Địa chỉ:</strong>  Quận 12, TP.HCM</p>
         <p><strong>Hotline:</strong> 1900 1234</p>
         <p><strong>Email:</strong> support@sportbooking.com</p>
-        <p><strong>Giờ làm việc:</strong> 08:00 - 21:00</p>
-
-        <div class="map">
-            <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18..."
-                width="100%"
-                height="250"
-                style="border:0;"
-                loading="lazy">
-            </iframe>
-        </div>
+        <p><strong>Giờ làm việc:</strong> 08:00 - 22:00</p>
     </div>
+
+    <div class="map">
+        <iframe
+            src="https://www.google.com/maps?q=Qu%E1%BA%ADn%201%20TP.HCM&output=embed"
+            width="100%"
+            height="250"
+            style="border:0;"
+            loading="lazy">
+        </iframe>
+    </div>
+</div>
 
     <div class="contact-card contact-form">
         <h2>Gửi liên hệ</h2>
@@ -151,11 +275,20 @@
         <button id="sendBtn" class="btn-submit">Gửi liên hệ</button>
 
         <div id="resultMsg"></div>
+
     </div>
+    <section class="feedback-history-section">
+        <h2>Lịch sử phản hồi</h2>
+        <p class="history-desc">Theo dõi trạng thái các liên hệ bạn đã gửi.</p>
+
+        <div id="responseResult">
+            <p>Đang tải phản hồi...</p>
+        </div>
+    </section>
 
 </div>
 
-<script type="module" src="js/lienhe.js"></script>
+<script type="module" src="js/lienhe.js?v=2"></script>
 
 </body>
 </html>

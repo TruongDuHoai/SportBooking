@@ -1257,16 +1257,25 @@ async function renderWeeklyGrid() {
                         }
 
                         const isPending =
-                            booking.trangThai ===
-                            "chờ_xác_nhận";
+                            booking.trangThai === "chờ_xác_nhận" ||
+                            booking.trangThai === "Chờ xác nhận";
 
-                        const statusClass = isPending
-                            ? "slot-pending"
-                            : "slot-confirmed";
+                        const isWaitingPayment =
+                            booking.trangThaiThanhToan === "Chờ xác nhận thanh toán" ||
+                            booking.trangThaiThanhToan === "Chờ thanh toán";
 
-                        const statusText = isPending
-                            ? "Chờ xác nhận"
-                            : "Đã xác nhận";
+                        let statusClass = "slot-confirmed";
+                        let statusText = "Đã xác nhận";
+
+                        if (isPending) {
+                            statusClass = "slot-pending";
+                            statusText = "Chờ xác nhận";
+                        }
+
+                        if (isWaitingPayment) {
+                            statusClass = "slot-pending";
+                            statusText = "Chờ TT";
+                        }
 
                         const customerName =
                             booking.userName ||
@@ -1292,6 +1301,10 @@ async function renderWeeklyGrid() {
                                     white-space:nowrap;
                                 ">
                                     ${escapeHTML(customerName)}
+                                    <br>
+                                    <span style="font-size:9px;">
+                                        ${escapeHTML(booking.trangThaiThanhToan || "Chưa thanh toán")}
+                                    </span>
                                 </div>
                             </td>
                         `;
@@ -1333,14 +1346,16 @@ async function renderWeeklyGrid() {
                                 booking.tenSan || tenSan,
                                 booking.ngayDat,
                                 Number(booking.gioBatDau),
-                                Number(booking.gioKetThuc) ||
-                                    Number(booking.gioBatDau) + 1,
+                                Number(booking.gioKetThuc) || Number(booking.gioBatDau) + 1,
                                 Number(booking.tongTien || 0),
                                 booking.trangThai,
-                                booking.userName ||
-                                    booking.userEmail ||
-                                    "Khách hàng"
+                                booking.userName || booking.userEmail || "Khách hàng",
+                                booking.userPhone || "---",
+                                booking.trangThaiThanhToan || "Chưa thanh toán",
+                                booking.phuongThucThanhToan || "Không rõ",
+                                booking.maThanhToan || ""
                             );
+                            
                         });
                     });
 
@@ -2080,7 +2095,7 @@ window.showDaySlots = async function(sanId, ngayDat) {
             const bookings = {};
             snapshot.forEach(doc => {
                 const b = doc.data();
-                b.bookingId = doc.id;
+                b.id = doc.id;
                 bookings[b.gioBatDau] = b;
             });
             
@@ -2094,7 +2109,19 @@ window.showDaySlots = async function(sanId, ngayDat) {
                     const statusText = booking.trangThai === 'chờ_xác_nhận' ? '⏳ Chờ xác nhận' : '✅ Đã xác nhận';
                     hoursHtml += `
                         <div style="margin:5px 0; padding:10px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#fff3cd;"
-                            onclick="showBookingDetail('${booking.bookingId}', '${booking.tenSan}', '${ngayDat}', ${hour}, ${hour+1}, ${booking.tongTien}, '${booking.trangThai}', '${booking.userName || booking.userEmail}')">
+                            onclick="showBookingDetail(
+                            '${booking.id}',
+                            '${booking.tenSan}',
+                            '${ngayDat}',
+                            ${hour},
+                            ${hour + 1},
+                            ${booking.tongTien},
+                            '${booking.trangThai}',
+                            '${booking.userName || booking.userEmail}',
+                            '${booking.trangThaiThanhToan || "Chưa thanh toán"}',
+                            '${booking.phuongThucThanhToan || "Không rõ"}',
+                            '${booking.maThanhToan || ""}'
+                            )"
                             <span><strong>${hour}:00 - ${hour+1}:00</strong> - ${booking.userName || booking.userEmail}</span>
                             <span>${statusText}</span>
                         </div>
@@ -2253,141 +2280,367 @@ window.showDaySlots = async function(sanId, ngayDat) {
         };
 
         // Hàm hiển thị chi tiết đơn và xác nhận/hủy
-        window.showBookingDetail = async function(bookingId, tenSan, ngayDat, gioBatDau, gioKetThuc, tongTien, trangThai, userName) {
-            const statusText = trangThai === 'chờ_xác_nhận' ? 'Chờ xác nhận' : 'Đã xác nhận';
-            const isPending = trangThai === 'chờ_xác_nhận';
-            
-            const modal = document.createElement('div'); 
-            modal.className = 'modal'; 
-            modal.style.display = 'flex';
+            window.showBookingDetail = async function(
+                bookingId,
+                tenSan,
+                ngayDat,
+                gioBatDau,
+                gioKetThuc,
+                tongTien,
+                trangThai,
+                userName,
+                userPhone,
+                trangThaiThanhToan,
+                phuongThucThanhToan,
+                maThanhToan
+            ){
+            const isPending =
+                trangThai === "chờ_xác_nhận" ||
+                trangThai === "Chờ xác nhận";
+
+            const statusText = isPending
+                ? "Chờ xác nhận"
+                : trangThai === "đã_hủy"
+                    ? "Đã hủy"
+                    : "Đã xác nhận";
+
+            // CHỈ CẦN CHECK TRẠNG THÁI THANH TOÁN
+            const needConfirmPayment =
+                trangThaiThanhToan === "Chờ xác nhận thanh toán";
+
+            const modal = document.createElement("div");
+            modal.className = "modal";
+            modal.style.display = "flex";
+
             modal.innerHTML = `
                 <div class="modal-content">
                     <h3>Chi tiết đặt sân</h3>
-                    <div style="margin: 15px 0;">
+
+                    <div style="margin:15px 0;">
                         <p><strong>Sân:</strong> ${tenSan}</p>
                         <p><strong>Ngày:</strong> ${ngayDat}</p>
                         <p><strong>Giờ:</strong> ${gioBatDau}:00 - ${gioKetThuc}:00</p>
                         <p><strong>Khách hàng:</strong> ${userName}</p>
-                        <p><strong>Thành tiền:</strong> ${tongTien.toLocaleString()}đ</p>
-                        <p><strong>Trạng thái hiện tại:</strong> <span style="color: ${isPending ? '#ff9800' : '#1a6b30'}">${statusText}</span></p>
+                        <p><strong>Số điện thoại:</strong> ${userPhone || "---"}</p>
+                        <p><strong>Thành tiền:</strong> ${Number(tongTien || 0).toLocaleString()}đ</p>
+
+                        <p>
+                            <strong>Trạng thái đơn:</strong>
+                            <span style="color:${isPending ? '#ff9800' : '#1a6b30'}">
+                                ${statusText}
+                            </span>
+                        </p>
+
+                        <p>
+                            <strong>Thanh toán:</strong>
+                            <span style="color:${needConfirmPayment ? '#2563eb' : '#1a6b30'}">
+                                ${trangThaiThanhToan || "Chưa thanh toán"}
+                            </span>
+                        </p>
+                        <p><strong>Phương thức:</strong> ${phuongThucThanhToan || "Không rõ"}</p>
+
+                        ${maThanhToan ? `
+                            <p>
+                                <strong>Mã thanh toán:</strong>
+                                <span style="color:#2563eb;font-weight:700;">
+                                    ${maThanhToan}
+                                </span>
+                            </p>
+                            ` : ""}
                     </div>
+
                     <div class="modal-buttons">
-                        ${isPending ? `<button class="btn-save" id="confirmBookingBtn" style="background:#1a6b30;">✅ Xác nhận đơn</button>` : ''}
-                        ${isPending ? `<button class="btn-cancel" id="rejectBookingBtn" style="background:#e74c3c;">❌ Từ chối / Xóa</button>` : ''}
-                        <button class="btn-cancel" id="closeDetailModal">Đóng</button>
+
+                        ${
+                            isPending ? `
+                            <button class="btn-save"
+                                id="confirmBookingBtn"
+                                style="background:#1a6b30;">
+                                Xác nhận đơn
+                            </button>
+                        ` : ""
+                        }
+
+                        ${
+                            needConfirmPayment ? `
+                            <button class="btn-save"
+                                id="confirmPaymentBtn"
+                                style="background:#2563eb;">
+                                Xác nhận thanh toán
+                            </button>
+                        ` : ""
+                        }
+
+                        ${
+                            isPending ? `
+                            <button class="btn-cancel"
+                                id="rejectBookingBtn"
+                                style="background:#e74c3c;">
+                                Từ chối / Xóa
+                            </button>
+                        ` : ""
+                        }
+
+                        <button class="btn-cancel" id="closeDetailModal">
+                            Đóng
+                        </button>
+
                     </div>
                 </div>
             `;
-            document.body.appendChild(modal);
-            
-            if (isPending) {
-                document.getElementById('confirmBookingBtn').onclick = async () => {
-                    if (confirm('Xác nhận đơn đặt sân này?')) {
-                        await updateDoc(doc(db, "donDat", bookingId), { trangThai: "đã_xác_nhận" });
-                        alert('Đã xác nhận đơn đặt sân!');
-                        modal.remove();
-                        renderWeeklyGrid();
-                        loadBookings();
-                        loadDashboard();
-                    }
-                };
-                
-                document.getElementById('rejectBookingBtn').onclick = async () => {
-                    if (confirm('Từ chối / Xóa đơn đặt sân này?')) {
-                        await deleteDoc(doc(db, "donDat", bookingId));
-                        alert('Đã xóa đơn đặt sân!');
-                        modal.remove();
-                        renderWeeklyGrid();
-                        loadBookings();
-                        loadDashboard();
-                    }
-                };
-            }
-            
-            document.getElementById('closeDetailModal').onclick = () => modal.remove();
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-        }
 
-        window.showBookingDetail = async function(bookingId, tenSan, ngayDat, gioBatDau, gioKetThuc, tongTien, trangThai, userName) {
-            const isPending = trangThai === 'chờ_xác_nhận';
-            
-            const modal = document.createElement('div'); 
-            modal.className = 'modal'; 
-            modal.style.display = 'flex';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h3>Chi tiết đặt sân</h3>
-                    <div style="margin: 15px 0;">
-                        <p><strong>Sân:</strong> ${tenSan}</p>
-                        <p><strong>Ngày:</strong> ${ngayDat}</p>
-                        <p><strong>Giờ:</strong> ${gioBatDau}:00 - ${gioKetThuc}:00</p>
-                        <p><strong>Khách hàng:</strong> ${userName}</p>
-                        <p><strong>Thành tiền:</strong> ${tongTien.toLocaleString()}đ</p>
-                        <p><strong>Trạng thái hiện tại:</strong> <span style="color: ${isPending ? '#ff9800' : '#1a6b30'}">${isPending ? 'Chờ xác nhận' : 'Đã xác nhận'}</span></p>
-                    </div>
-                    <div class="modal-buttons">
-                        ${isPending ? `<button class="btn-save" id="confirmBookingBtn" style="background:#1a6b30;">Xác nhận đơn</button>` : ''}
-                        ${isPending ? `<button class="btn-cancel" id="rejectBookingBtn" style="background:#e74c3c;">Từ chối / Xóa</button>` : ''}
-                        <button class="btn-cancel" id="closeDetailModal">Đóng</button>
-                    </div>
-                </div>
-            `;
             document.body.appendChild(modal);
-            
-            if (isPending) {
-                document.getElementById('confirmBookingBtn').onclick = async () => {
-                    if (confirm('Xác nhận đơn đặt sân này?')) {
-                        await updateDoc(doc(db, "donDat", bookingId), { trangThai: "đã_xác_nhận" });
-                        alert('Đã xác nhận đơn đặt sân!');
-                        modal.remove();
-                        renderWeeklyGrid();
-                        loadBookings();
-                        loadDashboard();
-                    }
-                };
-                
-                document.getElementById('rejectBookingBtn').onclick = async () => {
-                    if (confirm('Từ chối / Xóa đơn đặt sân này?')) {
-                        await deleteDoc(doc(db, "donDat", bookingId));
-                        alert('Đã xóa đơn đặt sân!');
-                        modal.remove();
-                        renderWeeklyGrid();
-                        loadBookings();
-                        loadDashboard();
-                    }
-                };
-            }
-            
-            document.getElementById('closeDetailModal').onclick = () => modal.remove();
-            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-        }
 
-        async function loadBookings() {
-            const container = document.getElementById('bookingsTab');
-            const q = query(collection(db, "donDat"), orderBy("createdAt", "desc"));
-            const snapshot = await getDocs(q);
-            if (snapshot.empty) { container.innerHTML = '<div class="data-table"><p style="padding:20px;">Chưa có đơn đặt sân nào.</p></div>'; return; }
-            let html = `<div class="card-header"><h2><i class="fas fa-list"></i> Danh sách đơn đặt</h2></div><div class="data-table"><table><thead><tr><th>STT</th><th>Khách hàng</th><th>Sân</th><th>Ngày</th><th>Giờ</th><th>Tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>`;
-            let stt = 1;
-            for (const docSnap of snapshot.docs) {
-                const b = docSnap.data();
-                let statusClass = b.trangThai === 'chờ_xác_nhận' ? 'status-pending' : (b.trangThai === 'đã_xác_nhận' ? 'status-confirmed' : 'status-cancelled');
-                html += `<tr>
-                    <td>${stt++}</td>
-                    <td>${b.userName || b.userEmail || '---'}</td>
-                    <td>${b.tenSan || '---'}</td>
-                    <td>${b.ngayDat || '---'}</td>
-                    <td>${b.gioBatDau}:00 - ${b.gioKetThuc}:00</td>
-                    <td>${(b.tongTien || 0).toLocaleString()}đ</td>
-                    <td><select class="${statusClass}" data-id="${docSnap.id}" style="border:none; padding:4px 12px; border-radius:20px;"><option value="chờ_xác_nhận" ${b.trangThai === 'chờ_xác_nhận' ? 'selected' : ''}>Chờ xác nhận</option><option value="đã_xác_nhận" ${b.trangThai === 'đã_xác_nhận' ? 'selected' : ''}>Đã xác nhận</option><option value="đã_hủy" ${b.trangThai === 'đã_hủy' ? 'selected' : ''}>Đã hủy</option></select></td>
-                    <td><button class="btn-delete" data-id="${docSnap.id}"><i class="fas fa-trash"></i></button></td>
-                </tr>`;
+            // XÁC NHẬN ĐƠN
+            const confirmBookingBtn =
+                document.getElementById("confirmBookingBtn");
+
+            if (confirmBookingBtn) {
+                confirmBookingBtn.onclick = async () => {
+                    if (confirm("Xác nhận đơn đặt sân này?")) {
+                        await updateDoc(
+                            doc(db, "donDat", bookingId),
+                            {
+                                trangThai: "đã_xác_nhận"
+                            }
+                        );
+
+                        alert("Đã xác nhận đơn đặt sân!");
+
+                        modal.remove();
+                        renderWeeklyGrid();
+                        loadBookings();
+                        loadDashboard();
+                    }
+                };
             }
-            html += `</tbody></table></div>`;
-            container.innerHTML = html;
-            document.querySelectorAll('.status-pending, .status-confirmed, .status-cancelled').forEach(select => { select.onchange = async () => { if (confirm('Cập nhật trạng thái?')) { await updateDoc(doc(db, "donDat", select.dataset.id), { trangThai: select.value }); loadBookings(); } }; });
-            document.querySelectorAll('.btn-delete').forEach(btn => { btn.onclick = async () => { if (confirm('Xóa đơn này?')) { await deleteDoc(doc(db, "donDat", btn.dataset.id)); loadBookings(); } }; });
-        }
+
+            // XÁC NHẬN THANH TOÁN
+            const confirmPaymentBtn =
+                document.getElementById("confirmPaymentBtn");
+
+            if (confirmPaymentBtn) {
+                confirmPaymentBtn.onclick = async () => {
+                    if (confirm("Xác nhận khách đã thanh toán?")) {
+                        await updateDoc(
+                            doc(db, "donDat", bookingId),
+                            {
+                                trangThaiThanhToan: "Đã thanh toán"
+                            }
+                        );
+
+                        alert("Đã xác nhận thanh toán!");
+
+                        modal.remove();
+                        renderWeeklyGrid();
+                        loadBookings();
+                        loadDashboard();
+                    }
+                };
+            }
+
+            // TỪ CHỐI / XÓA
+            const rejectBookingBtn =
+                document.getElementById("rejectBookingBtn");
+
+            if (rejectBookingBtn) {
+                rejectBookingBtn.onclick = async () => {
+                    if (confirm("Từ chối / Xóa đơn đặt sân này?")) {
+                        await deleteDoc(
+                            doc(db, "donDat", bookingId)
+                        );
+
+                        alert("Đã xóa đơn!");
+
+                        modal.remove();
+                        renderWeeklyGrid();
+                        loadBookings();
+                        loadDashboard();
+                    }
+                };
+            }
+
+            document.getElementById("closeDetailModal").onclick = () => {
+                modal.remove();
+            };
+
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+        };
+
+async function loadBookings() {
+    const container = document.getElementById('bookingsTab');
+
+    const q = query(
+        collection(db, "donDat"),
+        orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        container.innerHTML = `
+            <div class="data-table">
+                <p style="padding:20px;">
+                    Chưa có đơn đặt sân nào.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div class="card-header">
+            <h2>
+                <i class="fas fa-list"></i> Danh sách đơn đặt
+            </h2>
+        </div>
+
+        <div class="data-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Khách hàng</th>
+                        <th>Sân</th>
+                        <th>Ngày</th>
+                        <th>Giờ</th>
+                        <th>Tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    let stt = 1;
+
+    for (const docSnap of snapshot.docs) {
+        const b = docSnap.data();
+
+        let statusClass =
+            b.trangThai === 'chờ_xác_nhận'
+                ? 'status-pending'
+                : (
+                    b.trangThai === 'đã_xác_nhận'
+                        ? 'status-confirmed'
+                        : 'status-cancelled'
+                );
+
+        html += `
+            <tr>
+                <td>${stt++}</td>
+
+                <td>${b.userName || b.userEmail || '---'}</td>
+
+                <td>${b.tenSan || '---'}</td>
+
+                <td>${b.ngayDat || '---'}</td>
+
+                <td>
+                    ${b.gioBatDau || 0}:00 - ${b.gioKetThuc || 0}:00
+                </td>
+
+                <td>
+                    ${(b.tongTien || 0).toLocaleString()}đ
+                </td>
+
+                <td>
+                    <select 
+                        class="${statusClass}"
+                        data-id="${docSnap.id}"
+                        style="border:none;padding:4px 12px;border-radius:20px;"
+                    >
+                        <option value="chờ_xác_nhận"
+                            ${b.trangThai === 'chờ_xác_nhận' ? 'selected' : ''}>
+                            Chờ xác nhận
+                        </option>
+
+                        <option value="đã_xác_nhận"
+                            ${b.trangThai === 'đã_xác_nhận' ? 'selected' : ''}>
+                            Đã xác nhận
+                        </option>
+
+                        <option value="đã_hủy"
+                            ${b.trangThai === 'đã_hủy' ? 'selected' : ''}>
+                            Đã hủy
+                        </option>
+                    </select>
+                </td>
+
+                <td>
+                    <button
+                        class="btn-view"
+                        onclick="showBookingDetail(
+                            '${docSnap.id}',
+                            '${b.tenSan || ""}',
+                            '${b.ngayDat || ""}',
+                            ${Number(b.gioBatDau || 0)},
+                            ${Number(b.gioKetThuc || 0)},
+                            ${Number(b.tongTien || 0)},
+                            '${b.trangThai || ""}',
+                            '${b.userName || b.userEmail || "Khách hàng"}',
+                            '${b.userPhone || "---"}',
+                            '${b.trangThaiThanhToan || "Chưa thanh toán"}',
+                            '${b.phuongThucThanhToan || "Không rõ"}',
+                            '${b.maThanhToan || ""}'
+                        )"
+                        style="margin-right:10px;color:#ff9800;"
+                    >
+                        <i class="fas fa-eye"></i>
+                    </button>
+
+                    <button
+                        class="btn-delete"
+                        data-id="${docSnap.id}"
+                    >
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    container.innerHTML = html;
+
+    document.querySelectorAll(
+        '.status-pending, .status-confirmed, .status-cancelled'
+    ).forEach(select => {
+        select.onchange = async () => {
+            if (confirm('Cập nhật trạng thái?')) {
+                await updateDoc(
+                    doc(db, "donDat", select.dataset.id),
+                    {
+                        trangThai: select.value
+                    }
+                );
+
+                loadBookings();
+            }
+        };
+    });
+
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.onclick = async () => {
+            if (confirm('Xóa đơn này?')) {
+                await deleteDoc(
+                    doc(db, "donDat", btn.dataset.id)
+                );
+
+                loadBookings();
+            }
+        };
+    });
+}
 async function loadSans() {
     const snapshot = await getDocs(
         collection(db, "san")

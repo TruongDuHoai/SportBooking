@@ -36,7 +36,7 @@ let currentUser = null;
 let selectedDate = "";
 let selectedHours = [];
 
-const gioTrongNgay = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
+const gioTrongNgay = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
 
 async function loadSan() {
     const sanSnap = await getDoc(doc(db, "san", sanId));
@@ -134,39 +134,75 @@ function bindEvents() {
 async function loadLichTrong() {
     selectedHours = [];
 
-    let html = `<div class="time-slots-grid">`;
+    if (!selectedDate) {
+        document.getElementById("timeSlots").innerHTML =
+            "<p>Vui lòng chọn ngày.</p>";
+        return;
+    }
 
-    gioTrongNgay.forEach(gio => {
-        html += `
-            <label class="time-slot-label">
-                <input type="checkbox" value="${gio}" class="time-checkbox">
-                ${String(gio).padStart(2, "0")}:00 - ${String(gio + 1).padStart(2, "0")}:00
-            </label>
-        `;
-    });
+    try {
+        const q = query(
+            collection(db, "donDat"),
+            where("sanId", "==", sanId),
+            where("ngayDat", "==", selectedDate)
+        );
 
-    html += `</div>`;
-    document.getElementById("timeSlots").innerHTML = html;
+        const snapshot = await getDocs(q);
 
-    document.querySelectorAll(".time-checkbox").forEach(cb => {
-        cb.addEventListener("change", e => {
-            const gio = Number(e.target.value);
-            const label = e.target.closest(".time-slot-label");
+        const bookedHours = [];
 
-            if (e.target.checked) {
-                if (!selectedHours.includes(gio)) {
-                    selectedHours.push(gio);
-                }
-                label.classList.add("selected");
-            } else {
-                selectedHours = selectedHours.filter(h => h !== gio);
-                label.classList.remove("selected");
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+
+            if (data.trangThai !== "Đã hủy") {
+                bookedHours.push(Number(data.gioBatDau));
             }
-
-            selectedHours.sort((a, b) => a - b);
-            updateTotal();
         });
-    });
+
+        let html = `<div class="time-slots-grid">`;
+
+        gioTrongNgay.forEach(gio => {
+            const daDat = bookedHours.includes(gio);
+
+            html += `
+                <label class="time-slot-label ${daDat ? "disabled" : ""}">
+                    <input 
+                        type="checkbox" 
+                        value="${gio}" 
+                        class="time-checkbox"
+                        ${daDat ? "disabled" : ""}
+                    >
+                    ${String(gio).padStart(2, "0")}:00 - ${String(gio + 1).padStart(2, "0")}:00
+                    ${daDat ? " (Đã đặt)" : ""}
+                </label>
+            `;
+        });
+
+        html += `</div>`;
+
+        document.getElementById("timeSlots").innerHTML = html;
+
+        document.querySelectorAll(".time-checkbox").forEach(cb => {
+            cb.addEventListener("change", e => {
+                const gio = Number(e.target.value);
+                const label = e.target.closest(".time-slot-label");
+
+                if (e.target.checked) {
+                    selectedHours.push(gio);
+                    label.classList.add("selected");
+                } else {
+                    selectedHours = selectedHours.filter(h => h !== gio);
+                    label.classList.remove("selected");
+                }
+
+                selectedHours.sort((a, b) => a - b);
+                updateTotal();
+            });
+        });
+
+    } catch (error) {
+        console.error("Lỗi load lịch:", error);
+    }
 }
 
 function updateTotal() {
@@ -189,7 +225,11 @@ async function datSan() {
             tenSan: currentSan.ten,
             ngayDat: selectedDate,
             gioBatDau: gio,
-            gia: currentSan.gia
+            gioKetThuc: gio + 1,
+            gia: currentSan.gia,
+            diaChi: currentSan.diaChi || "",
+            loai: currentSan.loai || "",
+            hinhAnh: currentSan.hinhAnh || ""
         });
     });
 
