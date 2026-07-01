@@ -116,29 +116,41 @@ async function loadOrders(userId){
 
 async function loadFavorite(userId){
     const favoriteBox = document.getElementById("favoriteList");
-
-    const favRef = doc(db,"favorites",userId);
-    const favSnap = await getDoc(favRef);
-
-    if(!favSnap.exists()){
+    const q = query(collection(db,"favorites"),where("userId","==",userId));
+    const snap = await getDocs(q);
+    if(snap.empty){
         favoriteBox.innerHTML = `<p>Chưa có sân yêu thích nào.</p>`;
         return;
     }
-
-    const fav = favSnap.data();
-
-    favoriteBox.innerHTML = `
-        <div class="favorite-item">
-            <strong>${fav.tenSan}</strong>
-            <button class="btn-rebook" onclick="datLaiYeuThich('${fav.sanId}')">
-                Đặt sân
-            </button>
-        </div>
-    `;
+    let html = "";
+    snap.forEach(docSnap=>{
+        const fav = docSnap.data();
+        html += `
+            <div class="favorite-item">
+                <strong>${fav.tenSan}</strong>
+                <div>
+                    <button class="btn-rebook" onclick="datLaiYeuThich('${fav.sanId}')">
+                        Đặt sân
+                    </button>
+                    <button class="btn-cancel" onclick="xoaYeuThich('${docSnap.id}')">
+                        Xóa
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    favoriteBox.innerHTML = html;
 }
 
 window.datLaiYeuThich = function(sanId){
     window.location.href = `chitiet.html?id=${sanId}`;
+}
+
+window.xoaYeuThich = async function(docId){
+    if(!confirm("Bạn chắc chắn muốn xóa sân này khỏi danh sách yêu thích?")) return;
+    await deleteDoc(doc(db,"favorites",docId));
+    alert("Đã xóa khỏi danh sách yêu thích");
+    loadFavorite(auth.currentUser.uid);
 }
 
 document.getElementById("editBtn").onclick = ()=>{
