@@ -113,6 +113,33 @@ async function loadOrders(userId){
     orderList.innerHTML = html;
 }
 
+async function loadFavorite(userId){
+    const favoriteBox = document.getElementById("favoriteList");
+
+    const favRef = doc(db,"favorites",userId);
+    const favSnap = await getDoc(favRef);
+
+    if(!favSnap.exists()){
+        favoriteBox.innerHTML = `<p>Chưa có sân yêu thích nào.</p>`;
+        return;
+    }
+
+    const fav = favSnap.data();
+
+    favoriteBox.innerHTML = `
+        <div class="favorite-item">
+            <strong>${fav.tenSan}</strong>
+            <button class="btn-rebook" onclick="datLaiYeuThich('${fav.sanId}')">
+                Đặt sân
+            </button>
+        </div>
+    `;
+}
+
+window.datLaiYeuThich = function(sanId){
+    window.location.href = `chitiet.html?id=${sanId}`;
+}
+
 document.getElementById("editBtn").onclick = ()=>{
     document.getElementById("editForm").style.display = "block";
 };
