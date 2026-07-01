@@ -248,6 +248,7 @@ async function luuYeuThich() {
 
     alert("Đã lưu yêu thích");
 }
+
 async function guiDanhGia() {
     if (!currentUser) {
         window.location.href = "dangnhap.html";
