@@ -456,6 +456,47 @@ function getItemDiscount(itemTotal, index) {
     return Math.floor(itemTotal * discountValue / originalTotal);
 }
 
+function showPaymentModal(methodText, total) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById("paymentModal");
+        const modalText = document.getElementById("paymentModalText");
+        const paymentContent = document.getElementById("paymentContent");
+        const confirmPaidBtn = document.getElementById("confirmPaidBtn");
+        const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
+        const qrImage = document.getElementById("qrImage");
+
+        const code = "SB" + Date.now();
+
+        modalText.innerHTML = `
+            Phương thức: <strong>${methodText}</strong><br>
+            Số tiền: <strong>${formatMoney(total)}</strong>
+        `;
+
+        paymentContent.textContent = code;
+
+        const qrText = `SPORTBOOKING|${methodText}|${total}|${code}`;
+        qrImage.src =
+            `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
+
+        modal.style.display = "flex";
+
+        confirmPaidBtn.onclick = () => {
+            modal.style.display = "none";
+            resolve({
+                paid: true,
+                code: code
+            });
+        };
+
+        cancelPaymentBtn.onclick = () => {
+            modal.style.display = "none";
+            resolve({
+                paid: false,
+                code: ""
+            });
+        };
+    });
+}
 async function submitOrder() {
     const fullName = document.getElementById("fullName").value.trim();
     const phone = document.getElementById("phone").value.trim();
@@ -489,8 +530,25 @@ async function submitOrder() {
 
     updatePaymentSummary();
 
-    if (!confirm(`Xác nhận thanh toán ${formatMoney(finalTotal)} ?`)) {
-        return;
+    let paymentCode = "";
+    let paymentStatus =
+        paymentMethod === "cod"
+            ? "Chưa thanh toán"
+            : "Chờ xác nhận thanh toán";
+
+    if (paymentMethod === "cod") {
+        if (!confirm(`Xác nhận đặt sân ${formatMoney(finalTotal)} ?`)) {
+            return;
+        }
+    } else {
+        const result = await showPaymentModal(methodText, finalTotal);
+
+        if (!result.paid) {
+            alert("Bạn đã hủy thanh toán.");
+            return;
+        }
+
+        paymentCode = result.code;
     }
 
     const btn = document.getElementById("submitOrderBtn");
@@ -531,10 +589,9 @@ async function submitOrder() {
 
                 trangThai: "Chờ xác nhận",
                 phuongThucThanhToan: methodText,
-                trangThaiThanhToan:
-                    paymentMethod === "cod"
-                        ? "Chưa thanh toán"
-                        : "Chờ thanh toán",
+                trangThaiThanhToan: paymentStatus,
+                maThanhToan: paymentCode,
+                soTienThanhToan: finalTotal,
 
                 createdAt: new Date().toISOString(),
                 createdAtServer: serverTimestamp()

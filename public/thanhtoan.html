@@ -200,6 +200,45 @@
                 text-align:left;
             }
         }
+        .payment-modal{
+            display:none;
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.55);
+            z-index:9999;
+            align-items:center;
+            justify-content:center;
+            padding:20px;
+        }
+
+        .payment-modal-content{
+            width:100%;
+            max-width:520px;
+            background:white;
+            border-radius:18px;
+            padding:28px;
+            text-align:center;
+        }
+
+        .qr-box{
+            margin:18px auto;
+            width:220px;
+            height:220px;
+        }
+
+        .qr-box img{
+            width:100%;
+            height:100%;
+            object-fit:contain;
+        }
+
+        .bank-info{
+            text-align:left;
+            background:#f7faf7;
+            border-radius:12px;
+            padding:15px;
+            margin:18px 0;
+        }
     </style>
 </head>
 <body>
@@ -243,6 +282,31 @@
     </div>
 </div>
 
+<div id="paymentModal" class="payment-modal">
+    <div class="payment-modal-content">
+        <h2>Xác nhận chuyển khoản</h2>
+        <p id="paymentModalText"></p>
+
+        <div class="qr-box">
+            <img id="qrImage" src="" alt="QR thanh toán">
+        </div>
+
+        <div class="bank-info">
+            <p><strong>Ngân hàng:</strong> MB Bank</p>
+            <p><strong>Số tài khoản:</strong> 0123456789</p>
+            <p><strong>Chủ tài khoản:</strong> SPORTBOOKING</p>
+            <p><strong>Nội dung:</strong> <span id="paymentContent"></span></p>
+        </div>
+
+        <button id="confirmPaidBtn" class="btn-submit btn-main">
+            Tôi đã thanh toán
+        </button>
+
+        <button id="cancelPaymentBtn" class="btn-submit btn-back">
+            Hủy thanh toán
+        </button>
+    </div>
+</div>
 <script type="module" src="js/thanhtoan.js?v=promo"></script>
 
 </body>
