@@ -76,7 +76,7 @@ async function loadProfile(user){
     document.getElementById("infoFullName").textContent = userData.fullName;
     document.getElementById("infoEmail").textContent = userData.email;
     document.getElementById("infoPhone").textContent = userData.phone || "Chưa cập nhật";
-    document.getElementById("infoRole").textContent = getRole(userData.role);
+    //document.getElementById("infoRole").textContent = getRole(userData.role);
     document.getElementById("infoCreatedAt").textContent = formatDate(userData.createdAt);
 
     document.getElementById("editFullName").value = userData.fullName;
@@ -143,6 +143,40 @@ async function loadFavorite(userId){
     favoriteBox.innerHTML = html;
 }
 
+async function loadFavorites() {
+    const box = document.getElementById("favoriteList");
+    if (!box || !currentUser) return;
+
+    const q = query(
+        collection(db, "favorites"),
+        where("userId", "==", currentUser.uid)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        box.innerHTML = "<p>Chưa có sân yêu thích.</p>";
+        return;
+    }
+
+    let html = "";
+
+    snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+
+        html += `
+            <div class="favorite-item" style="padding:15px;border:1px solid #eee;border-radius:10px;margin-bottom:10px;">
+                <strong>${item.tenSan || "Không rõ tên sân"}</strong><br>
+                <span>${item.diaChi || ""}</span><br>
+                <span>${Number(item.gia || 0).toLocaleString()}đ / giờ</span><br>
+                <a href="chitiet.html?id=${item.sanId}" style="color:#1a6b30;">Xem chi tiết</a>
+            </div>
+        `;
+    });
+
+    box.innerHTML = html;
+}
+
 window.datLaiYeuThich = function(sanId){
     window.location.href = `chitiet.html?id=${sanId}`;
 }
@@ -185,7 +219,7 @@ document.getElementById("saveBtn").onclick = async ()=>{
     window.location.reload();
 };
 
-document.getElementById("logoutBtnInProfile").onclick = async (e)=>{
+document.getElementById("logoutBtnInProfile").onclick = async (e) => {
     e.preventDefault();
 
     await signOut(auth);
@@ -193,11 +227,15 @@ document.getElementById("logoutBtnInProfile").onclick = async (e)=>{
     window.location.href = "index.html";
 };
 
-onAuthStateChanged(auth,(user)=>{
-    if(!user){
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
         window.location.href = "dangnhap.html";
         return;
     }
 
-    loadProfile(user);
+    currentUser = user;
+
+    await loadProfile(user);
+    await loadFavorites();
 });

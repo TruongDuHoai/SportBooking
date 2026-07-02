@@ -382,7 +382,9 @@ async function applyPromotionCode() {
             return;
         }
 
-        const value = Number(promotion.value || 0);
+        const value = Number(
+            promotion.value || promotion.discount || 0
+        );
 
         if (value <= 0) {
             promoMessage.textContent = "Mã khuyến mãi không hợp lệ.";
@@ -393,7 +395,7 @@ async function applyPromotionCode() {
         const discountType = String(
             promotion.discountType ||
             promotion.type ||
-            "fixed"
+            "percent"
         ).toLowerCase();
 
         if (

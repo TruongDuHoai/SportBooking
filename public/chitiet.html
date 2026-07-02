@@ -224,8 +224,19 @@
         <a href="giohang.html">Giỏ hàng</a>
         <a href="lichsu.html">Lịch sử</a>
         <a href="lienhe.html">Liên hệ</a>
-        <a href="#" id="loginBtn">Đăng nhập</a>
-        <a href="taikhoan.html" id="userInfoBtn" style="display:none;">Tài khoản</a>
+
+        <a href="dangnhap.html" id="loginBtn">Đăng nhập</a>
+
+        <div id="userDropdownArea" style="display:none;position:relative;">
+            <a href="#" id="userInfoBtn">Tài khoản</a>
+
+            <div id="dropdownMenu"
+                style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;z-index:999;">
+                <a href="taikhoan.html" style="display:block;padding:12px;color:#333;text-decoration:none;">Thông tin</a>
+                <a href="lichsu.html" style="display:block;padding:12px;color:#333;text-decoration:none;">Lịch sử</a>
+                <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#e74c3c;text-decoration:none;">Đăng xuất</a>
+            </div>
+        </div>
     </nav>
 </header>
 
