@@ -436,109 +436,169 @@
         }
 
         async function renderAdminPanel() {
-            if (!currentUser) { redirectToLogin(); return; }
-            
-            currentUserRole = await checkUserRole(currentUser);
-            console.log("Final role:", currentUserRole);
-            
-            // Staff và Admin được vào, User thì chặn
-            if (currentUserRole !== 'admin' && currentUserRole !== 'staff') {
-                document.getElementById('adminApp').innerHTML = `
-                    <div style="text-align: center; padding: 50px; color: red;">
-                        <i class="fas fa-lock" style="font-size: 50px;"></i>
-                        <h2>Truy cập bị từ chối</h2>
-                        <p>Bạn không có quyền truy cập trang quản trị.</p>
-                        <a href="index.html" style="color: #1a6b30;">← Về trang chủ</a>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Admin thấy đầy đủ menu, Staff chỉ thấy Lịch sân
-            let sidebarHtml = '';
-            if (currentUserRole === 'admin') {
-                    sidebarHtml = `
-                        <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                        <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
-                        <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
-                        <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
-                        <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
-                        <a href="#" data-tab="policies"><i class="fas fa-file-contract"></i> Quản lý chính sách</a>
-                        <a href="#" data-tab="promotions"><i class="fas fa-tags"></i> Quản lý khuyến mãi</a>
-                        <a href="#" data-tab="banners"><i class="fas fa-images"></i> Quản lý banner</a>
-                        <a href="#" data-tab="comments"><i class="fas fa-comments"></i> Duyệt bình luận</a>
-                        <a href="#" data-tab="feedback"><i class="fas fa-envelope"></i> Phản hồi khách hàng</a>
-                        <a href="#" data-tab="mostBookedReport"> <i class="fas fa-chart-bar"></i> Báo cáo sân đặt nhiều nhất </a>
+    if (!currentUser) {
+        redirectToLogin();
+        return;
+    }
 
-                `;
-            } else {
-                sidebarHtml = `
-                    <a href="#" data-tab="calendar" class="active"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
-                `;
-            }
-            
-            document.getElementById('adminApp').innerHTML = `
-                <div class="admin-header"><h1><i class="fas fa-crown"></i> SportBooking Admin</h1><div><span><i class="fas fa-user-shield"></i> ${currentUser?.email} (${currentUserRole === 'admin' ? 'Admin' : 'Nhân viên'})</span><button id="logoutBtn" style="margin-left:20px; background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button></div></div>
-                <div class="admin-container">
-                    <div class="sidebar">${sidebarHtml}</div>
-                    <div class="content">
-                        <div id="dashboardTab" style="display:none;"></div>
-                        <div id="calendarTab"></div>
-                        <div id="bookingsTab" style="display:none;"></div>
-                        <div id="sansTab" style="display:none;"></div>
-                        <div id="usersTab" style="display:none;"></div>
-                        <div id="policiesTab" style="display:none;"></div>
-                        <div id="promotionsTab" style="display:none;"></div>
-                        <div id="bannersTab" style="display:none;"></div>
-                        <div id="commentsTab" style="display:none;"></div>
-                        <div id="feedbackTab" style="display:none;"></div>
-                        <div id="mostBookedReportTab" style="display:none;"></div>
-                    </div>
-                </div>
-            `;
-            
-            document.querySelectorAll('.sidebar a').forEach(link => {
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    document.querySelectorAll('.sidebar a').forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                    const tab = link.dataset.tab;
-                    document.getElementById('dashboardTab').style.display = tab === 'dashboard' ? 'block' : 'none';
-                    document.getElementById('calendarTab').style.display = tab === 'calendar' ? 'block' : 'none';
-                    document.getElementById('bookingsTab').style.display = tab === 'bookings' ? 'block' : 'none';
-                    document.getElementById('sansTab').style.display = tab === 'sans' ? 'block' : 'none';
-                    document.getElementById('usersTab').style.display = tab === 'users' ? 'block' : 'none';
-                    document.getElementById('policiesTab').style.display = tab === 'policies' ? 'block' : 'none';
-                    document.getElementById('promotionsTab').style.display = tab === 'promotions' ? 'block' : 'none';
-                    document.getElementById('bannersTab').style.display = tab === 'banners' ? 'block' : 'none';
-                    document.getElementById('commentsTab').style.display = tab === 'comments' ? 'block' : 'none';
-                    document.getElementById('feedbackTab').style.display = tab === 'feedback' ? 'block' : 'none';
-                    document.getElementById('mostBookedReportTab').style.display = tab === 'mostBookedReport' ? 'block' : 'none';
+    currentUserRole = await checkUserRole(currentUser);
+    console.log("Final role:", currentUserRole);
 
-                    if (tab === 'dashboard') loadDashboard();
-                    if (tab === 'calendar') loadCalendar();
-                    if (tab === 'bookings') loadBookings();
-                    if (tab === 'sans') loadSans();
-                    if (tab === 'users') loadUsers();
-                    if (tab === 'policies') loadPolicies();
-                    if (tab === 'promotions') loadPromotions();
-                    if (tab === 'banners') loadBanners();
-                    if (tab === 'comments') loadComments();
-                    if (tab === 'feedback') loadFeedback();
-                    if (tab === 'mostBookedReport') {
-    loadMostBookedSanReport();
-}
-                };
+    if (currentUserRole !== "admin" && currentUserRole !== "staff") {
+        document.getElementById("adminApp").innerHTML = `
+            <div style="text-align:center; padding:50px; color:red;">
+                <i class="fas fa-lock" style="font-size:50px;"></i>
+                <h2>Truy cập bị từ chối</h2>
+                <p>Bạn không có quyền truy cập trang quản trị.</p>
+                <a href="index.html" style="color:#1a6b30;">← Về trang chủ</a>
+            </div>
+        `;
+        return;
+    }
+
+    let sidebarHtml = "";
+
+    if (currentUserRole === "admin") {
+        sidebarHtml = `
+            <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
+            <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
+            <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
+            <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
+            <a href="#" data-tab="policies"><i class="fas fa-file-contract"></i> Quản lý chính sách</a>
+            <a href="#" data-tab="promotions"><i class="fas fa-tags"></i> Quản lý khuyến mãi</a>
+            <a href="#" data-tab="banners"><i class="fas fa-images"></i> Quản lý banner</a>
+            <a href="#" data-tab="comments"><i class="fas fa-comments"></i> Duyệt bình luận</a>
+            <a href="#" data-tab="feedback"><i class="fas fa-envelope"></i> Phản hồi khách hàng</a>
+            <a href="#" data-tab="foods"><i class="fas fa-utensils"></i> Quản lý đồ ăn</a>
+            <a href="#" data-tab="mostBookedReport"><i class="fas fa-chart-bar"></i> Báo cáo sân đặt nhiều nhất</a>
+        `;
+    } else {
+        sidebarHtml = `
+            <a href="#" data-tab="calendar" class="active"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
+        `;
+    }
+
+    document.getElementById("adminApp").innerHTML = `
+        <div class="admin-header">
+            <h1>
+                <a href="admin.html"
+                   style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-crown"></i>
+                    SportBooking Admin
+                </a>
+            </h1>
+
+            <div>
+                <span>
+                    <i class="fas fa-user-shield"></i>
+                    ${currentUser?.email}
+                    (${currentUserRole === "admin" ? "Admin" : "Nhân viên"})
+                </span>
+
+                <button id="logoutBtn"
+                    style="margin-left:20px; background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-container">
+            <div class="sidebar">${sidebarHtml}</div>
+
+            <div class="content">
+                <div id="dashboardTab" style="display:none;"></div>
+                <div id="calendarTab" style="display:none;"></div>
+                <div id="bookingsTab" style="display:none;"></div>
+                <div id="sansTab" style="display:none;"></div>
+                <div id="usersTab" style="display:none;"></div>
+                <div id="policiesTab" style="display:none;"></div>
+                <div id="promotionsTab" style="display:none;"></div>
+                <div id="bannersTab" style="display:none;"></div>
+                <div id="commentsTab" style="display:none;"></div>
+                <div id="feedbackTab" style="display:none;"></div>
+                <div id="foodsTab" style="display:none;"></div>
+                <div id="mostBookedReportTab" style="display:none;"></div>
+            </div>
+        </div>
+    `;
+
+    document.querySelectorAll(".sidebar a").forEach(link => {
+        link.onclick = (e) => {
+            e.preventDefault();
+
+            document.querySelectorAll(".sidebar a").forEach(l => {
+                l.classList.remove("active");
             });
-            
-            document.getElementById('logoutBtn').onclick = async () => { await signOut(auth); window.location.href = 'index.html'; };
-            
-            if (currentUserRole === 'admin') {
-                loadDashboard();
-            } else {
-                loadCalendar();
-            }
-        }
+
+            link.classList.add("active");
+
+            const tab = link.dataset.tab;
+
+            document.getElementById("dashboardTab").style.display =
+                tab === "dashboard" ? "block" : "none";
+
+            document.getElementById("calendarTab").style.display =
+                tab === "calendar" ? "block" : "none";
+
+            document.getElementById("bookingsTab").style.display =
+                tab === "bookings" ? "block" : "none";
+
+            document.getElementById("sansTab").style.display =
+                tab === "sans" ? "block" : "none";
+
+            document.getElementById("usersTab").style.display =
+                tab === "users" ? "block" : "none";
+
+            document.getElementById("policiesTab").style.display =
+                tab === "policies" ? "block" : "none";
+
+            document.getElementById("promotionsTab").style.display =
+                tab === "promotions" ? "block" : "none";
+
+            document.getElementById("bannersTab").style.display =
+                tab === "banners" ? "block" : "none";
+
+            document.getElementById("commentsTab").style.display =
+                tab === "comments" ? "block" : "none";
+
+            document.getElementById("feedbackTab").style.display =
+                tab === "feedback" ? "block" : "none";
+
+            document.getElementById("foodsTab").style.display =
+                tab === "foods" ? "block" : "none";
+
+            document.getElementById("mostBookedReportTab").style.display =
+                tab === "mostBookedReport" ? "block" : "none";
+
+            if (tab === "dashboard") loadDashboard();
+            if (tab === "calendar") loadCalendar();
+            if (tab === "bookings") loadBookings();
+            if (tab === "sans") loadSans();
+            if (tab === "users") loadUsers();
+            if (tab === "policies") loadPolicies();
+            if (tab === "promotions") loadPromotions();
+            if (tab === "banners") loadBanners();
+            if (tab === "comments") loadComments();
+            if (tab === "feedback") loadFeedback();
+            if (tab === "foods") loadFoodsAdmin();
+            if (tab === "mostBookedReport") loadMostBookedSanReport();
+        };
+    });
+
+    document.getElementById("logoutBtn").onclick = async () => {
+        await signOut(auth);
+        window.location.href = "index.html";
+    };
+
+    if (currentUserRole === "admin") {
+        document.getElementById("dashboardTab").style.display = "block";
+        loadDashboard();
+    } else {
+        document.getElementById("calendarTab").style.display = "block";
+        loadCalendar();
+    }
+}
 
         let currentSanId = null;
         let selectedCalendarSlots = [];
@@ -2641,6 +2701,165 @@ async function loadBookings() {
         };
     });
 }
+async function loadFoodsAdmin() {
+    const container = document.getElementById("foodsTab");
+
+    container.innerHTML = `
+        <div class="card-header">
+            <h2><i class="fas fa-utensils"></i> Quản lý đồ ăn & thức uống</h2>
+            <button class="btn-add" onclick="openFoodModal()">
+                <i class="fas fa-plus"></i> Thêm món
+            </button>
+        </div>
+
+        <div class="data-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Tên món</th>
+                        <th>Phân loại</th>
+                        <th>Giá</th>
+                        <th>Tồn kho</th>
+                        <th>Hình ảnh</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="foodTableBody"></tbody>
+            </table>
+        </div>
+    `;
+
+    const snap = await getDocs(collection(db, "dichVuAnUong"));
+    const tbody = document.getElementById("foodTableBody");
+
+    let html = "";
+    let stt = 1;
+
+    snap.forEach(docSnap => {
+        const food = docSnap.data();
+
+        html += `
+            <tr>
+                <td>${stt++}</td>
+                <td>${food.ten || "---"}</td>
+                <td>${food.phanLoai || "---"}</td>
+                <td>${Number(food.gia || 0).toLocaleString()}đ</td>
+                <td>${food.soLuong || 0}</td>
+                <td>
+                    <img src="${food.hinhAnh || ""}" 
+                         style="width:60px;height:45px;object-fit:cover;border-radius:6px;">
+                </td>
+                <td>
+                    <button class="btn-edit" onclick="openFoodModal(
+                        '${docSnap.id}',
+                        '${food.ten || ""}',
+                        '${food.phanLoai || ""}',
+                        ${Number(food.gia || 0)},
+                        ${Number(food.soLuong || 0)},
+                        '${food.hinhAnh || ""}'
+                    )">
+                        <i class="fas fa-edit"></i>
+                    </button>
+
+                    <button class="btn-delete" onclick="deleteFood('${docSnap.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html || `
+        <tr>
+            <td colspan="7" style="text-align:center;padding:20px;">
+                Chưa có món ăn nào.
+            </td>
+        </tr>
+    `;
+}
+
+window.openFoodModal = function(
+    foodId = "",
+    ten = "",
+    phanLoai = "",
+    gia = 0,
+    soLuong = 0,
+    hinhAnh = ""
+) {
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.style.display = "flex";
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>${foodId ? "Cập nhật món" : "Thêm món ăn"}</h3>
+
+            <label>Tên món</label>
+            <input type="text" id="foodTen" value="${ten}">
+
+            <label>Phân loại</label>
+            <select id="foodPhanLoai">
+                <option value="Nước uống" ${phanLoai === "Nước uống" ? "selected" : ""}>Nước uống</option>
+                <option value="Đồ ăn" ${phanLoai === "Đồ ăn" ? "selected" : ""}>Đồ ăn</option>
+            </select>
+
+            <label>Giá</label>
+            <input type="number" id="foodGia" value="${gia}">
+
+            <label>Số lượng tồn kho</label>
+            <input type="number" id="foodSoLuong" value="${soLuong}">
+
+            <label>Link hình ảnh</label>
+            <input type="text" id="foodHinhAnh" value="${hinhAnh}">
+
+            <div class="modal-buttons">
+                <button class="btn-save" id="saveFoodBtn">Lưu</button>
+                <button class="btn-cancel" id="closeFoodModal">Hủy</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById("closeFoodModal").onclick = () => modal.remove();
+
+    document.getElementById("saveFoodBtn").onclick = async () => {
+        const data = {
+            ten: document.getElementById("foodTen").value.trim(),
+            phanLoai: document.getElementById("foodPhanLoai").value,
+            gia: Number(document.getElementById("foodGia").value || 0),
+            soLuong: Number(document.getElementById("foodSoLuong").value || 0),
+            hinhAnh: document.getElementById("foodHinhAnh").value.trim(),
+            updatedAt: new Date()
+        };
+
+        if (!data.ten) {
+            alert("Vui lòng nhập tên món");
+            return;
+        }
+
+        if (foodId) {
+            await updateDoc(doc(db, "dichVuAnUong", foodId), data);
+            alert("Đã cập nhật món!");
+        } else {
+            data.createdAt = new Date();
+            await addDoc(collection(db, "dichVuAnUong"), data);
+            alert("Đã thêm món!");
+        }
+
+        modal.remove();
+        loadFoodsAdmin();
+    };
+};
+
+window.deleteFood = async function(foodId) {
+    if (!confirm("Xóa món này?")) return;
+
+    await deleteDoc(doc(db, "dichVuAnUong", foodId));
+    alert("Đã xóa món!");
+    loadFoodsAdmin();
+};
 async function loadSans() {
     const snapshot = await getDocs(
         collection(db, "san")

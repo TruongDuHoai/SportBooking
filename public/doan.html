@@ -303,354 +303,313 @@
 </main>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 
-    import {
-        getAuth,
-        onAuthStateChanged,
-        signOut
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+    getAuth,
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    import {
-        getFirestore,
-        doc,
-        getDoc,
-        setDoc,
-        collection,
-        getDocs
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    collection,
+    getDocs
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
-        authDomain: "thue-san-the-thao.firebaseapp.com",
-        projectId: "thue-san-the-thao",
-        storageBucket: "thue-san-the-thao.firebasestorage.app",
-        messagingSenderId: "90803956356",
-        appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
-    };
+const firebaseConfig = {
+    apiKey: "AIzaSyA0qNvl-i24wG9wOH-ajLu77MxNFvMvwjU",
+    authDomain: "thue-san-the-thao.firebaseapp.com",
+    projectId: "thue-san-the-thao",
+    storageBucket: "thue-san-the-thao.firebasestorage.app",
+    messagingSenderId: "90803956356",
+    appId: "1:90803956356:web:7c63edc595f6ad25acb0d1"
+};
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    let currentUser = null;
-    let foodCart = [];
+let currentUser = null;
+let foodCart = [];
+let foods = [];
 
-    let foods = [
-        {
-            id: "nuoc-suoi",
-            ten: "Nước suối Aquafina",
-            danhMuc: "nuoc",
-            gia: 10000,
-            moTa: "Nước suối đóng chai tiện lợi.",
-            hinhAnh: "images/foods/nuoc-suoi-aquafina-chai-500ml-2.jpg"
-        },
-        {
-            id: "pepsi",
-            ten: "Pepsi lon",
-            danhMuc: "nuoc",
-            gia: 15000,
-            moTa: "Nước ngọt có gas mát lạnh.",
-            hinhAnh: "images/foods/pepsi.jpg"
-        },
-        {
-            id: "coca",
-            ten: "Coca Cola lon",
-            danhMuc: "nuoc",
-            gia: 15000,
-            moTa: "Thức uống giải khát phổ biến.",
-            hinhAnh: "images/foods/coca-cola.png"
-        },
-        {
-            id: "sting",
-            ten: "Sting đỏ",
-            danhMuc: "nuoc",
-            gia: 15000,
-            moTa: "Nước tăng lực hồi phục nhanh.",
-            hinhAnh: "images/foods/sting.jpg"
-        },
-        {
-            id: "revive",
-            ten: "Revive",
-            danhMuc: "nuoc",
-            gia: 15000,
-            moTa: "Bù khoáng nhanh sau vận động.",
-            hinhAnh: "images/foods/revive.jpg"
-        },
-        {
-            id: "pocari",
-            ten: "Pocari Sweat",
-            danhMuc: "nuoc",
-            gia: 18000,
-            moTa: "Nước ion bổ sung điện giải.",
-            hinhAnh: "images/foods/pocari.jpg"
-        },
-        {
-            id: "tra-xanh",
-            ten: "Trà xanh C2",
-            danhMuc: "nuoc",
-            gia: 12000,
-            moTa: "Trà đóng chai mát lạnh.",
-            hinhAnh: "images/foods/traxanh-c2.jpg"
-        },
-        {
-            id: "bo-huc",
-            ten: "Bò húc",
-            danhMuc: "nuoc",
-            gia: 18000,
-            moTa: "Tăng lực mạnh.",
-            hinhAnh: "images/foods/bo-huc.png"
-        },
-        {
-            id: "tra-da-nho",
-            ten: "Trà đá bình nhỏ (1.5L)",
-            danhMuc: "nuoc",
-            gia: 15000,
-            moTa: "Phù hợp nhóm nhỏ.",
-            hinhAnh: "images/foods/binh-tra-da-nho.jpg"
-        },
-        {
-            id: "tra-da-lon",
-            ten: "Trà đá bình lớn (3L)",
-            danhMuc: "nuoc",
-            gia: 30000,
-            moTa: "Phù hợp nhóm đông.",
-            hinhAnh: "images/foods/binh-dung-da-lon.jpg"
-        },
-        {
-            id: "ca-vien",
-            ten: "Cá viên chiên",
-            danhMuc: "doan",
-            gia: 25000,
-            moTa: "Phần cá viên chiên nóng hổi.",
-            hinhAnh: "images/foods/ca-vien-chien.jpg"
-        },
-        {
-            id: "xuc-xich",
-            ten: "Xúc xích chiên",
-            danhMuc: "doan",
-            gia: 20000,
-            moTa: "Xúc xích nóng giòn.",
-            hinhAnh: "images/foods/XucXich-chien.png"
-        },
-        {
-            id: "mi-ly",
-            ten: "Mỳ ly Hảo Hảo",
-            danhMuc: "doan",
-            gia: 18000,
-            moTa: "Mỳ ly nóng tiện lợi.",
-            hinhAnh: "images/foods/my-ly.jpg"
-        }
-    ];
+const defaultFoods = [
+    { id:"nuoc-suoi", ten:"Nước suối Aquafina", danhMuc:"nuoc", gia:10000, moTa:"Nước suối đóng chai tiện lợi.", hinhAnh:"images/foods/nuoc-suoi-aquafina-chai-500ml-2.jpg" },
+    { id:"pepsi", ten:"Pepsi lon", danhMuc:"nuoc", gia:15000, moTa:"Nước ngọt có gas mát lạnh.", hinhAnh:"images/foods/pepsi.jpg" },
+    { id:"coca", ten:"Coca Cola lon", danhMuc:"nuoc", gia:15000, moTa:"Thức uống giải khát phổ biến.", hinhAnh:"images/foods/coca-cola.png" },
+    { id:"sting", ten:"Sting đỏ", danhMuc:"nuoc", gia:15000, moTa:"Nước tăng lực hồi phục nhanh.", hinhAnh:"images/foods/sting.jpg" },
+    { id:"revive", ten:"Revive", danhMuc:"nuoc", gia:15000, moTa:"Bù khoáng nhanh sau vận động.", hinhAnh:"images/foods/revive.jpg" },
+    { id:"pocari", ten:"Pocari Sweat", danhMuc:"nuoc", gia:18000, moTa:"Nước ion bổ sung điện giải.", hinhAnh:"images/foods/pocari.jpg" },
+    { id:"tra-xanh", ten:"Trà xanh C2", danhMuc:"nuoc", gia:12000, moTa:"Trà đóng chai mát lạnh.", hinhAnh:"images/foods/traxanh-c2.jpg" },
+    { id:"bo-huc", ten:"Bò húc", danhMuc:"nuoc", gia:18000, moTa:"Tăng lực mạnh.", hinhAnh:"images/foods/bo-huc.png" },
+    { id:"tra-da-nho", ten:"Trà đá bình nhỏ (1.5L)", danhMuc:"nuoc", gia:15000, moTa:"Phù hợp nhóm nhỏ.", hinhAnh:"images/foods/binh-tra-da-nho.jpg" },
+    { id:"tra-da-lon", ten:"Trà đá bình lớn (3L)", danhMuc:"nuoc", gia:30000, moTa:"Phù hợp nhóm đông.", hinhAnh:"images/foods/binh-dung-da-lon.jpg" },
+    { id:"ca-vien", ten:"Cá viên chiên", danhMuc:"doan", gia:25000, moTa:"Phần cá viên chiên nóng hổi.", hinhAnh:"images/foods/ca-vien-chien.jpg" },
+    { id:"xuc-xich", ten:"Xúc xích chiên", danhMuc:"doan", gia:20000, moTa:"Xúc xích nóng giòn.", hinhAnh:"images/foods/XucXich-chien.png" },
+    { id:"mi-ly", ten:"Mỳ ly Hảo Hảo", danhMuc:"doan", gia:18000, moTa:"Mỳ ly nóng tiện lợi.", hinhAnh:"images/foods/my-ly.jpg" }
+];
 
-    function renderFoods() {
-        const keyword = document.getElementById("searchFood").value.toLowerCase().trim();
-        const category = document.getElementById("categoryFilter").value;
-
-        let list = [...foods];
-
-        if (keyword) {
-            list = list.filter(item => item.ten.toLowerCase().includes(keyword));
-        }
-
-        if (category !== "all") {
-            list = list.filter(item => item.danhMuc === category);
-        }
-
-        const foodGrid = document.getElementById("foodGrid");
-
-        if (list.length === 0) {
-            foodGrid.innerHTML = `<div class="empty-food">Không tìm thấy món phù hợp.</div>`;
-            return;
-        }
-
-        foodGrid.innerHTML = list.map(item => `
-            <div class="food-card">
-                <img src="${item.hinhAnh}" alt="${item.ten}" onerror="this.src='images/foods/default-food.jpg'">
-
-                <div class="food-body">
-                    <h3>${item.ten}</h3>
-                    <p>${item.moTa}</p>
-                    <div class="food-price">${item.gia.toLocaleString()}đ</div>
-
-                    <div class="food-action">
-                        <input type="number" min="1" value="1" id="qty-${item.id}">
-                        <button class="btn-add" onclick="addFoodToCart('${item.id}')">
-                            Thêm
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join("");
-    }
-
-    window.addFoodToCart = function(foodId) {
-        const food = foods.find(item => item.id === foodId);
-        const qty = Number(document.getElementById(`qty-${foodId}`).value || 1);
-
-        if (!food || qty <= 0) return;
-
-        const existing = foodCart.find(item => item.id === foodId);
-
-        if (existing) {
-            existing.soLuong += qty;
-        } else {
-            foodCart.push({
-                type: "food",
-                id: food.id,
-                tenMon: food.ten,
-                gia: food.gia,
-                soLuong: qty,
-                hinhAnh: food.hinhAnh,
-                danhMuc: food.danhMuc
-            });
-        }
-
-        renderFoodCart();
-    };
-
-    function renderFoodCart() {
-        const list = document.getElementById("foodCartList");
-        const totalBox = document.getElementById("foodCartTotal");
-
-        if (foodCart.length === 0) {
-            list.innerHTML = `<div class="empty-food">Chưa có món nào.</div>`;
-            totalBox.textContent = "0đ";
-            return;
-        }
-
-        let total = 0;
-
-        list.innerHTML = foodCart.map((item, index) => {
-            const thanhTien = item.gia * item.soLuong;
-            total += thanhTien;
-
-            return `
-                <div class="cart-food-item">
-                    <strong>${item.tenMon}</strong><br>
-                    <small>${item.soLuong} x ${item.gia.toLocaleString()}đ</small>
-
-                    <div class="cart-food-actions">
-                        <span>${thanhTien.toLocaleString()}đ</span>
-                        <button class="btn-remove-food" onclick="removeFood(${index})">
-                            Xóa
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join("");
-
-        totalBox.textContent = total.toLocaleString() + "đ";
-    }
-
-    window.removeFood = function(index) {
-        foodCart.splice(index, 1);
-        renderFoodCart();
-    };
-
-    document.getElementById("btnAddFoodToMainCart").onclick = async () => {
-        if (!currentUser) {
-            alert("Vui lòng đăng nhập để thêm đồ ăn vào giỏ hàng!");
-            window.location.href = "dangnhap.html";
-            return;
-        }
-
-        if (foodCart.length === 0) {
-            alert("Vui lòng chọn ít nhất một món!");
-            return;
-        }
-
-        try {
-            const cartRef = doc(db, "carts", currentUser.uid);
-            const cartSnap = await getDoc(cartRef);
-
-            let items = cartSnap.exists() ? cartSnap.data().items || [] : [];
-
-            foodCart.forEach(foodItem => {
-                const existing = items.find(
-                    item => item.type === "food" && item.id === foodItem.id
-                );
-
-                if (existing) {
-                    existing.soLuong += foodItem.soLuong;
-                } else {
-                    items.push(foodItem);
-                }
-            });
-
-            await setDoc(cartRef, {
-                items,
-                updatedAt: new Date().toISOString()
-            });
-
-            alert("Đã thêm đồ ăn vào giỏ hàng chung!");
-
-            foodCart = [];
-            renderFoodCart();
-
-            window.location.href = "giohang.html";
-
-        } catch (error) {
-            console.error(error);
-            alert("Thêm vào giỏ hàng thất bại!");
-        }
-    };
-
-    
-
-    function setupAuth() {
-        const loginBtn = document.getElementById("loginBtn");
-        const userDropdownArea = document.getElementById("userDropdownArea");
-        const userInfoBtn = document.getElementById("userInfoBtn");
-        const dropdownMenu = document.getElementById("dropdownMenu");
-        const logoutBtn = document.getElementById("logoutBtn");
-
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-
-            if (user) {
-                loginBtn.style.display = "none";
-                userDropdownArea.style.display = "inline-block";
-
-                userInfoBtn.onclick = (e) => {
-                    e.preventDefault();
-                    dropdownMenu.style.display =
-                        dropdownMenu.style.display === "none" ? "block" : "none";
-                };
-            } else {
-                loginBtn.style.display = "inline";
-                userDropdownArea.style.display = "none";
-
-                loginBtn.onclick = (e) => {
-                    e.preventDefault();
-                    window.location.href = "dangnhap.html";
-                };
-            }
-        });
-
-        logoutBtn.onclick = async (e) => {
-            e.preventDefault();
-            await signOut(auth);
-            window.location.href = "index.html";
-        };
-
-        document.addEventListener("click", (e) => {
-            if (
-                userDropdownArea &&
-                dropdownMenu &&
-                !userDropdownArea.contains(e.target)
-            ) {
-                dropdownMenu.style.display = "none";
-            }
+async function seedFoodsToFirebase() {
+    for (const item of defaultFoods) {
+        await setDoc(doc(db, "dichVuAnUong", item.id), {
+            ten: item.ten,
+            phanLoai: item.danhMuc === "nuoc" ? "Nước uống" : "Đồ ăn",
+            gia: Number(item.gia || 0),
+            soLuong: 100,
+            hinhAnh: item.hinhAnh,
+            moTa: item.moTa || "",
+            createdAt: new Date(),
+            updatedAt: new Date()
         });
     }
 
-    document.getElementById("searchFood").addEventListener("input", renderFoods);
-    document.getElementById("categoryFilter").addEventListener("change", renderFoods);
+   // alert("Đã đẩy danh sách đồ ăn lên Firebase!");
+}
+
+async function loadFoodsFromFirebase() {
+    const snap = await getDocs(collection(db, "dichVuAnUong"));
+
+    foods = [];
+
+    snap.forEach(docSnap => {
+        const data = docSnap.data();
+
+        foods.push({
+            id: docSnap.id,
+            ten: data.ten || "Chưa đặt tên",
+            danhMuc: data.phanLoai === "Nước uống" ? "nuoc" : "doan",
+            gia: Number(data.gia || 0),
+            moTa: data.moTa || "",
+            hinhAnh: data.hinhAnh || "images/foods/default-food.jpg",
+            tonKho: Number(data.soLuong || 0)
+        });
+    });
 
     renderFoods();
+}
+
+function renderFoods() {
+    const keyword = document.getElementById("searchFood").value.toLowerCase().trim();
+    const category = document.getElementById("categoryFilter").value;
+
+    let list = [...foods];
+
+    if (keyword) {
+        list = list.filter(item => item.ten.toLowerCase().includes(keyword));
+    }
+
+    if (category !== "all") {
+        list = list.filter(item => item.danhMuc === category);
+    }
+
+    const foodGrid = document.getElementById("foodGrid");
+
+    if (list.length === 0) {
+        foodGrid.innerHTML = `<div class="empty-food">Không tìm thấy món phù hợp.</div>`;
+        return;
+    }
+
+    foodGrid.innerHTML = list.map(item => `
+        <div class="food-card">
+            <img src="${item.hinhAnh}" alt="${item.ten}" onerror="this.src='images/foods/default-food.jpg'">
+
+            <div class="food-body">
+                <h3>${item.ten}</h3>
+                <p>${item.moTa || ""}</p>
+                <div class="food-price">${item.gia.toLocaleString()}đ</div>
+                <p style="font-size:13px;color:#777;">Tồn kho: ${item.tonKho}</p>
+
+                <div class="food-action">
+                    <input type="number" min="1" max="${item.tonKho}" value="1" id="qty-${item.id}">
+                    <button class="btn-add" onclick="addFoodToCart('${item.id}')" ${item.tonKho <= 0 ? "disabled" : ""}>
+                        ${item.tonKho <= 0 ? "Hết hàng" : "Thêm"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
+
+window.addFoodToCart = function(foodId) {
+    const food = foods.find(item => item.id === foodId);
+    const qty = Number(document.getElementById(`qty-${foodId}`).value || 1);
+
+    if (!food || qty <= 0) return;
+
+    if (food.tonKho <= 0) {
+        alert("Món này đã hết hàng!");
+        return;
+    }
+
+    if (qty > food.tonKho) {
+        alert("Số lượng vượt quá tồn kho!");
+        return;
+    }
+
+    const existing = foodCart.find(item => item.id === foodId);
+
+    if (existing) {
+        existing.soLuong += qty;
+    } else {
+        foodCart.push({
+            type: "food",
+            id: food.id,
+            tenMon: food.ten,
+            gia: food.gia,
+            soLuong: qty,
+            hinhAnh: food.hinhAnh,
+            danhMuc: food.danhMuc
+        });
+    }
+
     renderFoodCart();
-    setupAuth();
+};
+
+function renderFoodCart() {
+    const list = document.getElementById("foodCartList");
+    const totalBox = document.getElementById("foodCartTotal");
+
+    if (foodCart.length === 0) {
+        list.innerHTML = `<div class="empty-food">Chưa có món nào.</div>`;
+        totalBox.textContent = "0đ";
+        return;
+    }
+
+    let total = 0;
+
+    list.innerHTML = foodCart.map((item, index) => {
+        const thanhTien = item.gia * item.soLuong;
+        total += thanhTien;
+
+        return `
+            <div class="cart-food-item">
+                <strong>${item.tenMon}</strong><br>
+                <small>${item.soLuong} x ${item.gia.toLocaleString()}đ</small>
+
+                <div class="cart-food-actions">
+                    <span>${thanhTien.toLocaleString()}đ</span>
+                    <button class="btn-remove-food" onclick="removeFood(${index})">
+                        Xóa
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    totalBox.textContent = total.toLocaleString() + "đ";
+}
+
+window.removeFood = function(index) {
+    foodCart.splice(index, 1);
+    renderFoodCart();
+};
+
+document.getElementById("btnAddFoodToMainCart").onclick = async () => {
+    if (!currentUser) {
+        alert("Vui lòng đăng nhập để thêm đồ ăn vào giỏ hàng!");
+        window.location.href = "dangnhap.html";
+        return;
+    }
+
+    if (foodCart.length === 0) {
+        alert("Vui lòng chọn ít nhất một món!");
+        return;
+    }
+
+    try {
+        const cartRef = doc(db, "carts", currentUser.uid);
+        const cartSnap = await getDoc(cartRef);
+
+        let items = cartSnap.exists() ? cartSnap.data().items || [] : [];
+
+        foodCart.forEach(foodItem => {
+            const existing = items.find(
+                item => item.type === "food" && item.id === foodItem.id
+            );
+
+            if (existing) {
+                existing.soLuong += foodItem.soLuong;
+            } else {
+                items.push(foodItem);
+            }
+        });
+
+        await setDoc(cartRef, {
+            items,
+            updatedAt: new Date().toISOString()
+        });
+
+        alert("Đã thêm đồ ăn vào giỏ hàng chung!");
+
+        foodCart = [];
+        renderFoodCart();
+
+        window.location.href = "giohang.html";
+
+    } catch (error) {
+        console.error(error);
+        alert("Thêm vào giỏ hàng thất bại!");
+    }
+};
+
+function setupAuth() {
+    const loginBtn = document.getElementById("loginBtn");
+    const userDropdownArea = document.getElementById("userDropdownArea");
+    const userInfoBtn = document.getElementById("userInfoBtn");
+    const dropdownMenu = document.getElementById("dropdownMenu");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+
+        if (user) {
+            loginBtn.style.display = "none";
+            userDropdownArea.style.display = "inline-block";
+
+            userInfoBtn.onclick = (e) => {
+                e.preventDefault();
+                dropdownMenu.style.display =
+                    dropdownMenu.style.display === "none" ? "block" : "none";
+            };
+        } else {
+            loginBtn.style.display = "inline";
+            userDropdownArea.style.display = "none";
+
+            loginBtn.onclick = (e) => {
+                e.preventDefault();
+                window.location.href = "dangnhap.html";
+            };
+        }
+    });
+
+    logoutBtn.onclick = async (e) => {
+        e.preventDefault();
+        await signOut(auth);
+        window.location.href = "index.html";
+    };
+
+    document.addEventListener("click", (e) => {
+        if (
+            userDropdownArea &&
+            dropdownMenu &&
+            !userDropdownArea.contains(e.target)
+        ) {
+            dropdownMenu.style.display = "none";
+        }
+    });
+}
+
+document.getElementById("searchFood").addEventListener("input", renderFoods);
+document.getElementById("categoryFilter").addEventListener("change", renderFoods);
+
+setupAuth();
+renderFoodCart();
+
+await loadFoodsFromFirebase();
 </script>
 </body>
 </html>
