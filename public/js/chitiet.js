@@ -481,12 +481,28 @@ async function datSan() {
 async function luuYeuThich() {
     if (!currentUser) return location.href = "dangnhap.html";
 
-    await setDoc(doc(db, "favorites", currentUser.uid), {
-        sanId: sanId,
-        tenSan: currentSan.ten
-    });
+    const q = query(
+        collection(db, "favorites"),
+        where("userId", "==", currentUser.uid),
+        where("sanId", "==", sanId)
+    );
 
-    alert("Đã lưu yêu thích");
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        await addDoc(collection(db, "favorites"), {
+            userId: currentUser.uid,
+            sanId: sanId,
+            tenSan: currentSan.ten,
+            diaChi: currentSan.diaChi || "",
+            gia: currentSan.gia || 0,
+            hinhAnh: currentSan.hinhAnh || "",
+            loai: currentSan.loai || "",
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    location.href = "yeuthich.html";
 }
 
 async function guiDanhGia() {
