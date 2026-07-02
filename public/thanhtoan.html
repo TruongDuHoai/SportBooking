@@ -99,6 +99,98 @@
             border-radius:20px;
         }
 
+
+        .promo-box{
+            margin:20px 0;
+            padding:18px;
+            background:#f8fafc;
+            border:1px solid #e5e7eb;
+            border-radius:14px;
+        }
+
+        .promo-box label{
+            display:block;
+            margin-bottom:10px;
+            font-weight:700;
+            color:#1a6b30;
+        }
+
+        .promo-input-row{
+            display:flex;
+            gap:10px;
+        }
+
+        .promo-input-row input{
+            flex:1;
+            padding:12px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            text-transform:uppercase;
+        }
+
+        .promo-input-row button{
+            padding:0 18px;
+            border:none;
+            border-radius:8px;
+            background:#1a6b30;
+            color:white;
+            font-weight:700;
+            cursor:pointer;
+        }
+
+        .promo-input-row button:disabled{
+            opacity:.7;
+            cursor:not-allowed;
+        }
+
+        #promoMessage{
+            margin-top:10px;
+            font-size:14px;
+            min-height:20px;
+        }
+
+        .payment-summary{
+            margin-top:20px;
+            padding:18px;
+            background:#fff;
+            border:1px solid #eee;
+            border-radius:14px;
+        }
+
+        .payment-summary > div{
+            display:flex;
+            justify-content:space-between;
+            gap:15px;
+            padding:8px 0;
+            font-size:16px;
+        }
+
+        .payment-summary #discountRow{
+            color:#16a34a;
+        }
+
+        .summary-final{
+            margin-top:8px;
+            padding-top:14px !important;
+            border-top:1px solid #eee;
+            font-size:22px !important;
+            font-weight:800;
+        }
+
+        .summary-final strong{
+            color:#e74c3c;
+        }
+
+        @media(max-width:768px){
+            .promo-input-row{
+                flex-direction:column;
+            }
+
+            .promo-input-row button{
+                padding:12px 18px;
+            }
+        }
+
         @media(max-width:768px){
             .order-item{
                 flex-direction:column;
@@ -107,59 +199,6 @@
             .order-total{
                 text-align:left;
             }
-        }
-        .payment-modal{
-            display:none;
-            position:fixed;
-            inset:0;
-            background:rgba(0,0,0,.55);
-            z-index:9999;
-            align-items:center;
-            justify-content:center;
-            padding:20px;
-        }
-
-        .payment-modal-content{
-            width:100%;
-            max-width:460px;
-            background:white;
-            border-radius:18px;
-            padding:28px;
-            box-shadow:0 20px 50px rgba(0,0,0,.25);
-            text-align:center;
-        }
-
-        .payment-modal-content h2{
-            color:#1a6b30;
-            margin-bottom:10px;
-        }
-
-        .qr-box{
-            margin:18px auto;
-            width:220px;
-            height:220px;
-            border:1px solid #eee;
-            border-radius:14px;
-            padding:12px;
-            background:#fafafa;
-        }
-
-        .qr-box img{
-            width:100%;
-            height:100%;
-            object-fit:contain;
-        }
-
-        .bank-info{
-            text-align:left;
-            background:#f7faf7;
-            border-radius:12px;
-            padding:15px;
-            margin:18px 0;
-        }
-
-        .bank-info p{
-            margin:8px 0;
         }
     </style>
 </head>
@@ -204,33 +243,7 @@
     </div>
 </div>
 
-<div id="paymentModal" class="payment-modal">
-    <div class="payment-modal-content">
-        <h2>Xác nhận chuyển khoản</h2>
-        <p id="paymentModalText"></p>
-
-        <div class="qr-box">
-            <img id="qrImage" src="images/qr-payment.png" alt="QR thanh toán">
-        </div>
-
-        <div class="bank-info">
-            <p><strong>Ngân hàng:</strong> MB Bank</p>
-            <p><strong>Số tài khoản:</strong> 0123456789</p>
-            <p><strong>Chủ tài khoản:</strong> SPORTBOOKING</p>
-            <p><strong>Nội dung:</strong> <span id="paymentContent"></span></p>
-        </div>
-
-        <button id="confirmPaidBtn" class="btn-submit btn-main">
-            Tôi đã thanh toán
-        </button>
-
-        <button id="cancelPaymentBtn" class="btn-submit btn-back">
-            Hủy thanh toán
-        </button>
-    </div>
-</div>
-
-<script type="module" src="js/thanhtoan.js?v=12"></script>
+<script type="module" src="js/thanhtoan.js?v=promo"></script>
 
 </body>
 </html>

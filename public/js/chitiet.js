@@ -238,7 +238,7 @@ async function datSan() {
     location.href = "giohang.html";
 }
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+/**import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
     getFirestore,
     doc,
@@ -477,7 +477,7 @@ async function datSan() {
     alert("Đã thêm vào giỏ");
     location.href = "giohang.html";
 }
-
+*/
 async function luuYeuThich() {
     if (!currentUser) return location.href = "dangnhap.html";
 
@@ -746,7 +746,6 @@ async function loadDanhGia() {
         container.style.padding = "15px";
     }
 }
-
 onAuthStateChanged(auth, user => {
     currentUser = user;
 
@@ -757,7 +756,7 @@ onAuthStateChanged(auth, user => {
 });
 
 loadSan();
-
+/**
 async function guiDanhGia() {
     if (!currentUser) {
         window.location.href = "dangnhap.html";
@@ -1010,3 +1009,4 @@ onAuthStateChanged(auth, user => {
 });
 
 loadSan();
+*/

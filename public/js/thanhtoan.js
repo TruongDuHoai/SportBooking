@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-
 import {
     getFirestore,
     doc,
@@ -7,7 +6,10 @@ import {
     deleteDoc,
     collection,
     addDoc,
-    serverTimestamp
+    serverTimestamp,
+    getDocs,
+    query,
+    where
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import {
@@ -32,6 +34,34 @@ const auth = getAuth(app);
 let currentUser = null;
 let cartItems = [];
 
+let originalTotal = 0;
+let discountValue = 0;
+let finalTotal = 0;
+let appliedPromotion = null;
+
+function getItemTotal(item) {
+    const price = Number(item.gia || 0);
+
+    if (item.type === "food") {
+        return price * Number(item.soLuong || 1);
+    }
+
+    return price;
+}
+
+function formatMoney(value) {
+    return Number(value || 0).toLocaleString("vi-VN") + "đ";
+}
+
+function escapeHTML(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 async function loadCart() {
     const container = document.getElementById("checkoutContent");
 
@@ -55,6 +85,9 @@ async function loadCart() {
             hienThiGioHangTrong();
             return;
         }
+
+        appliedPromotion = null;
+        discountValue = 0;
 
         hienThiThanhToan();
 
@@ -86,60 +119,97 @@ function hienThiGioHangTrong() {
 function hienThiThanhToan() {
     const container = document.getElementById("checkoutContent");
 
-    let total = 0;
+    originalTotal = 0;
+    discountValue = 0;
+    finalTotal = 0;
+    appliedPromotion = null;
+
     let itemsHtml = "";
 
-    cartItems.forEach(item => {
+    cartItems.forEach((item) => {
+        const itemTotal = getItemTotal(item);
+        originalTotal += itemTotal;
+
         if (item.type === "food") {
-            const soLuong = Number(item.soLuong || 1);
-            const gia = Number(item.gia || 0);
-            const thanhTien = gia * soLuong;
-            total += thanhTien;
+            const quantity = Number(item.soLuong || 1);
 
             itemsHtml += `
                 <div class="order-item">
                     <div>
-                        <strong>${item.tenMon || item.ten || "Món ăn"}</strong><br>
-                        <small>Loại: Đồ ăn / Thức uống</small><br>
-                        <small>Số lượng: ${soLuong}</small>
+                        <strong>${escapeHTML(item.tenMon || "Món ăn")}</strong><br>
+                        <small>Đồ ăn / Thức uống</small><br>
+                        <small>Số lượng: ${quantity}</small>
                     </div>
 
                     <div>
-                        <strong>${thanhTien.toLocaleString()}đ</strong>
+                        <strong>${formatMoney(itemTotal)}</strong>
                     </div>
                 </div>
             `;
         } else {
-            const gia = Number(item.gia || 0);
-            total += gia;
-
-            const gioBatDau = Number(item.gioBatDau || 0);
-            const gioKetThuc = Number(item.gioKetThuc || gioBatDau + 1);
-
             itemsHtml += `
                 <div class="order-item">
                     <div>
-                        <strong>${item.tenSan || "Sân bóng đá quận 12"}</strong><br>
-                        <small>Ngày: ${item.ngayDat || "Không có ngày"}</small><br>
-                        <small>Giờ: ${gioBatDau}:00 - ${gioKetThuc}:00</small>
+                        <strong>${escapeHTML(item.tenSan || "Sân")}</strong><br>
+                        <small>Ngày: ${escapeHTML(item.ngayDat || "")}</small><br>
+                        <small>Giờ: ${Number(item.gioBatDau || 0)}:00 - ${Number(item.gioKetThuc || 0)}:00</small>
                     </div>
 
                     <div>
-                        <strong>${gia.toLocaleString()}đ</strong>
+                        <strong>${formatMoney(itemTotal)}</strong>
                     </div>
                 </div>
             `;
         }
     });
 
+    finalTotal = originalTotal;
+
     container.innerHTML = `
         <div class="checkout-card">
+
             <h3>Thông tin đơn hàng</h3>
 
             ${itemsHtml}
 
-            <div class="order-total">
-                Tổng tiền: <span>${total.toLocaleString()}đ</span>
+            <div class="promo-box">
+                <label for="promoCodeInput">
+                    Mã khuyến mãi
+                </label>
+
+                <div class="promo-input-row">
+                    <input
+                        type="text"
+                        id="promoCodeInput"
+                        placeholder="Nhập mã khuyến mãi"
+                    >
+
+                    <button
+                        type="button"
+                        id="applyPromoBtn"
+                    >
+                        Áp dụng
+                    </button>
+                </div>
+
+                <div id="promoMessage"></div>
+            </div>
+
+            <div class="payment-summary">
+                <div>
+                    <span>Tạm tính:</span>
+                    <strong id="originalTotalText">${formatMoney(originalTotal)}</strong>
+                </div>
+
+                <div id="discountRow" style="display:none;">
+                    <span>Giảm giá:</span>
+                    <strong id="discountAmountText">-0đ</strong>
+                </div>
+
+                <div class="summary-final">
+                    <span>Tổng thanh toán:</span>
+                    <strong id="finalTotalText">${formatMoney(finalTotal)}</strong>
+                </div>
             </div>
 
             <h3>Thông tin người đặt</h3>
@@ -147,12 +217,12 @@ function hienThiThanhToan() {
             <div class="form-group">
                 <input type="text" id="fullName"
                     placeholder="Họ tên"
-                    value="${currentUser.displayName || ''}">
+                    value="${escapeHTML(currentUser.displayName || "")}">
             </div>
 
             <div class="form-group">
                 <input type="email" id="email"
-                    value="${currentUser.email || ''}" readonly>
+                    value="${escapeHTML(currentUser.email || "")}" readonly>
             </div>
 
             <div class="form-group">
@@ -161,6 +231,7 @@ function hienThiThanhToan() {
             </div>
 
             <div class="payment-methods">
+
                 <label>
                     <input type="radio" name="paymentMethod" value="cod" checked>
                     Thanh toán tại sân
@@ -175,6 +246,7 @@ function hienThiThanhToan() {
                     <input type="radio" name="paymentMethod" value="momo">
                     Ví MoMo
                 </label>
+
             </div>
 
             <button class="btn-submit btn-main" id="submitOrderBtn">
@@ -184,66 +256,209 @@ function hienThiThanhToan() {
             <button class="btn-submit btn-back" id="backCartBtn">
                 Quay lại giỏ hàng
             </button>
+
         </div>
     `;
 
-    document.getElementById("submitOrderBtn").addEventListener("click", submitOrder);
+    document.getElementById("submitOrderBtn")
+        .addEventListener("click", submitOrder);
 
-    document.getElementById("backCartBtn").addEventListener("click", () => {
-        window.location.href = "giohang.html";
-    });
+    document.getElementById("backCartBtn")
+        .addEventListener("click", () => {
+            window.location.href = "giohang.html";
+        });
+
+    document.getElementById("applyPromoBtn")
+        .addEventListener("click", applyPromotionCode);
+
+    document.getElementById("promoCodeInput")
+        .addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                applyPromotionCode();
+            }
+        });
+}
+
+function updatePaymentSummary() {
+    finalTotal = Math.max(originalTotal - discountValue, 0);
+
+    const discountRow = document.getElementById("discountRow");
+    const discountAmountText = document.getElementById("discountAmountText");
+    const finalTotalText = document.getElementById("finalTotalText");
+
+    if (discountValue > 0) {
+        discountRow.style.display = "flex";
+        discountAmountText.textContent = "-" + formatMoney(discountValue);
+    } else {
+        discountRow.style.display = "none";
+        discountAmountText.textContent = "-0đ";
+    }
+
+    finalTotalText.textContent = formatMoney(finalTotal);
+}
+
+function getPromotionDate(value) {
+    if (!value) {
+        return null;
+    }
+
+    if (typeof value.toDate === "function") {
+        return value.toDate();
+    }
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime())
+        ? null
+        : date;
+}
+
+async function applyPromotionCode() {
+    const promoInput = document.getElementById("promoCodeInput");
+    const promoMessage = document.getElementById("promoMessage");
+    const applyButton = document.getElementById("applyPromoBtn");
+
+    const code = promoInput.value.trim().toUpperCase();
+
+    appliedPromotion = null;
+    discountValue = 0;
+    updatePaymentSummary();
+
+    if (!code) {
+        promoMessage.textContent = "Vui lòng nhập mã khuyến mãi.";
+        promoMessage.style.color = "#dc2626";
+        return;
+    }
+
+    try {
+        applyButton.disabled = true;
+        applyButton.textContent = "Đang kiểm tra...";
+
+        promoMessage.textContent = "Đang kiểm tra mã khuyến mãi...";
+        promoMessage.style.color = "#64748b";
+
+        const promoQuery = query(
+            collection(db, "promotions"),
+            where("code", "==", code)
+        );
+
+        const snapshot = await getDocs(promoQuery);
+
+        if (snapshot.empty) {
+            promoMessage.textContent = "Mã khuyến mãi không tồn tại.";
+            promoMessage.style.color = "#dc2626";
+            return;
+        }
+
+        let promotion = null;
+
+        snapshot.forEach((docSnap) => {
+            promotion = {
+                id: docSnap.id,
+                ...docSnap.data()
+            };
+        });
+
+        if (!promotion.active) {
+            promoMessage.textContent = "Mã khuyến mãi chưa được kích hoạt.";
+            promoMessage.style.color = "#dc2626";
+            return;
+        }
+
+        const now = new Date();
+        const startDate = getPromotionDate(promotion.startDate);
+        const endDate = getPromotionDate(promotion.endDate);
+
+        if (startDate && now < startDate) {
+            promoMessage.textContent = "Mã khuyến mãi chưa đến thời gian sử dụng.";
+            promoMessage.style.color = "#dc2626";
+            return;
+        }
+
+        if (endDate && now > endDate) {
+            promoMessage.textContent = "Mã khuyến mãi đã hết hạn.";
+            promoMessage.style.color = "#dc2626";
+            return;
+        }
+
+        const value = Number(promotion.value || 0);
+
+        if (value <= 0) {
+            promoMessage.textContent = "Mã khuyến mãi không hợp lệ.";
+            promoMessage.style.color = "#dc2626";
+            return;
+        }
+
+        const discountType = String(
+            promotion.discountType ||
+            promotion.type ||
+            "fixed"
+        ).toLowerCase();
+
+        if (
+            discountType === "percent" ||
+            discountType === "percentage" ||
+            discountType === "phan_tram"
+        ) {
+            discountValue = Math.floor(originalTotal * value / 100);
+        } else {
+            discountValue = value;
+        }
+
+        if (discountValue > originalTotal) {
+            discountValue = originalTotal;
+        }
+
+        appliedPromotion = promotion;
+        updatePaymentSummary();
+
+        promoMessage.textContent =
+            `Áp dụng mã ${code} thành công.`;
+        promoMessage.style.color = "#16a34a";
+
+    } catch (error) {
+        console.error("Lỗi áp dụng khuyến mãi:", error);
+
+        promoMessage.textContent =
+            "Không thể áp dụng mã khuyến mãi: " + error.message;
+        promoMessage.style.color = "#dc2626";
+
+    } finally {
+        applyButton.disabled = false;
+        applyButton.textContent = "Áp dụng";
+    }
 }
 
 function validatePhone(phone) {
     return /^0[0-9]{9}$/.test(phone);
 }
 
-function showPaymentModal(methodText, total) {
-    return new Promise((resolve) => {
-        const modal = document.getElementById("paymentModal");
-        const modalText = document.getElementById("paymentModalText");
-        const paymentContent = document.getElementById("paymentContent");
-        const confirmPaidBtn = document.getElementById("confirmPaidBtn");
-        const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
-        const qrImage = document.getElementById("qrImage");
+function getItemDiscount(itemTotal, index) {
+    if (!discountValue || !originalTotal) {
+        return 0;
+    }
 
-        const code = "SB" + Date.now();
+    if (index === cartItems.length - 1) {
+        const usedDiscount = cartItems
+            .slice(0, -1)
+            .reduce((sum, item, itemIndex) => {
+                return sum + Math.floor(
+                    getItemTotal(item) * discountValue / originalTotal
+                );
+            }, 0);
 
-        modalText.innerHTML = `
-            Phương thức: <strong>${methodText}</strong><br>
-            Số tiền: <strong>${total.toLocaleString()}đ</strong>
-        `;
+        return discountValue - usedDiscount;
+    }
 
-        paymentContent.textContent = code;
-
-        const qrText = `SPORTBOOKING|${methodText}|${total}|${code}`;
-        qrImage.src =
-            `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
-
-        modal.style.display = "flex";
-
-        confirmPaidBtn.onclick = () => {
-            modal.style.display = "none";
-            resolve({
-                paid: true,
-                code: code
-            });
-        };
-
-        cancelPaymentBtn.onclick = () => {
-            modal.style.display = "none";
-            resolve({
-                paid: false,
-                code: ""
-            });
-        };
-    });
+    return Math.floor(itemTotal * discountValue / originalTotal);
 }
 
 async function submitOrder() {
     const fullName = document.getElementById("fullName").value.trim();
     const phone = document.getElementById("phone").value.trim();
-    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+    const paymentMethod =
+        document.querySelector('input[name="paymentMethod"]:checked').value;
 
     if (!fullName) {
         alert("Vui lòng nhập họ tên");
@@ -270,37 +485,10 @@ async function submitOrder() {
         methodText = "Ví MoMo";
     }
 
-    const total = cartItems.reduce((sum, item) => {
-        if (item.type === "food") {
-            return sum + Number(item.gia || 0) * Number(item.soLuong || 1);
-        }
-        return sum + Number(item.gia || 0);
-    }, 0);
+    updatePaymentSummary();
 
-    if (paymentMethod === "cod") {
-        const confirmCOD = confirm(
-            `Xác nhận đặt sân ${total.toLocaleString()}đ?\nThanh toán tại sân`
-        );
-
-        if (!confirmCOD) return;
-    }
-
-    let paymentStatus = "Chưa thanh toán";
-    let orderStatus = "Chờ xác nhận";
-
-    let paymentCode = "";
-
-    if (paymentMethod === "bank" || paymentMethod === "momo") {
-        const result = await showPaymentModal(methodText, total);
-
-        if (!result.paid) {
-            alert("Bạn đã hủy thanh toán.");
-            return;
-        }
-
-        paymentCode = result.code;
-        paymentStatus = "Chờ xác nhận thanh toán";
-        orderStatus = "Chờ xác nhận";
+    if (!confirm(`Xác nhận thanh toán ${formatMoney(finalTotal)} ?`)) {
+        return;
     }
 
     const btn = document.getElementById("submitOrderBtn");
@@ -308,84 +496,44 @@ async function submitOrder() {
     btn.textContent = "Đang xử lý...";
 
     try {
-        const sanItems = cartItems.filter(item => item.type !== "food");
-        const foodItems = cartItems.filter(item => item.type === "food");
-
-        for (const item of sanItems) {
-            const gioBatDau = Number(item.gioBatDau || 0);
-            const gioKetThuc = Number(item.gioKetThuc || gioBatDau + 1);
+        for (const [index, item] of cartItems.entries()) {
+            const itemTotal = getItemTotal(item);
+            const itemDiscount = getItemDiscount(itemTotal, index);
+            const itemFinalTotal = Math.max(itemTotal - itemDiscount, 0);
 
             await addDoc(collection(db, "donDat"), {
                 userId: currentUser.uid,
-                userEmail: currentUser.email || "",
+                userEmail: currentUser.email,
                 userName: fullName,
                 userPhone: phone,
 
-                sanId: item.sanId || "san1",
-                tenSan: item.tenSan || "Sân bóng đá quận 12",
+                sanId: item.sanId || "",
+                tenSan: item.tenSan || item.tenMon || "Dịch vụ",
                 ngayDat: item.ngayDat || "",
-                gioBatDau: gioBatDau,
-                gioKetThuc: gioKetThuc,
+                gioBatDau: Number(item.gioBatDau || 0),
+                gioKetThuc: Number(item.gioKetThuc || 0),
 
                 gia: Number(item.gia || 0),
-                tongTien: Number(item.gia || 0),
+                tongTienGoc: itemTotal,
+                soTienGiam: itemDiscount,
+                tongTien: itemFinalTotal,
 
-                diaChi: item.diaChi || "Quận 12",
-                loai: item.loai || "bongda",
+                maKhuyenMai: appliedPromotion ? appliedPromotion.code : "",
+                khuyenMaiId: appliedPromotion ? appliedPromotion.id : "",
+
+                diaChi: item.diaChi || "",
+                loai: item.loai || "",
                 hinhAnh: item.hinhAnh || "",
+                type: item.type || "booking",
+                soLuong: Number(item.soLuong || 1),
 
-                trangThai: orderStatus,
+                trangThai: "Chờ xác nhận",
                 phuongThucThanhToan: methodText,
-                trangThaiThanhToan: paymentStatus,
+                trangThaiThanhToan:
+                    paymentMethod === "cod"
+                        ? "Chưa thanh toán"
+                        : "Chờ thanh toán",
 
-                maThanhToan: paymentCode,
-                soTienThanhToan: total,
-
-                createdAt: new Date().toISOString(),
-                createdAtServer: serverTimestamp()
-            });
-        }
-
-        if (foodItems.length > 0) {
-            const foodTotal = foodItems.reduce((sum, item) => {
-                return sum + Number(item.gia || 0) * Number(item.soLuong || 1);
-            }, 0);
-
-            const foodOrderRef = await addDoc(collection(db, "donDoAn"), {
-                userId: currentUser.uid,
-                userEmail: currentUser.email || "",
-                userName: fullName,
-                userPhone: phone,
-
-                items: foodItems.map(item => ({
-                    id: item.id || "",
-                    tenMon: item.tenMon || item.ten || "Món ăn",
-                    danhMuc: item.danhMuc || "",
-                    gia: Number(item.gia || 0),
-                    soLuong: Number(item.soLuong || 1),
-                    hinhAnh: item.hinhAnh || "",
-                    moTa: item.moTa || ""
-                })),
-
-                tongTien: foodTotal,
-                trangThai: orderStatus,
-                phuongThucThanhToan: methodText,
-                trangThaiThanhToan: paymentStatus,
-
-                createdAt: new Date().toISOString(),
-                createdAtServer: serverTimestamp()
-            });
-
-            await addDoc(collection(db, "notifications"), {
-                type: "food_order",
-                title: "Có đơn đồ ăn mới",
-                message: `${fullName} vừa đặt ${foodItems.length} món đồ ăn/nước uống.`,
-                orderId: foodOrderRef.id,
-                userId: currentUser.uid,
-                userName: fullName,
-                userPhone: phone,
-                tongTien: foodTotal,
-                isRead: false,
                 createdAt: new Date().toISOString(),
                 createdAtServer: serverTimestamp()
             });
@@ -393,11 +541,11 @@ async function submitOrder() {
 
         await deleteDoc(doc(db, "carts", currentUser.uid));
 
-        alert("Thanh toán thành công!");
+        alert("Đặt sân thành công!");
         window.location.href = "lichsu.html";
 
     } catch (error) {
-        console.error("LỖI THANH TOÁN:", error);
+        console.error(error);
         alert("Thanh toán thất bại: " + error.message);
 
         btn.disabled = false;
@@ -410,25 +558,23 @@ function setupAuthUI() {
     const userDropdownArea = document.getElementById("userDropdownArea");
     const userInfoBtn = document.getElementById("userInfoBtn");
     const dropdownMenu = document.getElementById("dropdownMenu");
-    const logoutBtn = document.getElementById("logoutBtn") || document.getElementById("logoutDropdownBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
 
-            if (loginBtn) loginBtn.style.display = "none";
-            if (userDropdownArea) userDropdownArea.style.display = "inline-block";
+            loginBtn.style.display = "none";
+            userDropdownArea.style.display = "inline-block";
 
-            if (userInfoBtn && dropdownMenu) {
-                userInfoBtn.onclick = (e) => {
-                    e.preventDefault();
+            userInfoBtn.onclick = (e) => {
+                e.preventDefault();
 
-                    dropdownMenu.style.display =
-                        dropdownMenu.style.display === "none"
-                            ? "block"
-                            : "none";
-                };
-            }
+                dropdownMenu.style.display =
+                    dropdownMenu.style.display === "none"
+                        ? "block"
+                        : "none";
+            };
 
             loadCart();
 
@@ -437,19 +583,13 @@ function setupAuthUI() {
         }
     });
 
-    if (logoutBtn) {
-        logoutBtn.onclick = async () => {
-            await signOut(auth);
-            window.location.href = "index.html";
-        };
-    }
+    logoutBtn.onclick = async () => {
+        await signOut(auth);
+        window.location.href = "index.html";
+    };
 
     document.addEventListener("click", (e) => {
-        if (
-            userDropdownArea &&
-            dropdownMenu &&
-            !userDropdownArea.contains(e.target)
-        ) {
+        if (!userDropdownArea.contains(e.target)) {
             dropdownMenu.style.display = "none";
         }
     });
