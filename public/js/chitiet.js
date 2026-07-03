@@ -13,7 +13,8 @@ import {
 
 import {
     getAuth,
-    onAuthStateChanged
+    onAuthStateChanged,
+    signOut
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -506,26 +507,55 @@ async function loadDanhGia() {
         container.style.padding = "15px";
     }
 }
-onAuthStateChanged(auth, user => {
-    currentUser = user;
+const loginBtn = document.getElementById("loginBtn");
+const userDropdownArea = document.getElementById("userDropdownArea");
+const userInfoBtn = document.getElementById("userInfoBtn");
+const dropdownMenu = document.getElementById("dropdownMenu");
+const logoutDropdownBtn = document.getElementById("logoutBtn");
 
-    const loginBtn = document.getElementById("loginBtn");
-    const userDropdownArea = document.getElementById("userDropdownArea");
-    const userInfoBtn = document.getElementById("userInfoBtn");
-    const dropdownMenu = document.getElementById("dropdownMenu");
-
+onAuthStateChanged(auth, (user) => {
     if (user) {
+        // Đã đăng nhập
         loginBtn.style.display = "none";
         userDropdownArea.style.display = "inline-block";
 
+        // Toggle dropdown
         userInfoBtn.onclick = (e) => {
             e.preventDefault();
 
             dropdownMenu.style.display =
-                dropdownMenu.style.display === "none" ? "block" : "none";
+                dropdownMenu.style.display === "none" ||
+                dropdownMenu.style.display === ""
+                    ? "block"
+                    : "none";
         };
+
+        // Đóng dropdown khi click ra ngoài
+        document.addEventListener("click", function (e) {
+            if (!userDropdownArea.contains(e.target)) {
+                dropdownMenu.style.display = "none";
+            }
+        });
+
+        // Đăng xuất
+        if (logoutDropdownBtn) {
+            logoutDropdownBtn.onclick = async (e) => {
+                e.preventDefault();
+
+                try {
+                    await signOut(auth);
+                    alert("Đã đăng xuất!");
+                    window.location.href = "index.html";
+                } catch (error) {
+                    console.error("Lỗi đăng xuất:", error);
+                    alert("Không thể đăng xuất");
+                }
+            };
+        }
+
     } else {
-        loginBtn.style.display = "inline";
+        // Chưa đăng nhập
+        loginBtn.style.display = "inline-block";
         userDropdownArea.style.display = "none";
 
         loginBtn.onclick = (e) => {

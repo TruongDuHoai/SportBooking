@@ -62,7 +62,7 @@
         .badge-cancelled { background: #fff5f5; color: #c92a2a; }
 
         .calendar-toolbar { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-        .calendar-toolbar button { background: white; border: 1px solid #ccd1d9; color: #434a54; width: 34px; height: 34px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .calendar-toolbar button { background: white; border: 1px solid #ccd1d9; color: #434a54; min-width: 38px; height: 38px; padding: 0 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .calendar-toolbar button:hover { background: #f5f7fa; border-color: #aab2bd; }
         
         .weekly-calendar-wrapper { background: white; border-radius: 12px; border: 1px solid #e6ebf0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden; }
@@ -189,6 +189,7 @@
         let currentRole = null;
         let currentSanId = null;
         let selectedCalendarSlots = [];
+        let unsubscribeFeedback = null;
 
 function clearSelectedCalendarSlots() {
     selectedCalendarSlots = [];
@@ -377,60 +378,81 @@ function updateSelectedSlotsBar() {
         });
 
         function renderStaffPanel(role) {
-            document.getElementById('staffApp').innerHTML = `
-                <div class="admin-header">
-                    <h1><i class="fas fa-user-shield"></i> Cổng Nhân Viên SportBooking</h1>
-                    <div class="user-info">
-                        <span><i class="far fa-user-circle"></i> ${currentUser.email} (${role === 'admin' ? 'Quản trị' : 'Nhân viên'})</span>
-                        <button class="btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
-                    </div>
-                </div>
-                <div class="admin-container">
-                    <div class="sidebar">
-                        <a href="#" data-tab="dashboard" class="active"><i class="fas fa-chart-pie"></i> Bảng điều khiển (Dashboard)</a>
-                        <a href="#" data-tab="calendar"><i class="far fa-calendar-alt"></i> Lịch tuần & Đặt nhanh</a>
-                        <a href="#" data-tab="bookings"><i class="fas fa-clipboard-check"></i> Duyệt đơn đặt sân</a>
-                        <a href="#" data-tab="feedback"><i class="far fa-comments"></i> Hỗ trợ & Phản hồi</a>
-                        <a href="#" data-tab="food"><i class="fas fa-boxes"></i> Quản lý kho & Căng tin</a>
-                    </div>
-                    <div class="content">
-                        <div id="dashboardTab"></div>
-                        <div id="calendarTab" style="display:none;"></div>
-                        <div id="bookingsTab" style="display:none;"></div>
-                        <div id="feedbackTab" style="display:none;"></div>
-                        <div id="foodTab" style="display:none;"></div>
-                    </div>
-                </div>
-            `;
+    document.getElementById('staffApp').innerHTML = `
+        <div class="admin-header">
+            <h1>
+                <a href="nhanvien.html" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:10px;">
+                    <i class="fas fa-user-shield"></i>
+                    SportBooking Staff
+                </a>
+            </h1>
+            <div class="user-info">
+                <span><i class="far fa-user-circle"></i> ${currentUser.email} (${role === 'admin' ? 'Quản trị' : 'Nhân viên'})</span>
+                <button class="btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+            </div>
+        </div>
+        <div class="admin-container">
+            <div class="sidebar">
+                <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
+                <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
+                <a href="#" data-tab="feedback"><i class="fas fa-envelope"></i> Phản hồi khách hàng</a>
+                <a href="#" data-tab="food"><i class="fas fa-utensils"></i> Quản lý đồ ăn</a>
+            </div>
+            <div class="content">
+                <div id="dashboardTab"></div>
+                <div id="calendarTab" style="display:none;"></div>
+                <div id="bookingsTab" style="display:none;"></div>
+                <div id="feedbackTab" style="display:none;"></div>
+                <div id="foodTab" style="display:none;"></div>
+            </div>
+        </div>
+    `;
 
-            document.getElementById('logoutBtn').onclick = async () => { await signOut(auth); window.location.href = 'dangnhap.html'; };
+    document.getElementById('logoutBtn').onclick = async () => {
+        await signOut(auth);
+        window.location.href = 'dangnhap.html';
+    };
 
-            document.querySelectorAll('.sidebar a').forEach(link => {
-                link.onclick = (e) => {
-                    e.preventDefault();
-                    document.querySelectorAll('.sidebar a').forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-                    const tab = link.dataset.tab;
-                    
-                    document.getElementById('dashboardTab').style.display = tab === 'dashboard' ? 'block' : 'none';
-                    document.getElementById('calendarTab').style.display = tab === 'calendar' ? 'block' : 'none';
-                    document.getElementById('bookingsTab').style.display = tab === 'bookings' ? 'block' : 'none';
-                    document.getElementById('feedbackTab').style.display = tab === 'feedback' ? 'block' : 'none';
-                    document.getElementById('foodTab').style.display = tab === 'food' ? 'block' : 'none';
-                    
-                    if (tab !== 'calendar' && unsubscribeCalendar) { unsubscribeCalendar(); unsubscribeCalendar = null; }
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        link.onclick = (e) => {
+            e.preventDefault();
+            document.querySelectorAll('.sidebar a').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
 
-                    if (tab === 'dashboard') loadDashboard();
-                    if (tab === 'calendar') loadCalendar();
-                    if (tab === 'bookings') loadBookings();
-                    if (tab === 'feedback') loadFeedback();
-                    if (tab === 'food') loadFoodSection();
-                };
-            });
-            loadDashboard();
-        }
+            const tab = link.dataset.tab;
 
-        async function loadDashboard() {
+            document.getElementById('dashboardTab').style.display = tab === 'dashboard' ? 'block' : 'none';
+            document.getElementById('calendarTab').style.display = tab === 'calendar' ? 'block' : 'none';
+            document.getElementById('bookingsTab').style.display = tab === 'bookings' ? 'block' : 'none';
+            document.getElementById('feedbackTab').style.display = tab === 'feedback' ? 'block' : 'none';
+            document.getElementById('foodTab').style.display = tab === 'food' ? 'block' : 'none';
+
+            if (tab !== 'calendar' && unsubscribeCalendar) {
+                unsubscribeCalendar();
+                unsubscribeCalendar = null;
+            }
+            if (tab !== 'bookings' && unsubscribeBookings) {
+                unsubscribeBookings();
+                unsubscribeBookings = null;
+            }
+            if (tab !== 'feedback' && unsubscribeFeedback) {
+                unsubscribeFeedback();
+                unsubscribeFeedback = null;
+            }
+
+            if (tab === 'dashboard') loadDashboard();
+            if (tab === 'calendar') loadCalendar();
+            if (tab === 'bookings') loadBookings();
+            if (tab === 'feedback') loadFeedback();
+            if (tab === 'food') loadFoodSection();
+        };
+    });
+
+    loadDashboard();
+}
+
+                async function loadDashboard() {
             const container = document.getElementById('dashboardTab');
             container.innerHTML = `<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> Đang tính toán dữ liệu hệ thống...</div>`;
 
@@ -540,240 +562,240 @@ function updateSelectedSlotsBar() {
             `;
         }
 
-        async function loadCalendar() {
-            const container = document.getElementById('calendarTab');
-            const sansSnap = await getDocs(collection(db, "san"));
-            let sanOptions = '<option value="">-- Chọn sân đấu để hiển thị lịch --</option>';
-            sansSnap.forEach(doc => { sanOptions += `<option value="${doc.id}">${doc.data().ten}</option>`; });
-            
-            container.innerHTML = `
-                <div class="card-header">
-                    <h2><i class="fas fa-calendar-week"></i> Sơ đồ theo dõi lịch đặt sân theo Tuần (Thời gian thực)</h2>
-                    <div class="calendar-toolbar">
-                        <button id="prevWeekBtn"><i class="fas fa-chevron-left"></i> Tuần trước</button>
-                        <span id="weekDisplay" style="font-weight:600; font-size:14px; background:white; padding:8px 12px; border-radius:6px; border:1px solid #ccd1d9;"></span>
-                        <button id="nextWeekBtn">Tuần sau <i class="fas fa-chevron-right"></i></button>
-                    </div>
-                </div>
-                <div class="san-selector" style="margin-bottom:20px;">
-                    <select id="selectSan" class="form-control" style="width:300px; height:40px; font-weight:500;">${sanOptions}</select>
-                </div>
-                <div id="multiBookingBar" class="multi-booking-bar">
-    <div id="selectedSlotsSummary">
-        Chưa chọn khung giờ nào
-    </div>
+async function loadCalendar() {
+    const container = document.getElementById('calendarTab');
+    container.innerHTML = `<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> Đang tải lịch sân...</div>`;
 
-    <div class="multi-booking-actions">
-        <button
-            type="button"
-            class="btn-primary"
-            id="confirmMultiBookingBtn"
-        >
-            <i class="fas fa-calendar-check"></i>
-            Đặt các giờ đã chọn
-        </button>
+    const sansSnap = await getDocs(collection(db, "san"));
+    let sanOptions = '<option value="">-- Chọn sân đấu để hiển thị lịch --</option>';
+    sansSnap.forEach(docSnap => {
+        const san = docSnap.data();
+        sanOptions += `<option value="${docSnap.id}">${san.ten || san.tenSan || 'Sân chưa đặt tên'}</option>`;
+    });
 
-        <button
-            type="button"
-            class="btn-clear-slots"
-            id="clearMultiBookingBtn"
-        >
-            Hủy chọn
-        </button>
-    </div>
-</div>
+    container.innerHTML = `
+        <div class="card-header">
+            <div>
+                <h2><i class="fas fa-calendar-week"></i> Lịch đặt sân theo tuần</h2>
+                <p style="color:#64748b; font-size:13px; margin-top:6px;">Theo dõi và đặt nhiều khung giờ liên tiếp</p>
+            </div>
+            <div class="calendar-toolbar">
+                <button type="button" id="prevWeekBtn"><i class="fas fa-chevron-left"></i> Tuần trước</button>
+                <span id="weekDisplay" style="font-weight:600; font-size:14px; background:white; padding:8px 12px; border-radius:6px; border:1px solid #ccd1d9;"></span>
+                <button type="button" id="nextWeekBtn">Tuần sau <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
 
-<div id="calendarGrid"></div>
-                <div id="calendarGrid"></div>
-            `;
-document.getElementById("selectSan").onchange = () => {
+        <div class="san-selector" style="margin-bottom:20px;">
+            <select id="selectSan" class="form-control" style="width:300px; height:40px; font-weight:500;">${sanOptions}</select>
+        </div>
+
+        <div id="multiBookingBar" class="multi-booking-bar">
+            <div id="selectedSlotsSummary">Chưa chọn khung giờ nào</div>
+            <div class="multi-booking-actions">
+                <button type="button" class="btn-primary" id="confirmMultiBookingBtn">
+                    <i class="fas fa-calendar-check"></i> Đặt các giờ đã chọn
+                </button>
+                <button type="button" class="btn-clear-slots" id="clearMultiBookingBtn">Hủy chọn</button>
+            </div>
+        </div>
+
+        <div id="calendarGrid"></div>
+    `;
+
+    document.getElementById("selectSan").onchange = () => {
+        clearSelectedCalendarSlots();
+        currentSanId = document.getElementById("selectSan").value;
+        renderWeeklyGrid();
+    };
+
+    document.getElementById("prevWeekBtn").onclick = () => {
+        clearSelectedCalendarSlots();
+        startOfWeekDate.setDate(startOfWeekDate.getDate() - 7);
+        renderWeeklyGrid();
+    };
+
+    document.getElementById("nextWeekBtn").onclick = () => {
+        clearSelectedCalendarSlots();
+        startOfWeekDate.setDate(startOfWeekDate.getDate() + 7);
+        renderWeeklyGrid();
+    };
+
+    document.getElementById("clearMultiBookingBtn").onclick = () => {
     clearSelectedCalendarSlots();
-
-    currentSanId =
-        document.getElementById("selectSan").value;
-
-    renderWeeklyGrid();
 };
 
-document.getElementById("prevWeekBtn").onclick = () => {
-    clearSelectedCalendarSlots();
-
-    startOfWeekDate.setDate(
-        startOfWeekDate.getDate() - 7
-    );
-
-    renderWeeklyGrid();
-};
-
-document.getElementById("nextWeekBtn").onclick = () => {
-    clearSelectedCalendarSlots();
-
-    startOfWeekDate.setDate(
-        startOfWeekDate.getDate() + 7
-    );
-
-    renderWeeklyGrid();
-};
-document
-    .getElementById("confirmMultiBookingBtn")
-    .addEventListener("click", () => {
+    document.getElementById("confirmMultiBookingBtn").onclick = () => {
         if (selectedCalendarSlots.length === 0) {
             alert("Vui lòng chọn ít nhất một khung giờ!");
             return;
         }
 
         openMultiBookingModal();
-    });          
-            if(currentSanId) { document.getElementById('selectSan').value = currentSanId; renderWeeklyGrid(); }
-            else { document.getElementById('calendarGrid').innerHTML = '<div style="background:white; padding:50px; text-align:center; border-radius:12px; border:1px solid #e6ebf0; color:#656d78;"><i class="far fa-map" style="font-size:40px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>Vui lòng chọn một sân cụ thể ở menu trên để xem lịch biểu dạng tuần.</div>'; }
-        }
+    };
+
+
+    if (currentSanId) {
+        document.getElementById('selectSan').value = currentSanId;
+        renderWeeklyGrid();
+    } else {
+        document.getElementById('calendarGrid').innerHTML = `
+            <div style="background:white; padding:50px; text-align:center; border-radius:12px; border:1px solid #e6ebf0; color:#656d78;">
+                <i class="far fa-map" style="font-size:40px; color:#cbd5e1; margin-bottom:12px; display:block;"></i>
+                Vui lòng chọn một sân cụ thể ở menu trên để xem lịch biểu dạng tuần.
+            </div>`;
+    }
+}
 
         async function renderWeeklyGrid() {
-            if (unsubscribeCalendar) { unsubscribeCalendar(); unsubscribeCalendar = null; }
-            if (!currentSanId) return;
+    if (unsubscribeCalendar) {
+        unsubscribeCalendar();
+        unsubscribeCalendar = null;
+    }
+    if (!currentSanId) return;
 
-            const sanDoc = await getDoc(doc(db, "san", currentSanId));
-            const baseGia = sanDoc.data().gia;
-            const tenSan = sanDoc.data().ten;
-
-            const daysOfWeek = [];
-            const labels = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"];
-            let tempDate = new Date(startOfWeekDate);
-
-            for (let i = 0; i < 7; i++) {
-                const year = tempDate.getFullYear();
-                const month = String(tempDate.getMonth() + 1).padStart(2, '0');
-                const date = String(tempDate.getDate()).padStart(2, '0');
-                daysOfWeek.push({
-                    dateStr: `${year}-${month}-${date}`,
-                    label: `${labels[i]} (${date}/${month})`
-                });
-                tempDate.setDate(tempDate.getDate() + 1);
-            }
-
-            document.getElementById('weekDisplay').innerText = `Tuần: ${daysOfWeek[0].dateStr.split('-').reverse().join('/')} - ${daysOfWeek[6].dateStr.split('-').reverse().join('/')}`;
-
-            const q = query(collection(db, "donDat"), where("sanId", "==", currentSanId));
-            unsubscribeCalendar = onSnapshot(q, (snapshot) => {
-                const bookingMap = new Map();
-snapshot.forEach((docSnap) => {
-    const booking = docSnap.data();
-
-    if (booking.trangThai === "đã_hủy") {
+    const sanDoc = await getDoc(doc(db, "san", currentSanId));
+    if (!sanDoc.exists()) {
+        document.getElementById('calendarGrid').innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:20px;border-radius:10px;">Không tìm thấy thông tin sân.</div>';
         return;
     }
 
-    const startHour = Number(
-        booking.gioBatDau
-    );
+    const sanData = sanDoc.data();
+    const baseGia = Number(sanData.gia || 0);
+    const tenSan = sanData.ten || sanData.tenSan || 'Sân chưa đặt tên';
 
-    const endHour = Number(
-        booking.gioKetThuc ||
-        startHour + 1
-    );
+    const daysOfWeek = [];
+    const labels = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"];
+    let tempDate = new Date(startOfWeekDate);
 
-    for (
-        let occupiedHour = startHour;
-        occupiedHour < endHour;
-        occupiedHour++
-    ) {
-        bookingMap.set(
-            `${booking.ngayDat}_${occupiedHour}`,
-            booking
-        );
+    for (let i = 0; i < 7; i++) {
+        const year = tempDate.getFullYear();
+        const month = String(tempDate.getMonth() + 1).padStart(2, '0');
+        const date = String(tempDate.getDate()).padStart(2, '0');
+        daysOfWeek.push({
+            dateStr: `${year}-${month}-${date}`,
+            label: `${labels[i]}`,
+            displayDate: `${date}/${month}`
+        });
+        tempDate.setDate(tempDate.getDate() + 1);
     }
-});
 
-                const hours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
-                let html = `
-                    <div class="weekly-calendar-wrapper">
-                        <table class="weekly-table">
-                            <thead>
-                                <tr>
-                                    <th class="time-col"><i class="far fa-clock"></i> Giờ</th>
-                `;
-                for (const day of daysOfWeek) {
-                    html += `<th>${day.label}</th>`;
-                }
-                html += `</tr></thead><tbody>`;
+    document.getElementById('weekDisplay').innerText = `Tuần: ${daysOfWeek[0].displayDate} - ${daysOfWeek[6].displayDate}`;
 
-                for (const hour of hours) {
-                    html += `<tr><td class="time-cell">${hour}:00</td>`;
-                    for (const day of daysOfWeek) {
-                        const booking = bookingMap.get(`${day.dateStr}_${hour}`);
-                        if (booking) {
-                            const isConfirmed = booking.trangThai === 'đã_xác_nhận';
-                            html += `
-                                <td class="${isConfirmed ? 'slot-confirmed' : 'slot-pending'}">
-                                    <div>${isConfirmed ? '<i class="fas fa-check-circle"></i> Đã duyệt' : '<i class="fas fa-spinner"></i> Chờ duyệt'}</div>
-                                    <div style="font-size:10px; color:#555; margin-top:2px;">${(booking.userName || 'Ẩn danh')}</div>
-                                </td>`;
-} else {
-    const isSelected =
-        selectedCalendarSlots.some(
-            (item) =>
-                item.date === day.dateStr &&
-                item.hour === hour
-        );
+    const q = query(collection(db, "donDat"), where("sanId", "==", currentSanId));
+    unsubscribeCalendar = onSnapshot(q, (snapshot) => {
+        const bookingMap = new Map();
 
-    html += `
-        <td
-            class="
-                slot-available
-                multi-book-slot
-                ${isSelected ? "slot-selected" : ""}
-            "
-            data-date="${day.dateStr}"
-            data-hour="${hour}"
-            data-price="${baseGia}"
-            title="${hour}:00 - ${hour + 1}:00"
-        >
-            <i
-                class="fas fa-plus-circle"
-                style="
-                    font-size: 13px;
-                    opacity: 0.7;
-                "
-            ></i>
+        snapshot.forEach((docSnap) => {
+            const booking = { ...docSnap.data(), id: docSnap.id };
+            if (booking.trangThai === "đã_hủy") return;
 
-            <div style="
-                margin-top: 3px;
-                font-size: 10px;
-            ">
-                Chọn
-            </div>
-        </td>
-    `;
-}
-                    }
-                    html += `</tr>`;
-                }
-html += `</tbody></table></div>`;
+            const startHour = Number(booking.gioBatDau);
+            const endHourValue = Number(booking.gioKetThuc);
+            if (!booking.ngayDat || !Number.isFinite(startHour)) return;
 
-const calendarGrid =
-    document.getElementById(
-        "calendarGrid"
-    );
+            const endHour = Number.isFinite(endHourValue) && endHourValue > startHour
+                ? endHourValue
+                : startHour + 1;
 
-calendarGrid.innerHTML = html;
-
-calendarGrid
-    .querySelectorAll(".multi-book-slot")
-    .forEach((slot) => {
-        slot.addEventListener(
-            "click",
-            () => {
-                toggleCalendarSlot(
-                    slot,
-                    tenSan
-                );
+            for (let occupiedHour = startHour; occupiedHour < endHour; occupiedHour++) {
+                bookingMap.set(`${booking.ngayDat}_${occupiedHour}`, booking);
             }
-        );
-    });
+        });
 
-updateSelectedSlotsBar();
-            });
+        selectedCalendarSlots = selectedCalendarSlots.filter(slot => !bookingMap.has(`${slot.date}_${slot.hour}`));
+
+        const hours = [];
+        for (let hour = 6; hour <= 22; hour++) hours.push(hour);
+
+        let html = `
+            <div style="margin-bottom:12px; color:#434a54; font-size:14px;">
+                Đang xem lịch: <strong>${tenSan}</strong>
+            </div>
+            <div class="weekly-calendar-wrapper">
+                <table class="weekly-table">
+                    <thead>
+                        <tr>
+                            <th class="time-col"><i class="far fa-clock"></i> Giờ</th>
+        `;
+
+        for (const day of daysOfWeek) {
+            html += `<th><div>${day.label}</div><div style="margin-top:4px;color:#64748b;font-size:12px;">${day.displayDate}</div></th>`;
         }
+        html += `</tr></thead><tbody>`;
+
+        for (const hour of hours) {
+            html += `<tr><td class="time-cell">${String(hour).padStart(2, '0')}:00</td>`;
+            for (const day of daysOfWeek) {
+                const key = `${day.dateStr}_${hour}`;
+                const booking = bookingMap.get(key);
+
+                if (booking) {
+                    const isPending = booking.trangThai === 'chờ_xác_nhận' || booking.trangThai === 'Chờ xác nhận';
+                    const isWaitingPayment = booking.trangThaiThanhToan === 'Chờ xác nhận thanh toán' || booking.trangThaiThanhToan === 'Chờ thanh toán';
+
+                    let statusClass = isPending || isWaitingPayment ? 'slot-pending' : 'slot-confirmed';
+                    let statusText = isWaitingPayment ? 'Chờ TT' : (isPending ? 'Chờ duyệt' : 'Đã duyệt');
+
+                    html += `
+                        <td class="${statusClass} booked-calendar-slot" data-booking-key="${key}" style="cursor:pointer;">
+                            <div>${statusText}</div>
+                            <div style="font-size:10px; color:#555; margin-top:2px;">
+                                ${booking.userName || booking.userEmail || 'Ẩn danh'}<br>
+                                <span style="font-size:9px;">${booking.trangThaiThanhToan || 'Chưa thanh toán'}</span>
+                            </div>
+                        </td>`;
+                } else {
+                    const isSelected = selectedCalendarSlots.some(item => item.date === day.dateStr && item.hour === hour);
+                    html += `
+                        <td
+                            class="slot-available multi-book-slot ${isSelected ? 'slot-selected' : ''}"
+                            data-date="${day.dateStr}"
+                            data-hour="${hour}"
+                            data-price="${baseGia}"
+                            title="${hour}:00 - ${hour + 1}:00"
+                        >
+                            <i class="fas fa-plus-circle" style="font-size:13px; opacity:0.7;"></i>
+                            <div style="margin-top:3px; font-size:10px;">Chọn</div>
+                        </td>`;
+                }
+            }
+            html += `</tr>`;
+        }
+        html += `</tbody></table></div>`;
+
+        const calendarGrid = document.getElementById("calendarGrid");
+        calendarGrid.innerHTML = html;
+
+        calendarGrid.querySelectorAll(".multi-book-slot").forEach((slot) => {
+            slot.addEventListener("click", () => toggleCalendarSlot(slot, tenSan));
+        });
+
+        calendarGrid.querySelectorAll(".booked-calendar-slot").forEach((slot) => {
+            slot.addEventListener("click", () => {
+                const booking = bookingMap.get(slot.dataset.bookingKey);
+                if (!booking) return;
+                showBookingDetail(
+                    booking.id,
+                    booking.tenSan || tenSan,
+                    booking.ngayDat,
+                    Number(booking.gioBatDau),
+                    Number(booking.gioKetThuc) || Number(booking.gioBatDau) + 1,
+                    Number(booking.tongTien || 0),
+                    booking.trangThai,
+                    booking.userName || booking.userEmail || 'Khách hàng',
+                    booking.userPhone || '---',
+                    booking.trangThaiThanhToan || 'Chưa thanh toán',
+                    booking.phuongThucThanhToan || 'Không rõ',
+                    booking.maThanhToan || ''
+                );
+            });
+        });
+
+        updateSelectedSlotsBar();
+    });
+}
+
 async function openMultiBookingModal() {
 if (selectedCalendarSlots.length === 0) {
 alert("Vui lòng chọn ít nhất một khung giờ!");
@@ -899,6 +921,12 @@ modal.innerHTML = `
             placeholder="Có thể để trống"
         >
 
+        <label>Trạng thái đơn</label>
+        <select id="multiBookingStatus">
+            <option value="đã_xác_nhận">Đã xác nhận</option>
+            <option value="chờ_xác_nhận">Chờ xác nhận</option>
+        </select>
+
         <div class="modal-buttons">
             <button
                 type="button"
@@ -939,6 +967,7 @@ saveButton.addEventListener("click", async () => {
     const userName = nameInput.value.trim();
     const userPhone = phoneInput.value.trim();
     const enteredEmail = emailInput.value.trim();
+    const trangThai = document.getElementById("multiBookingStatus").value;
 
     if (!userName || !userPhone) {
         alert(
@@ -1026,7 +1055,7 @@ saveButton.addEventListener("click", async () => {
                 gia: giaMoiGio,
                 tongTien: tongTien,
 
-                trangThai: "đã_xác_nhận",
+                trangThai: trangThai,
 
                 nguonDat: "nhan_vien",
                 createdBy:
@@ -1105,7 +1134,99 @@ modal.addEventListener("click", (event) => {
             };
         };
 
-        async function loadBookings() {
+
+window.showBookingDetail = async function(
+    bookingId,
+    tenSan,
+    ngayDat,
+    gioBatDau,
+    gioKetThuc,
+    tongTien,
+    trangThai,
+    userName,
+    userPhone,
+    trangThaiThanhToan,
+    phuongThucThanhToan,
+    maThanhToan
+) {
+    const isPending = trangThai === "chờ_xác_nhận" || trangThai === "Chờ xác nhận";
+    const statusText = isPending ? "Chờ xác nhận" : trangThai === "đã_hủy" ? "Đã hủy" : "Đã xác nhận";
+    const needConfirmPayment = trangThaiThanhToan === "Chờ xác nhận thanh toán";
+
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.style.display = "flex";
+
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Chi tiết đặt sân</h3>
+            <div style="margin:15px 0; line-height:1.8;">
+                <p><strong>Sân:</strong> ${tenSan}</p>
+                <p><strong>Ngày:</strong> ${ngayDat}</p>
+                <p><strong>Giờ:</strong> ${gioBatDau}:00 - ${gioKetThuc}:00</p>
+                <p><strong>Khách hàng:</strong> ${userName}</p>
+                <p><strong>Số điện thoại:</strong> ${userPhone || '---'}</p>
+                <p><strong>Thành tiền:</strong> ${Number(tongTien || 0).toLocaleString("vi-VN")}đ</p>
+                <p><strong>Trạng thái đơn:</strong> <span style="color:${isPending ? '#f59f00' : '#1a6b30'}">${statusText}</span></p>
+                <p><strong>Thanh toán:</strong> <span style="color:${needConfirmPayment ? '#2563eb' : '#1a6b30'}">${trangThaiThanhToan || 'Chưa thanh toán'}</span></p>
+                <p><strong>Phương thức:</strong> ${phuongThucThanhToan || 'Không rõ'}</p>
+                ${maThanhToan ? `<p><strong>Mã thanh toán:</strong> <span style="color:#2563eb;font-weight:700;">${maThanhToan}</span></p>` : ''}
+            </div>
+            <div class="modal-buttons">
+                ${isPending ? `<button class="btn-modal-save" id="confirmBookingBtn">Xác nhận đơn</button>` : ''}
+                ${needConfirmPayment ? `<button class="btn-modal-save" id="confirmPaymentBtn" style="background:#2563eb;">Xác nhận thanh toán</button>` : ''}
+                ${trangThai !== 'đã_hủy' ? `<button class="btn-modal-cancel" id="cancelBookingBtn" style="color:#c92a2a;">Hủy đơn</button>` : ''}
+                <button class="btn-modal-cancel" id="closeDetailModal">Đóng</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const confirmBookingBtn = document.getElementById("confirmBookingBtn");
+    if (confirmBookingBtn) {
+        confirmBookingBtn.onclick = async () => {
+            await updateDoc(doc(db, "donDat", bookingId), {
+                trangThai: "đã_xác_nhận",
+                updatedAt: new Date().toISOString()
+            });
+            alert("Đã xác nhận đơn!");
+            modal.remove();
+        };
+    }
+
+    const confirmPaymentBtn = document.getElementById("confirmPaymentBtn");
+    if (confirmPaymentBtn) {
+        confirmPaymentBtn.onclick = async () => {
+            await updateDoc(doc(db, "donDat", bookingId), {
+                trangThaiThanhToan: "Đã thanh toán",
+                updatedAt: new Date().toISOString()
+            });
+            alert("Đã xác nhận thanh toán!");
+            modal.remove();
+        };
+    }
+
+    const cancelBookingBtn = document.getElementById("cancelBookingBtn");
+    if (cancelBookingBtn) {
+        cancelBookingBtn.onclick = async () => {
+            if (!confirm("Bạn chắc chắn muốn hủy đơn này?")) return;
+            await updateDoc(doc(db, "donDat", bookingId), {
+                trangThai: "đã_hủy",
+                updatedAt: new Date().toISOString()
+            });
+            alert("Đã hủy đơn!");
+            modal.remove();
+        };
+    }
+
+    document.getElementById("closeDetailModal").onclick = () => modal.remove();
+    modal.onclick = (event) => {
+        if (event.target === modal) modal.remove();
+    };
+};
+
+                async function loadBookings() {
             const container = document.getElementById('bookingsTab');
             if(unsubscribeBookings) unsubscribeBookings();
 
@@ -1146,65 +1267,164 @@ modal.addEventListener("click", (event) => {
             }
         };
 
-        async function loadFeedback() {
-            const container = document.getElementById('feedbackTab');
-            container.innerHTML = `
-                <div class="card-header"><h2><i class="far fa-comments"></i> Trung tâm hỗ trợ trực tuyến & Tiếp nhận phản hồi (Realtime)</h2></div>
-                <div class="chat-container">
-                    <div class="chat-sidebar"><h4>Danh sách liên hệ mới</h4><div class="chat-room-list" id="chatRoomsList"></div></div>
-                    <div class="chat-main">
-                        <div class="chat-messages" id="chatMessagesArea">
-                            <div style="text-align:center; color:#999; margin-top:180px; font-size:13.5px;"><i class="far fa-comment-dots" style="font-size:36px; margin-bottom:12px; display:block; color:#cbd5e1;"></i>Vui lòng chọn một khách hàng cần phản hồi tin nhắn từ cột bên trái.</div>
-                        </div>
-                        <div class="chat-input-area">
-                            <input type="text" id="chatReplyInput" placeholder="Nhập nội dung tin nhắn phản hồi..." disabled>
-                            <button class="btn-primary" id="sendChatBtn" style="padding: 10px 20px;" disabled><i class="far fa-paper-plane"></i> Gửi</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document
-    .getElementById(
-        "clearMultiBookingBtn"
-    )
-    .addEventListener(
-        "click",
-        clearSelectedCalendarSlots
+async function loadFeedback() {
+    if (unsubscribeFeedback) {
+    unsubscribeFeedback();
+    unsubscribeFeedback = null;
+}
+    const container = document.getElementById("feedbackTab");
+
+    container.innerHTML = `
+        <div class="card-header">
+            <h2><i class="fas fa-envelope"></i> Phản hồi khách hàng</h2>
+        </div>
+
+        <div class="data-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Khách hàng</th>
+                        <th>Email</th>
+                        <th>Nội dung</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbackTableBody">
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:25px;">
+                            Đang tải phản hồi...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    const tbody = document.getElementById("feedbackTableBody");
+
+    const q = query(
+        collection(db, "feedback"),
+        orderBy("createdAt", "desc")
     );
 
-document
-    .getElementById(
-        "confirmMultiBookingBtn"
-    )
-    .addEventListener("click", () => {
-        if (
-            selectedCalendarSlots.length === 0
-        ) {
-            alert(
-                "Vui lòng chọn ít nhất một khung giờ!"
-            );
+    onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align:center;padding:25px;color:#999;">
+                        Chưa có phản hồi nào.
+                    </td>
+                </tr>
+            `;
             return;
         }
 
-        openMultiBookingModal();
+        let html = "";
+
+        snapshot.forEach((docSnap) => {
+            const fb = docSnap.data();
+
+            const status = fb.status || "new";
+
+            let statusText = "Mới";
+            let statusClass = "badge-pending";
+
+            if (status === "read") {
+                statusText = "Đã xem";
+                statusClass = "badge-confirmed";
+            }
+
+            if (status === "processed") {
+                statusText = "Đã xử lý";
+                statusClass = "badge-confirmed";
+            }
+
+            html += `
+                <tr>
+                    <td>
+                        <strong>${fb.name || fb.fullName || "Khách hàng"}</strong>
+                        <br>
+                        <small>${fb.phone || "---"}</small>
+                    </td>
+
+                    <td>${fb.email || "---"}</td>
+
+                    <td>
+                        <div style="max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            ${fb.message || fb.content || fb.noiDung || "---"}
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="badge ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+
+                    <td>
+                        <button class="action-btn btn-confirm" onclick="viewFeedbackDetail('${docSnap.id}')">
+                            Xem
+                        </button>
+
+                        ${
+                            status !== "processed"
+                                ? `<button class="action-btn btn-cancel-action" onclick="markFeedbackProcessed('${docSnap.id}')">
+                                    Xử lý
+                                   </button>`
+                                : ""
+                        }
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    });
+}
+
+window.viewFeedbackDetail = async function (feedbackId) {
+    const snap = await getDoc(doc(db, "feedback", feedbackId));
+
+    if (!snap.exists()) {
+        alert("Không tìm thấy phản hồi!");
+        return;
+    }
+
+    const fb = snap.data();
+
+    if ((fb.status || "new") === "new") {
+        await updateDoc(doc(db, "feedback", feedbackId), {
+            status: "read",
+            readAt: new Date(),
+            readBy: currentUser?.email || "staff",
+            updatedAt: new Date()
+        });
+    }
+
+    alert(
+        `Khách hàng: ${fb.name || fb.fullName || "Khách hàng"}\n` +
+        `Email: ${fb.email || "---"}\n` +
+        `SĐT: ${fb.phone || "---"}\n\n` +
+        `Nội dung:\n${fb.message || fb.content || fb.noiDung || "---"}`
+    );
+};
+
+window.markFeedbackProcessed = async function (feedbackId) {
+    if (!confirm("Đánh dấu phản hồi này là đã xử lý?")) return;
+
+    await updateDoc(doc(db, "feedback", feedbackId), {
+        status: "processed",
+        processedAt: new Date(),
+        processedBy: currentUser?.email || "staff",
+        updatedAt: new Date()
     });
 
-            onSnapshot(collection(db, "support_rooms"), (snapshot) => {
-                const listContainer = document.getElementById('chatRoomsList');
-                if (snapshot.empty) { listContainer.innerHTML = '<p style="padding:15px; color:#999; font-size:13px;">Chưa có phản hồi nào.</p>'; return; }
-                listContainer.innerHTML = '';
-                snapshot.forEach(roomDoc => {
-                    const room = roomDoc.data();
-                    const div = document.createElement('div');
-                    div.className = `chat-room-item ${activeChatRoomId === roomDoc.id ? 'active' : ''}`;
-                    div.innerHTML = `<strong style="color:#2c3e50; font-size:13.5px;">${room.customerName || 'Khách hàng'}</strong><br><small style="color:#656d78; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; margin-top:2px;">${room.lastMessage || 'Đang chờ phản hồi...'}</small>`;
-                    div.onclick = () => selectChatRoom(roomDoc.id);
-                    listContainer.appendChild(div);
-                });
-            });
-        }
+    alert("Đã xử lý phản hồi!");
+};
 
-        function selectChatRoom(roomId) {
+
+                function selectChatRoom(roomId) {
             activeChatRoomId = roomId;
             document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
             document.getElementById('chatReplyInput').disabled = false;
@@ -1444,47 +1664,272 @@ document
             loadFoodOrders();
         };
 
-        window.openCreateFoodOrderModal = async function() {
+        window.openCreateFoodOrderModal = async function () {
             const snapshot = await getDocs(collection(db, "dichVuAnUong"));
-            let options = '';
-            snapshot.forEach(doc => { const f = doc.data(); options += `<option value="${doc.id}" data-gia="${f.gia}" data-ten="${f.ten}">${f.ten} (Tồn: ${f.soLuong || 0})</option>`; });
 
-            const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
+            const foods = [];
+
+            snapshot.forEach((docSnap) => {
+                const f = docSnap.data();
+
+                foods.push({
+                    id: docSnap.id,
+                    ten: f.ten || "Chưa đặt tên",
+                    gia: Number(f.gia || 0),
+                    soLuong: Number(f.soLuong || 0)
+                });
+            });
+
+            if (foods.length === 0) {
+                alert("Chưa có sản phẩm nào trong kho!");
+                return;
+            }
+
+            let options = "";
+
+            foods.forEach((f) => {
+                options += `
+                    <option
+                        value="${f.id}"
+                        data-ten="${f.ten}"
+                        data-gia="${f.gia}"
+                        data-ton="${f.soLuong}"
+                    >
+                        ${f.ten} - ${f.gia.toLocaleString("vi-VN")}đ (Tồn: ${f.soLuong})
+                    </option>
+                `;
+            });
+
+            const selectedFoodItems = [];
+
+            const modal = document.createElement("div");
+            modal.className = "modal";
+            modal.style.display = "flex";
+
             modal.innerHTML = `
-                <div class="modal-content">
-                    <h3><i class="fas fa-cart-plus"></i> Gọi món phục vụ tại quầy</h3>
-                    <label>Món ăn / thức uống</label><select id="popFoodSelect">${options}</select>
-                    <label>Số lượng</label><input type="number" id="popFoodQty" value="1" min="1">
-                    <label>Vị trí giao (Sân / Khu vực)</label><input type="text" id="popFoodNote" placeholder="Ví dụ: Sân 3, Hàng ghế chờ">
+                <div class="modal-content" style="max-width:560px;">
+                    <h3>
+                        <i class="fas fa-cart-plus"></i>
+                        Gọi món phục vụ tại quầy
+                    </h3>
+
+                    <label>Món ăn / thức uống</label>
+                    <select id="popFoodSelect">${options}</select>
+
+                    <label>Số lượng</label>
+                    <input type="number" id="popFoodQty" value="1" min="1">
+
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        id="addFoodItemBtn"
+                        style="margin-top:10px;"
+                    >
+                        <i class="fas fa-plus"></i>
+                        Thêm món
+                    </button>
+
+                    <div
+                        id="selectedFoodList"
+                        style="
+                            margin-top:15px;
+                            padding:12px;
+                            border:1px solid #e5e7eb;
+                            border-radius:8px;
+                            background:#f8fafc;
+                            min-height:60px;
+                        "
+                    >
+                        <p style="color:#999;">Chưa thêm món nào.</p>
+                    </div>
+
+                    <label>Vị trí giao (Sân / Khu vực)</label>
+                    <input
+                        type="text"
+                        id="popFoodNote"
+                        placeholder="Ví dụ: Sân 3, Hàng ghế chờ"
+                    >
+
+                    <div style="
+                        margin-top:12px;
+                        font-size:17px;
+                        font-weight:700;
+                        color:#1a6b30;
+                        text-align:right;
+                    ">
+                        Tổng tiền:
+                        <span id="foodOrderTotal">0đ</span>
+                    </div>
+
                     <div class="modal-buttons">
-                        <button class="btn-modal-save" id="savePopFoodBtn">Xuất đơn hàng</button>
-                        <button class="btn-modal-cancel" onclick="this.closest('.modal').remove()">Hủy</button>
+                        <button class="btn-modal-save" id="savePopFoodBtn">
+                            Xuất đơn hàng
+                        </button>
+
+                        <button class="btn-modal-cancel" id="cancelPopFoodBtn">
+                            Hủy
+                        </button>
                     </div>
                 </div>
             `;
-            document.body.appendChild(modal);
-            document.getElementById('savePopFoodBtn').onclick = async () => {
-                const select = document.getElementById('popFoodSelect');
-                const qty = parseInt(document.getElementById('popFoodQty').value);
-                const note = document.getElementById('popFoodNote').value.trim();
-                const opt = select.options[select.selectedIndex];
-                
-                if (!opt) { alert('Chưa có sản phẩm nào trong kho!'); return; }
 
-                await addDoc(collection(db, "donDichVu"), {
-                    chiTietMon: `${opt.dataset.ten} (x${qty})`, tenSan: note || 'Tại quầy',
-                    tongTien: parseInt(opt.dataset.gia) * qty, trangThai: 'đã_hoàn_thành', createdAt: new Date().toISOString()
-                });
-                
-                const targetItem = allInventoryItems.find(i => i.id === select.value);
-                if (targetItem) {
-                    const nextStock = Math.max(0, parseInt(targetItem.soLuong || 0) - qty);
-                    await updateDoc(doc(db, "dichVuAnUong", select.value), { soLuong: nextStock });
+            document.body.appendChild(modal);
+
+            function renderSelectedFoodList() {
+                const box = document.getElementById("selectedFoodList");
+                const totalBox = document.getElementById("foodOrderTotal");
+
+                if (selectedFoodItems.length === 0) {
+                    box.innerHTML = `<p style="color:#999;">Chưa thêm món nào.</p>`;
+                    totalBox.textContent = "0đ";
+                    return;
                 }
 
-                alert('Đã ghi nhận đơn và tự động khấu trừ số lượng sản phẩm trong kho!'); 
-                modal.remove(); 
-                loadFoodOrders();
+                let total = 0;
+
+                box.innerHTML = selectedFoodItems.map((item, index) => {
+                    total += item.thanhTien;
+
+                    return `
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;
+                            gap:10px;
+                            padding:8px 0;
+                            border-bottom:1px solid #e5e7eb;
+                        ">
+                            <div>
+                                <strong>${item.ten}</strong>
+                                <br>
+                                <small>
+                                    ${item.soLuong} x ${item.gia.toLocaleString("vi-VN")}đ
+                                </small>
+                            </div>
+
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <strong>${item.thanhTien.toLocaleString("vi-VN")}đ</strong>
+                                <button
+                                    type="button"
+                                    class="action-btn btn-cancel-action"
+                                    onclick="removeSelectedFoodItem(${index})"
+                                >
+                                    Xóa
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+
+                totalBox.textContent = total.toLocaleString("vi-VN") + "đ";
+            }
+
+            window.removeSelectedFoodItem = function (index) {
+                selectedFoodItems.splice(index, 1);
+                renderSelectedFoodList();
+            };
+
+            document.getElementById("addFoodItemBtn").onclick = () => {
+                const select = document.getElementById("popFoodSelect");
+                const qtyInput = document.getElementById("popFoodQty");
+
+                const foodId = select.value;
+                const qty = Number(qtyInput.value);
+                const opt = select.options[select.selectedIndex];
+
+                if (!opt) {
+                    alert("Vui lòng chọn món!");
+                    return;
+                }
+
+                if (!Number.isFinite(qty) || qty <= 0) {
+                    alert("Số lượng không hợp lệ!");
+                    return;
+                }
+
+                const ten = opt.dataset.ten;
+                const gia = Number(opt.dataset.gia || 0);
+                const tonKho = Number(opt.dataset.ton || 0);
+
+                const daChon = selectedFoodItems
+                    .filter(item => item.id === foodId)
+                    .reduce((sum, item) => sum + item.soLuong, 0);
+
+                if (qty + daChon > tonKho) {
+                    alert(`Không đủ tồn kho. Món này còn ${tonKho}, bạn đã chọn ${daChon}.`);
+                    return;
+                }
+
+                selectedFoodItems.push({
+                    id: foodId,
+                    ten: ten,
+                    gia: gia,
+                    soLuong: qty,
+                    thanhTien: gia * qty
+                });
+
+                qtyInput.value = 1;
+                renderSelectedFoodList();
+            };
+
+            document.getElementById("savePopFoodBtn").onclick = async () => {
+                const note = document.getElementById("popFoodNote").value.trim();
+
+                if (selectedFoodItems.length === 0) {
+                    alert("Vui lòng thêm ít nhất một món!");
+                    return;
+                }
+
+                const tongTien = selectedFoodItems.reduce(
+                    (sum, item) => sum + item.thanhTien,
+                    0
+                );
+
+                try {
+                    await addDoc(collection(db, "donDichVu"), {
+                        items: selectedFoodItems,
+                        chiTietMon: selectedFoodItems
+                            .map(item => `${item.ten} (x${item.soLuong})`)
+                            .join(", "),
+                        tenSan: note || "Tại quầy",
+                        tongTien: tongTien,
+                        trangThai: "đã_hoàn_thành",
+                        createdAt: new Date().toISOString(),
+                        createdBy: currentUser?.email || "staff"
+                    });
+
+                    for (const item of selectedFoodItems) {
+                        const foodRef = doc(db, "dichVuAnUong", item.id);
+                        const foodSnap = await getDoc(foodRef);
+
+                        if (foodSnap.exists()) {
+                            const currentStock = Number(foodSnap.data().soLuong || 0);
+                            const nextStock = Math.max(0, currentStock - item.soLuong);
+
+                            await updateDoc(foodRef, {
+                                soLuong: nextStock
+                            });
+                        }
+                    }
+
+                    alert("Đã ghi nhận đơn nhiều món và tự động trừ kho!");
+                    modal.remove();
+                    loadFoodOrders();
+
+                } catch (error) {
+                    console.error("Lỗi tạo đơn đồ ăn:", error);
+                    alert("Không thể tạo đơn đồ ăn: " + error.message);
+                }
+            };
+
+            document.getElementById("cancelPopFoodBtn").onclick = () => {
+                modal.remove();
+            };
+
+            modal.onclick = (event) => {
+                if (event.target === modal) {
+                    modal.remove();
+                }
             };
         };
 
