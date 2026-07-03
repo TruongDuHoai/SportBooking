@@ -37,7 +37,7 @@ let currentUser = null;
 let selectedDate = "";
 let selectedHours = [];
 
-const gioTrongNgay = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+const gioTrongNgay = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
 
 async function loadSan() {
     const sanSnap = await getDoc(doc(db, "san", sanId));
