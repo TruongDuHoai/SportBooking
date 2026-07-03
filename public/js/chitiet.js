@@ -514,6 +514,7 @@ const dropdownMenu = document.getElementById("dropdownMenu");
 const logoutDropdownBtn = document.getElementById("logoutBtn");
 
 onAuthStateChanged(auth, (user) => {
+      currentUser = user;
     if (user) {
         // Đã đăng nhập
         loginBtn.style.display = "none";
@@ -554,6 +555,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
     } else {
+        currentUser = null;
         // Chưa đăng nhập
         loginBtn.style.display = "inline-block";
         userDropdownArea.style.display = "none";

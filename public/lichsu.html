@@ -143,6 +143,49 @@
         <a href="lichsu.html">Lịch sử</a>
         <a href="lienhe.html">Liên hệ</a>
 
+        <div id="notificationBox" style="position:relative;display:none;">
+            <a href="#" id="notificationBell" style="position:relative;">
+                <i class="fas fa-bell"></i>
+                <span id="notificationBadge"
+                    style="
+                        display:none;
+                        position:absolute;
+                        top:-8px;
+                        right:-10px;
+                        background:red;
+                        color:white;
+                        font-size:11px;
+                        padding:2px 6px;
+                        border-radius:50%;
+                    ">
+                    0
+                </span>
+            </a>
+
+            <div id="notificationDropdown"
+                style="
+                    display:none;
+                    position:absolute;
+                    right:0;
+                    top:35px;
+                    width:320px;
+                    background:white;
+                    color:#333;
+                    border-radius:10px;
+                    box-shadow:0 5px 20px rgba(0,0,0,.15);
+                    z-index:999;
+                    overflow:hidden;
+                ">
+                <div style="padding:12px;font-weight:bold;border-bottom:1px solid #eee;">
+                    Thông báo
+                </div>
+
+                <div id="notificationList" style="max-height:350px;overflow-y:auto;">
+                    <p style="padding:15px;color:#777;">Chưa có thông báo.</p>
+                </div>
+            </div>
+        </div>
+
         <div id="userMenu" style="position:relative;display:inline-block;">
             <a href="#" id="loginBtn">Đăng nhập</a>
 

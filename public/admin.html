@@ -419,6 +419,19 @@
                 let currentUser = null;
         let currentUserRole = null;
 
+        async function createNotification(userId, title, message, type = "booking") {
+            if (!userId) return;
+
+            await addDoc(collection(db, "notifications"), {
+                userId: userId,
+                title: title,
+                message: message,
+                type: type,
+                isRead: false,
+                createdAt: new Date().toISOString()
+            });
+        }
+
         async function checkUserRole(user) {
             if (!user) return null;
             try {
@@ -2431,15 +2444,13 @@ window.showDaySlots = async function(sanId, ngayDat) {
                         ` : ""
                         }
 
-                        ${
-                            isPending ? `
+                        ${isPending ? `
                             <button class="btn-cancel"
                                 id="rejectBookingBtn"
                                 style="background:#e74c3c;">
-                                Từ chối / Xóa
+                                Hủy đơn
                             </button>
-                        ` : ""
-                        }
+                        ` : ""}
 
                         <button class="btn-cancel" id="closeDetailModal">
                             Đóng
@@ -2451,74 +2462,128 @@ window.showDaySlots = async function(sanId, ngayDat) {
 
             document.body.appendChild(modal);
 
-            // XÁC NHẬN ĐƠN
-            const confirmBookingBtn =
-                document.getElementById("confirmBookingBtn");
-
-            if (confirmBookingBtn) {
-                confirmBookingBtn.onclick = async () => {
-                    if (confirm("Xác nhận đơn đặt sân này?")) {
-                        await updateDoc(
-                            doc(db, "donDat", bookingId),
-                            {
-                                trangThai: "đã_xác_nhận"
-                            }
-                        );
-
-                        alert("Đã xác nhận đơn đặt sân!");
-
-                        modal.remove();
-                        renderWeeklyGrid();
-                        loadBookings();
-                        loadDashboard();
-                    }
-                };
-            }
 
             // XÁC NHẬN THANH TOÁN
-            const confirmPaymentBtn =
-                document.getElementById("confirmPaymentBtn");
+           const confirmBookingBtn =
+    document.getElementById("confirmBookingBtn");
 
-            if (confirmPaymentBtn) {
-                confirmPaymentBtn.onclick = async () => {
-                    if (confirm("Xác nhận khách đã thanh toán?")) {
-                        await updateDoc(
-                            doc(db, "donDat", bookingId),
-                            {
-                                trangThaiThanhToan: "Đã thanh toán"
-                            }
-                        );
+if (confirmBookingBtn) {
+    confirmBookingBtn.onclick = async () => {
+        if (!confirm("Xác nhận đơn đặt sân này?")) return;
 
-                        alert("Đã xác nhận thanh toán!");
+        // Lấy thông tin đơn
+        const bookingSnap = await getDoc(
+            doc(db, "donDat", bookingId)
+        );
 
-                        modal.remove();
-                        renderWeeklyGrid();
-                        loadBookings();
-                        loadDashboard();
-                    }
-                };
+        if (!bookingSnap.exists()) {
+            alert("Không tìm thấy đơn!");
+            return;
+        }
+
+        const booking = bookingSnap.data();
+
+        console.log("Booking:", booking);
+        console.log("Gửi thông báo cho user:", booking.userId);
+
+        await createNotification(
+            booking.userId,
+            "Đơn đặt sân đã được xác nhận",
+            `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận.`
+        );
+
+        // Cập nhật trạng thái
+        await updateDoc(
+            doc(db, "donDat", bookingId),
+            {
+                trangThai: "đã_xác_nhận",
+                updatedAt: new Date()
             }
+        );
+
+        // Gửi thông báo
+        console.log("Gửi thông báo cho userId:", booking.userId);
+        await createNotification(
+            booking.userId,
+            "Đơn đặt sân đã được xác nhận",
+            `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận.`
+        );
+
+        alert("Đã xác nhận đơn đặt sân!");
+
+        modal.remove();
+        renderWeeklyGrid();
+        loadBookings();
+        loadDashboard();
+    };
+}
+
+            // XÁC NHẬN THANH TOÁN
+const confirmPaymentBtn =
+    document.getElementById("confirmPaymentBtn");
+
+if (confirmPaymentBtn) {
+    confirmPaymentBtn.onclick = async () => {
+        if (!confirm("Xác nhận khách đã thanh toán?")) return;
+
+        await updateDoc(
+            doc(db, "donDat", bookingId),
+            {
+                trangThaiThanhToan: "Đã thanh toán",
+                trangThai: "đã_xác_nhận",
+                updatedAt: new Date()
+            }
+        );
+
+        alert("Đã xác nhận thanh toán!");
+
+        modal.remove();
+        renderWeeklyGrid();
+        loadBookings();
+        loadDashboard();
+    };
+}
 
             // TỪ CHỐI / XÓA
-            const rejectBookingBtn =
-                document.getElementById("rejectBookingBtn");
+           const rejectBookingBtn =
+            document.getElementById("rejectBookingBtn");
 
-            if (rejectBookingBtn) {
-                rejectBookingBtn.onclick = async () => {
-                    if (confirm("Từ chối / Xóa đơn đặt sân này?")) {
-                        await deleteDoc(
-                            doc(db, "donDat", bookingId)
-                        );
+        if (rejectBookingBtn) {
+            rejectBookingBtn.onclick = async () => {
+                if (!confirm("Bạn có chắc muốn hủy đơn này?")) return;
 
-                        alert("Đã xóa đơn!");
+                // Lấy thông tin đơn
+                const bookingRef = doc(db, "donDat", bookingId);
+                const bookingSnap = await getDoc(bookingRef);
 
-                        modal.remove();
-                        renderWeeklyGrid();
-                        loadBookings();
-                        loadDashboard();
-                    }
-                };
-            }
+                if (!bookingSnap.exists()) {
+                    alert("Không tìm thấy đơn!");
+                    return;
+                }
+
+                const booking = bookingSnap.data();
+
+                // Cập nhật trạng thái
+                await updateDoc(bookingRef, {
+                    trangThai: "đã_hủy",
+                    updatedAt: new Date()
+                });
+
+                // Gửi thông báo cho khách
+                await createNotification(
+                    booking.userId,
+                    "Đơn đặt sân đã bị hủy",
+                    `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} đã bị hủy.`
+                );
+
+                alert("Đã hủy đơn!");
+
+                modal.remove();
+                renderWeeklyGrid();
+                loadBookings();
+                loadDashboard();
+            };
+        }
 
             document.getElementById("closeDetailModal").onclick = () => {
                 modal.remove();

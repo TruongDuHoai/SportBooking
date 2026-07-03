@@ -1,6 +1,22 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+import {
+    getFirestore,
+    collection,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    doc,
+    updateDoc
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+import {
+    getAuth,
+    signOut,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -304,6 +320,121 @@ async function loadCustomerBanners() {
     }
 }
 
+function loadNotifications(user) {
+    console.log("Đang load notification cho UID:", user.uid);
+    const notificationBox = document.getElementById("notificationBox");
+    const notificationBell = document.getElementById("notificationBell");
+    const notificationBadge = document.getElementById("notificationBadge");
+    const notificationDropdown = document.getElementById("notificationDropdown");
+    const notificationList = document.getElementById("notificationList");
+
+    if (!notificationBox || !user) return;
+
+    notificationBox.style.display = "inline-block";
+
+    const q = query(
+        collection(db, "notifications"),
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+    );
+
+    onSnapshot(q, (snapshot) => {
+        console.log("Số thông báo:", snapshot.size);
+        let unreadCount = 0;
+        let html = "";
+
+        if (snapshot.empty) {
+            notificationList.innerHTML = `
+                <p style="padding:15px;color:#777;">
+                    Chưa có thông báo.
+                </p>
+            `;
+            notificationBadge.style.display = "none";
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const n = docSnap.data();
+
+            if (!n.isRead) unreadCount++;
+
+            html += `
+                <div
+                    onclick="markNotificationRead('${docSnap.id}')"
+                    style="
+                        padding:12px;
+                        border-bottom:1px solid #eee;
+                        cursor:pointer;
+                        background:${n.isRead ? "#fff" : "#e8f5e9"};
+                    ">
+
+                    <strong>${n.title}</strong>
+
+                    <p style="margin:6px 0;">
+                        ${n.message}
+                    </p>
+
+                    <small style="color:#888;">
+                        ${
+                            n.createdAt
+                                ? new Date(n.createdAt).toLocaleString("vi-VN")
+                                : ""
+                        }
+                    </small>
+
+                </div>
+                `;
+        });
+
+        notificationList.innerHTML = html;
+
+        if (unreadCount > 0) {
+            notificationBadge.textContent = unreadCount;
+            notificationBadge.style.display = "flex";
+        } else {
+            notificationBadge.style.display = "none";
+        }
+    });
+
+    notificationBell.onclick = (e) => {
+        e.preventDefault();
+
+        notificationDropdown.style.display =
+            notificationDropdown.style.display === "block"
+                ? "none"
+                : "block";
+    };
+
+    document.addEventListener("click", (e) => {
+
+        if (
+            !notificationBox.contains(e.target)
+        ) {
+            notificationDropdown.style.display = "none";
+        }
+
+    });
+}
+
+window.markNotificationRead = async function(id){
+
+    try{
+
+        await updateDoc(
+            doc(db,"notifications",id),
+            {
+                isRead:true
+            }
+        );
+
+    }catch(error){
+
+        console.error(error);
+
+    }
+
+}
+
 // Hiển thị danh sách sân
 function hienThiSan(danhSach) {
     const container = document.getElementById('danhSachSan');
@@ -336,6 +467,8 @@ function hienThiSan(danhSach) {
     });
     container.innerHTML = html;
 }
+
+
 
 // Tải dữ liệu từ Firebase
 async function loadSanTuFirebase() {
@@ -443,6 +576,8 @@ function kiemTraDangNhap() {
         if (user) {
             loginBtn.style.display = 'none';
             userDropdownArea.style.display = 'inline-block';
+
+             loadNotifications(user);
             
             userInfoBtn.onclick = (e) => {
                 e.preventDefault();
