@@ -570,20 +570,24 @@
             <a href="lichsu.html">Lịch sử</a>
             <a href="lienhe.html">Liên hệ</a>
 
-            <div id="notificationBox" style="position:relative;display:none;">
-                <a href="#" id="notificationBell" style="position:relative;">
+            <div id="notificationBox" style="position:relative;display:none;margin-right:15px;">
+                <a href="#" id="notificationBell" style="position:relative;color:white;font-size:20px;">
                     <i class="fas fa-bell"></i>
+
                     <span id="notificationBadge"
                         style="
                             display:none;
                             position:absolute;
                             top:-8px;
-                            right:-10px;
+                            right:-8px;
                             background:red;
                             color:white;
-                            font-size:11px;
-                            padding:2px 6px;
+                            min-width:18px;
+                            height:18px;
                             border-radius:50%;
+                            font-size:11px;
+                            justify-content:center;
+                            align-items:center;
                         ">
                         0
                     </span>
@@ -595,16 +599,19 @@
                         position:absolute;
                         right:0;
                         top:35px;
-                        width:320px;
+                        width:330px;
                         background:white;
                         color:#333;
                         border-radius:10px;
-                        box-shadow:0 5px 20px rgba(0,0,0,.15);
-                        z-index:999;
+                        box-shadow:0 8px 20px rgba(0,0,0,.2);
+                        z-index:9999;
                         overflow:hidden;
                     ">
-                    <div style="padding:12px;font-weight:bold;border-bottom:1px solid #eee;">
-                        Thông báo
+                    <div style="padding:12px;font-weight:bold;border-bottom:1px solid #eee;display:flex;justify-content:space-between;">
+                        <span>Thông báo</span>
+                        <button id="markAllNotificationsReadBtn" style="border:none;background:none;color:#1a6b30;cursor:pointer;">
+                            Đánh dấu tất cả
+                        </button>
                     </div>
 
                     <div id="notificationList" style="max-height:350px;overflow-y:auto;">
@@ -613,16 +620,16 @@
                 </div>
             </div>
 
-            <div style="position:relative; display:inline-block;" id="userMenu">
-                <a href="#" id="loginBtn">Đăng nhập</a>
+            <div id="userMenu" style="position:relative;display:inline-block;">
+            <a href="#" id="loginBtn">Đăng nhập</a>
 
-                <div id="userDropdownArea" style="display:none; position:relative;">
-                    <a href="#" id="userInfoBtn">Tài khoản</a>
+            <div id="userDropdownArea" style="display:none;position:relative;">
+                <a href="#" id="userInfoBtn">Tài khoản</a>
 
-                    <div id="dropdownMenu" style="display:none; position:absolute; right:0; top:100%; background:white; min-width:130px; box-shadow:0 2px 8px rgba(0,0,0,0.2); border-radius:8px; z-index:100;">
-                        <a href="taikhoan.html" style="display:block; padding:10px; color:#333; text-decoration:none; border-bottom:1px solid #eee;">Thông tin</a>
-                        <a href="#" id="logoutDropdownBtn" style="display:block; padding:10px; color:#e74c3c; text-decoration:none;">Đăng xuất</a>
-                    </div>
+                <div id="dropdownMenu" style="display:none;position:absolute;right:0;top:100%;background:white;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:140px;">
+                    <a href="taikhoan.html" style="display:block;padding:12px;color:#333;text-decoration:none;">Thông tin</a>
+                    <a href="#" id="logoutBtn" style="display:block;padding:12px;color:#e74c3c;text-decoration:none;">Đăng xuất</a>
+                </div>
                 </div>
             </div>
         </nav>
@@ -793,5 +800,8 @@
     </footer>
 
    <script type="module" src="js/main.js?v=2"></script>
+
+    <script type="module" src="js/notification.js"></script>
+
 </body>
 </html>

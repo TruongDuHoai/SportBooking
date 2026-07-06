@@ -31,6 +31,9 @@ const auth = getAuth(app);
 let allBookings = [];
 let currentUser = null;
 
+let currentStatus = "all";
+let currentKeyword = "";
+
 async function loadBookings(uid){
     const q = query(collection(db,"donDat"),where("userId","==",uid));
     const snap = await getDocs(q);
@@ -43,7 +46,7 @@ async function loadBookings(uid){
         });
     });
 
-    renderBookings(allBookings);
+    applyFilters();
 }
 
 function renderBookings(bookings){
@@ -67,7 +70,7 @@ function renderBookings(bookings){
         if(item.trangThai === "Đã hủy") statusClass = "cancel";
 
         html += `
-            <div class="booking-card">
+            <div class="booking-card history-row">
                 <div class="booking-top">
                     <div class="booking-info">
                         <h3>${item.tenSan}</h3>
@@ -101,6 +104,36 @@ function renderBookings(bookings){
     box.innerHTML = html;
 }
 
+function applyFilters() {
+
+    let result = [...allBookings];
+
+    // Lọc trạng thái
+    if (currentStatus !== "all") {
+        result = result.filter(item => item.trangThai === currentStatus);
+    }
+
+    // Lọc tìm kiếm
+    if (currentKeyword.trim() !== "") {
+
+        const keyword = currentKeyword.toLowerCase();
+
+        result = result.filter(item => {
+
+            return (
+                (item.tenSan || "").toLowerCase().includes(keyword) ||
+                (item.ngayDat || "").toLowerCase().includes(keyword) ||
+                (item.trangThai || "").toLowerCase().includes(keyword)
+            );
+
+        });
+
+    }
+
+    renderBookings(result);
+
+}
+
 window.datLai = function(sanId){
     window.location.href = `chitiet.html?id=${sanId}`;
 }
@@ -116,14 +149,20 @@ window.huyDon = async function(id){
     loadBookings(currentUser.uid);
 }
 
-document.getElementById("filterStatus").addEventListener("change",(e)=>{
-    const value = e.target.value;
+document.getElementById("filterStatus").addEventListener("change", (e) => {
 
-    if(value === "all"){
-        renderBookings(allBookings);
-    }else{
-        renderBookings(allBookings.filter(i=>i.trangThai===value));
-    }
+    currentStatus = e.target.value;
+
+    applyFilters();
+
+});
+
+document.getElementById("historySearch").addEventListener("keyup", (e) => {
+
+    currentKeyword = e.target.value;
+
+    applyFilters();
+
 });
 
 onAuthStateChanged(auth,(user)=>{

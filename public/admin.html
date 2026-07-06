@@ -476,6 +476,7 @@
             <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
             <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
+            <a href="#" data-tab="foodOrders"><i class="fas fa-receipt"></i> Đơn đồ ăn</a>
             <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
             <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
             <a href="#" data-tab="policies"><i class="fas fa-file-contract"></i> Quản lý chính sách</a>
@@ -523,6 +524,7 @@
                 <div id="dashboardTab" style="display:none;"></div>
                 <div id="calendarTab" style="display:none;"></div>
                 <div id="bookingsTab" style="display:none;"></div>
+                <div id="foodOrdersTab" style="display:none;"></div>
                 <div id="sansTab" style="display:none;"></div>
                 <div id="usersTab" style="display:none;"></div>
                 <div id="policiesTab" style="display:none;"></div>
@@ -557,6 +559,9 @@
             document.getElementById("bookingsTab").style.display =
                 tab === "bookings" ? "block" : "none";
 
+            document.getElementById("foodOrdersTab").style.display =
+                tab === "foodOrders" ? "block" : "none";
+
             document.getElementById("sansTab").style.display =
                 tab === "sans" ? "block" : "none";
 
@@ -587,6 +592,7 @@
             if (tab === "dashboard") loadDashboard();
             if (tab === "calendar") loadCalendar();
             if (tab === "bookings") loadBookings();
+            if (tab === "foodOrders") loadFoodOrders();
             if (tab === "sans") loadSans();
             if (tab === "users") loadUsers();
             if (tab === "policies") loadPolicies();
@@ -806,9 +812,9 @@ startOfWeekDate = setMonday(new Date());
             let totalRevenue = 0, pending = 0, confirmed = 0;
             bookingsSnap.forEach(doc => {
                 const b = doc.data();
-                if (b.trangThai === 'đã_xác_nhận') totalRevenue += (b.tongTien || 0);
-                if (b.trangThai === 'chờ_xác_nhận') pending++;
-                if (b.trangThai === 'đã_xác_nhận') confirmed++;
+                if (b.trangThai === "đã_xác_nhận") totalRevenue += (b.tongTien || 0);
+                if (b.trangThai === "Chờ xác nhận") pending++;
+                if (b.trangThai === "đã_xác_nhận") confirmed++;
             });
             container.innerHTML = `<div class="stats"><div class="stat-card"><i class="fas fa-store"></i><h3>Tổng số sân</h3><div class="number">${sansSnap.size}</div></div><div class="stat-card"><i class="fas fa-users"></i><h3>Người dùng</h3><div class="number">${usersSnap.size}</div></div><div class="stat-card"><i class="fas fa-shopping-cart"></i><h3>Tổng đơn</h3><div class="number">${bookingsSnap.size}</div></div><div class="stat-card"><i class="fas fa-clock"></i><h3>Chờ xác nhận</h3><div class="number">${pending}</div></div><div class="stat-card"><i class="fas fa-check-circle"></i><h3>Đã xác nhận</h3><div class="number">${confirmed}</div></div><div class="stat-card"><i class="fas fa-money-bill-wave"></i><h3>Doanh thu</h3><div class="number">${totalRevenue.toLocaleString()}đ</div></div></div>`;
         }
@@ -2179,7 +2185,7 @@ window.showDaySlots = async function(sanId, ngayDat) {
             for (const hour of hours) {
                 const booking = bookings[hour];
                 if (booking) {
-                    const statusText = booking.trangThai === 'chờ_xác_nhận' ? '⏳ Chờ xác nhận' : '✅ Đã xác nhận';
+                    const statusText = booking.trangThai === "Chờ xác nhận" ? '⏳ Chờ xác nhận' : '✅ Đã xác nhận';
                     hoursHtml += `
                         <div style="margin:5px 0; padding:10px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#fff3cd;"
                             onclick="showBookingDetail(
@@ -2526,13 +2532,30 @@ if (confirmPaymentBtn) {
     confirmPaymentBtn.onclick = async () => {
         if (!confirm("Xác nhận khách đã thanh toán?")) return;
 
+        const bookingRef = doc(db, "donDat", bookingId);
+        const bookingSnap = await getDoc(bookingRef);
+
+        if (!bookingSnap.exists()) {
+            alert("Không tìm thấy đơn!");
+            return;
+        }
+
+        const booking = bookingSnap.data();
+
         await updateDoc(
-            doc(db, "donDat", bookingId),
+            bookingRef,
             {
                 trangThaiThanhToan: "Đã thanh toán",
                 trangThai: "đã_xác_nhận",
                 updatedAt: new Date()
             }
+        );
+
+        await createNotification(
+            booking.userId,
+            "Thanh toán đơn đặt sân thành công",
+            `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận thanh toán.`,
+            "payment"
         );
 
         alert("Đã xác nhận thanh toán!");
@@ -2618,10 +2641,37 @@ async function loadBookings() {
     }
 
     let html = `
-        <div class="card-header">
+    <div class="card-header">
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:20px;
+            gap:15px;
+            flex-wrap:wrap;
+        ">
+
             <h2>
-                <i class="fas fa-list"></i> Danh sách đơn đặt
+                <i class="fas fa-list"></i>
+                Danh sách đơn đặt
             </h2>
+
+            <input
+                type="text"
+                id="bookingSearch"
+                placeholder="Tìm tên khách, sân, ngày..."
+                style="
+                    width:300px;
+                    max-width:100%;
+                    padding:10px 15px;
+                    border:1px solid #ddd;
+                    border-radius:8px;
+                    font-size:14px;
+                "
+            >
+
+        </div>
         </div>
 
         <div class="data-table">
@@ -2646,89 +2696,154 @@ async function loadBookings() {
     for (const docSnap of snapshot.docs) {
         const b = docSnap.data();
 
-        let statusClass =
-            b.trangThai === 'chờ_xác_nhận'
-                ? 'status-pending'
-                : (
-                    b.trangThai === 'đã_xác_nhận'
-                        ? 'status-confirmed'
-                        : 'status-cancelled'
-                );
+        const isPending =
+            b.trangThai === "Chờ xác nhận" ||
+            b.trangThai === "chờ_xác_nhận";
+
+        const statusClass = isPending
+            ? "status-pending"
+            : b.trangThai === "đã_xác_nhận"
+            ? "status-confirmed"
+            : "status-cancelled";
 
         html += `
-            <tr>
-                <td>${stt++}</td>
+        <tr
+            class="booking-row"
+            data-search="
+                ${(b.userName || "").toLowerCase()}
+                ${(b.tenSan || "").toLowerCase()}
+                ${(b.ngayDat || "").toLowerCase()}
+                ${(b.userPhone || "").toLowerCase()}
+            "
+        >
+            <td>${stt++}</td>
 
-                <td>${b.userName || b.userEmail || '---'}</td>
+            <td>${b.userName || b.userEmail || "---"}</td>
 
-                <td>${b.tenSan || '---'}</td>
+            <td>${b.tenSan || "---"}</td>
 
-                <td>${b.ngayDat || '---'}</td>
+            <td>${b.ngayDat || "---"}</td>
 
-                <td>
-                    ${b.gioBatDau || 0}:00 - ${b.gioKetThuc || 0}:00
-                </td>
+            <td>
+                ${b.gioBatDau || 0}:00 - ${b.gioKetThuc || 0}:00
+            </td>
 
-                <td>
-                    ${(b.tongTien || 0).toLocaleString()}đ
-                </td>
+            <td>
+                ${(b.tongTien || 0).toLocaleString()}đ
+            </td>
 
-                <td>
-                    <select 
-                        class="${statusClass}"
-                        data-id="${docSnap.id}"
-                        style="border:none;padding:4px 12px;border-radius:20px;"
-                    >
-                        <option value="chờ_xác_nhận"
-                            ${b.trangThai === 'chờ_xác_nhận' ? 'selected' : ''}>
-                            Chờ xác nhận
-                        </option>
+            <!-- Trạng thái -->
+            <td>
+                <span
+                    class="${statusClass}"
+                    style="
+                        display:inline-block;
+                        padding:6px 14px;
+                        border-radius:20px;
+                        font-weight:600;
+                    "
+                >
+                    ${
+                        isPending
+                            ? "Chờ xác nhận"
+                            : b.trangThai === "đã_xác_nhận"
+                            ? "Đã xác nhận"
+                            : "Đã hủy"
+                    }
+                </span>
 
-                        <option value="đã_xác_nhận"
-                            ${b.trangThai === 'đã_xác_nhận' ? 'selected' : ''}>
-                            Đã xác nhận
-                        </option>
+                <br>
 
-                        <option value="đã_hủy"
-                            ${b.trangThai === 'đã_hủy' ? 'selected' : ''}>
-                            Đã hủy
-                        </option>
-                    </select>
-                </td>
+                <small style="color:#64748b;">
+                    ${b.trangThaiThanhToan || "Chưa thanh toán"}
+                </small>
+            </td>
 
-                <td>
-                    <button
-                        class="btn-view"
-                        onclick="showBookingDetail(
-                            '${docSnap.id}',
-                            '${b.tenSan || ""}',
-                            '${b.ngayDat || ""}',
-                            ${Number(b.gioBatDau || 0)},
-                            ${Number(b.gioKetThuc || 0)},
-                            ${Number(b.tongTien || 0)},
-                            '${b.trangThai || ""}',
-                            '${b.userName || b.userEmail || "Khách hàng"}',
-                            '${b.userPhone || "---"}',
-                            '${b.trangThaiThanhToan || "Chưa thanh toán"}',
-                            '${b.phuongThucThanhToan || "Không rõ"}',
-                            '${b.maThanhToan || ""}'
-                        )"
-                        style="margin-right:10px;color:#ff9800;"
-                    >
-                        <i class="fas fa-eye"></i>
-                    </button>
+            <!-- Thao tác -->
+            <td>
 
-                    <button
-                        class="btn-delete"
-                        data-id="${docSnap.id}"
-                    >
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
+                <!-- Xem -->
+                <button
+                    class="btn-view"
+                    onclick="showBookingDetail(
+                        '${docSnap.id}',
+                        '${b.tenSan || ""}',
+                        '${b.ngayDat || ""}',
+                        ${Number(b.gioBatDau || 0)},
+                        ${Number(b.gioKetThuc || 0)},
+                        ${Number(b.tongTien || 0)},
+                        '${b.trangThai || ""}',
+                        '${b.userName || b.userEmail || "Khách hàng"}',
+                        '${b.userPhone || "---"}',
+                        '${b.trangThaiThanhToan || "Chưa thanh toán"}',
+                        '${b.phuongThucThanhToan || "Không rõ"}',
+                        '${b.maThanhToan || ""}'
+                    )"
+                    title="Xem chi tiết"
+                    style="margin-right:5px;color:#ff9800;"
+                >
+                    <i class="fas fa-eye"></i>
+                </button>
+
+                ${
+                    b.trangThai === "chờ_xác_nhận"
+                        ? `
+                        <button
+                            class="btn-edit"
+                            onclick="confirmBookingFromList('${docSnap.id}')"
+                            title="Xác nhận"
+                            style="margin-right:5px;"
+                        >
+                            <i class="fas fa-check"></i>
+                        </button>
+                        `
+                        : ""
+                }
+
+                ${
+                    b.trangThai !== "đã_hủy" &&
+                    b.trangThaiThanhToan !== "Đã thanh toán"
+                        ? `
+                        <button
+                            class="btn-edit"
+                            onclick="confirmPaymentFromList('${docSnap.id}')"
+                            title="Xác nhận thanh toán"
+                            style="margin-right:5px;"
+                        >
+                            <i class="fas fa-credit-card"></i>
+                        </button>
+                        `
+                        : ""
+                }
+
+                ${
+                    b.trangThai !== "đã_hủy"
+                        ? `
+                        <button
+                            class="btn-delete"
+                            onclick="cancelBookingFromList('${docSnap.id}')"
+                            title="Hủy đơn"
+                            style="margin-right:5px;"
+                        >
+                            <i class="fas fa-ban"></i>
+                        </button>
+                        `
+                        : ""
+                }
+
+                <button
+                    class="btn-delete"
+                    onclick="deleteBookingFromList('${docSnap.id}')"
+                    title="Xóa"
+                >
+                    <i class="fas fa-trash"></i>
+                </button>
+
+            </td>
+
+        </tr>
         `;
-    }
-
+}
     html += `
                 </tbody>
             </table>
@@ -2736,36 +2851,127 @@ async function loadBookings() {
     `;
 
     container.innerHTML = html;
+    const searchInput = document.getElementById("bookingSearch");
 
-    document.querySelectorAll(
-        '.status-pending, .status-confirmed, .status-cancelled'
-    ).forEach(select => {
-        select.onchange = async () => {
-            if (confirm('Cập nhật trạng thái?')) {
-                await updateDoc(
-                    doc(db, "donDat", select.dataset.id),
-                    {
-                        trangThai: select.value
-                    }
-                );
+    if (searchInput) {
+    searchInput.onkeyup = function () {
 
-                loadBookings();
-            }
-        };
-    });
+        const keyword = this.value.toLowerCase();
 
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.onclick = async () => {
-            if (confirm('Xóa đơn này?')) {
-                await deleteDoc(
-                    doc(db, "donDat", btn.dataset.id)
-                );
+        document.querySelectorAll(".booking-row").forEach(row => {
 
-                loadBookings();
-            }
-        };
-    });
+            const text = row.innerText.toLowerCase();
+
+            row.style.display =
+                text.includes(keyword)
+                    ? ""
+                    : "none";
+
+        });
+
+    };
 }
+}
+
+window.confirmBookingFromList = async function (bookingId) {
+    if (!confirm("Xác nhận đơn đặt sân này?")) return;
+
+    const bookingRef = doc(db, "donDat", bookingId);
+    const bookingSnap = await getDoc(bookingRef);
+
+    if (!bookingSnap.exists()) {
+        alert("Không tìm thấy đơn!");
+        return;
+    }
+
+    const booking = bookingSnap.data();
+
+    await updateDoc(bookingRef, {
+        trangThai: "đã_xác_nhận",
+        updatedAt: new Date()
+    });
+
+    await createNotification(
+        booking.userId,
+        "Đơn đặt sân đã được xác nhận",
+        `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận.`
+    );
+
+    alert("Đã xác nhận đơn!");
+    loadBookings();
+    loadDashboard();
+};
+
+window.confirmPaymentFromList = async function (bookingId) {
+    if (!confirm("Xác nhận khách đã thanh toán?")) return;
+
+    const bookingRef = doc(db, "donDat", bookingId);
+    const bookingSnap = await getDoc(bookingRef);
+
+    if (!bookingSnap.exists()) {
+        alert("Không tìm thấy đơn!");
+        return;
+    }
+
+    const booking = bookingSnap.data();
+
+    await updateDoc(bookingRef, {
+        trangThaiThanhToan: "Đã thanh toán",
+        trangThai: "đã_xác_nhận",
+        updatedAt: new Date()
+    });
+
+    await createNotification(
+        booking.userId,
+        "Thanh toán đơn đặt sân thành công",
+        `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận thanh toán.`,
+        "payment"
+    );
+
+    alert("Đã xác nhận thanh toán!");
+    loadBookings();
+    loadDashboard();
+};
+
+window.cancelBookingFromList = async function (bookingId) {
+    if (!confirm("Bạn có chắc muốn hủy đơn này?")) return;
+
+    const bookingRef = doc(db, "donDat", bookingId);
+    const bookingSnap = await getDoc(bookingRef);
+
+    if (!bookingSnap.exists()) {
+        alert("Không tìm thấy đơn!");
+        return;
+    }
+
+    const booking = bookingSnap.data();
+
+    await updateDoc(bookingRef, {
+        trangThai: "đã_hủy",
+        updatedAt: new Date()
+    });
+
+    await createNotification(
+        booking.userId,
+        "Đơn đặt sân đã bị hủy",
+        `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} đã bị hủy.`
+    );
+
+    alert("Đã hủy đơn!");
+    loadBookings();
+    loadDashboard();
+};
+
+window.deleteBookingFromList = async function (bookingId) {
+    if (!confirm("Xóa vĩnh viễn đơn này?")) return;
+
+    await deleteDoc(doc(db, "donDat", bookingId));
+
+    alert("Đã xóa đơn!");
+    loadBookings();
+    loadDashboard();
+};
+
 async function loadFoodsAdmin() {
     const container = document.getElementById("foodsTab");
 
@@ -2843,6 +3049,266 @@ async function loadFoodsAdmin() {
         </tr>
     `;
 }
+
+async function loadFoodOrders() {
+    const container = document.getElementById("foodOrdersTab");
+
+    container.innerHTML = `
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap;">
+            <h2>
+                <i class="fas fa-receipt"></i>
+                Danh sách đơn đồ ăn
+            </h2>
+
+            <input
+                type="text"
+                id="foodOrderSearch"
+                placeholder="Tìm tên khách, món, SĐT..."
+                style="width:320px;max-width:100%;padding:10px 15px;border:1px solid #ddd;border-radius:8px;"
+            >
+        </div>
+
+        <div class="data-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Khách hàng</th>
+                        <th>Thông tin món</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Thời gian</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="foodOrderTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align:center;padding:20px;">
+                            Đang tải đơn đồ ăn...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    const tbody = document.getElementById("foodOrderTableBody");
+
+    const q = query(
+        collection(db, "donDoAn"),
+        orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align:center;padding:20px;">
+                    Chưa có đơn đồ ăn nào.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = "";
+    let stt = 1;
+
+    snapshot.forEach((docSnap) => {
+        const o = docSnap.data();
+
+        const status = o.trangThai || o.status || "chờ_xử_lý";
+
+        const statusText =
+            status === "đã_hoàn_thành"
+                ? "Đã hoàn thành"
+                : status === "đã_hủy"
+                ? "Đã hủy"
+                : "Chờ xử lý";
+
+        const statusClass =
+            status === "đã_hoàn_thành"
+                ? "status-confirmed"
+                : status === "đã_hủy"
+                ? "status-cancelled"
+                : "status-pending";
+
+        const customer =
+            o.userName || o.customerName || o.userEmail || "Khách hàng";
+
+        const phone =
+            o.userPhone || o.phone || "---";
+
+        const itemsText =
+            o.chiTietMon ||
+            (Array.isArray(o.items)
+                ? o.items.map(item => `${item.ten || item.name} x${item.soLuong || item.quantity || 1}`).join(", ")
+                : o.tenMon || "---");
+
+        const total = Number(o.tongTien || o.total || 0);
+
+        const createdAtValue =
+            o.createdAtServer ||
+            o.createdAt ||
+            o.ngayTao ||
+            o.orderDate;
+
+        let createdAt = "---";
+
+        if (createdAtValue?.toDate) {
+            createdAt = createdAtValue.toDate().toLocaleString("vi-VN");
+        } else if (createdAtValue) {
+            createdAt = new Date(createdAtValue).toLocaleString("vi-VN");
+        }
+
+        html += `
+            <tr class="food-order-row">
+                <td>${stt++}</td>
+
+                <td>
+                    <strong>${customer}</strong>
+                    <br>
+                    <small>${phone}</small>
+                </td>
+
+                <td>${itemsText}</td>
+
+                <td>${total.toLocaleString("vi-VN")}đ</td>
+
+                <td>
+                    <span class="${statusClass}">
+                        ${statusText}
+                    </span>
+                </td>
+
+                <td>${createdAt}</td>
+
+                <td>
+                    ${
+                        status !== "đã_hoàn_thành" && status !== "đã_hủy"
+                            ? `
+                            <button
+                                class="btn-edit"
+                                onclick="completeFoodOrder('${docSnap.id}')"
+                                title="Hoàn thành"
+                            >
+                                <i class="fas fa-check"></i>
+                            </button>
+                            `
+                            : ""
+                    }
+
+                    ${
+                        status !== "đã_hủy"
+                            ? `
+                            <button
+                                class="btn-delete"
+                                onclick="cancelFoodOrder('${docSnap.id}')"
+                                title="Hủy đơn"
+                            >
+                                <i class="fas fa-ban"></i>
+                            </button>
+                            `
+                            : ""
+                    }
+
+                    <button
+                        class="btn-delete"
+                        onclick="deleteFoodOrder('${docSnap.id}')"
+                        title="Xóa đơn"
+                    >
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+
+    const searchInput = document.getElementById("foodOrderSearch");
+
+    if (searchInput) {
+        searchInput.onkeyup = function () {
+            const keyword = this.value.toLowerCase();
+
+            document.querySelectorAll(".food-order-row").forEach(row => {
+                row.style.display =
+                    row.innerText.toLowerCase().includes(keyword)
+                        ? ""
+                        : "none";
+            });
+        };
+    }
+}
+
+window.completeFoodOrder = async function (orderId) {
+    if (!confirm("Xác nhận hoàn thành đơn đồ ăn này?")) return;
+
+    const orderRef = doc(db, "donDoAn", orderId);
+    const orderSnap = await getDoc(orderRef);
+
+    if (!orderSnap.exists()) {
+        alert("Không tìm thấy đơn đồ ăn!");
+        return;
+    }
+
+    const order = orderSnap.data();
+
+    await updateDoc(orderRef, {
+        trangThai: "đã_hoàn_thành",
+        updatedAt: new Date()
+    });
+
+    await createNotification(
+        order.userId,
+        "Đơn đồ ăn đã hoàn thành",
+        `Đơn đồ ăn/thức uống của bạn đã được hoàn thành.`,
+        "food_order"
+    );
+
+    alert("Đã hoàn thành đơn đồ ăn!");
+    loadFoodOrders();
+};
+
+window.cancelFoodOrder = async function (orderId) {
+    if (!confirm("Bạn có chắc muốn hủy đơn đồ ăn này?")) return;
+
+    const orderRef = doc(db, "donDoAn", orderId);
+    const orderSnap = await getDoc(orderRef);
+
+    if (!orderSnap.exists()) {
+        alert("Không tìm thấy đơn đồ ăn!");
+        return;
+    }
+
+    const order = orderSnap.data();
+
+    await updateDoc(orderRef, {
+        trangThai: "đã_hủy",
+        updatedAt: new Date()
+    });
+
+    await createNotification(
+        order.userId,
+        "Đơn đồ ăn đã bị hủy",
+        `Đơn đồ ăn/thức uống của bạn đã bị hủy.`,
+        "food_order"
+    );
+
+    alert("Đã hủy đơn đồ ăn!");
+    loadFoodOrders();
+};
+
+window.deleteFoodOrder = async function (orderId) {
+    if (!confirm("Xóa vĩnh viễn đơn đồ ăn này?")) return;
+
+    await deleteDoc(doc(db, "donDoAn", orderId));
+
+    alert("Đã xóa đơn đồ ăn!");
+    loadFoodOrders();
+};
 
 window.openFoodModal = function(
     foodId = "",
@@ -2925,6 +3391,7 @@ window.deleteFood = async function(foodId) {
     alert("Đã xóa món!");
     loadFoodsAdmin();
 };
+
 async function loadSans() {
     const snapshot = await getDocs(
         collection(db, "san")
@@ -6672,5 +7139,7 @@ try {
                 }
             });
     </script>
+
+
 </body>
 </html>
