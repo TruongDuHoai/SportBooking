@@ -434,13 +434,26 @@
 
         async function checkUserRole(user) {
             if (!user) return null;
+
             try {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
-                console.log("User role from Firestore:", userDoc.data()?.role);
-                return userDoc.exists() ? userDoc.data().role || 'user' : 'user';
+
+                if (!userDoc.exists()) return "user";
+
+                const data = userDoc.data();
+
+                if (data.isActive === false) {
+                    await signOut(auth);
+                    alert("Tài khoản của bạn đã bị khóa!");
+                    window.location.href = "dangnhap.html";
+                    return null;
+                }
+
+                return data.role || "user";
+
             } catch (error) {
                 console.error("Lỗi kiểm tra role:", error);
-                return 'user';
+                return "user";
             }
         }
 

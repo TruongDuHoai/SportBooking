@@ -10,7 +10,8 @@ import {
     onSnapshot,
     doc,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import {
@@ -460,39 +461,69 @@ function kiemTraDangNhap() {
     const dropdownMenu = document.getElementById('dropdownMenu');
     const logoutDropdownBtn = document.getElementById('logoutDropdownBtn');
     
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            loginBtn.style.display = 'none';
-            userDropdownArea.style.display = 'inline-block';
-            
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+
+            if (userSnap.exists() && userSnap.data().isActive === false) {
+                await signOut(auth);
+                alert("Tài khoản của bạn đã bị khóa!");
+                window.location.href = "dangnhap.html";
+                return;
+            }
+
+            loginBtn.style.display = "none";
+            userDropdownArea.style.display = "inline-block";
+
             userInfoBtn.onclick = (e) => {
                 e.preventDefault();
-                dropdownMenu.style.display = dropdownMenu.style.display === 'none' ? 'block' : 'none';
+                dropdownMenu.style.display =
+                    dropdownMenu.style.display === "none" ? "block" : "none";
             };
-            
-            document.addEventListener('click', function closeDropdown(e) {
+
+            document.addEventListener("click", function closeDropdown(e) {
                 if (!userDropdownArea.contains(e.target)) {
-                    dropdownMenu.style.display = 'none';
+                    dropdownMenu.style.display = "none";
                 }
             });
-            
+
             if (logoutDropdownBtn) {
                 logoutDropdownBtn.onclick = async (e) => {
                     e.preventDefault();
                     await signOut(auth);
-                    alert('Đã đăng xuất!');
+                    alert("Đã đăng xuất!");
                     window.location.reload();
                 };
             }
         } else {
-            loginBtn.style.display = 'inline-block';
-            userDropdownArea.style.display = 'none';
+            loginBtn.style.display = "inline-block";
+            userDropdownArea.style.display = "none";
+
             loginBtn.onclick = (e) => {
                 e.preventDefault();
-                window.location.href = 'dangnhap.html';
+                window.location.href = "dangnhap.html";
             };
         }
     });
+}
+
+const logoutBtn =
+    document.getElementById("logoutBtn") ||
+    document.getElementById("logoutDropdownBtn");
+
+if (logoutBtn) {
+    logoutBtn.onclick = async (e) => {
+        e.preventDefault();
+
+        try {
+            await signOut(auth);
+            alert("Đã đăng xuất");
+            window.location.href = "index.html";
+        } catch (error) {
+            console.error("Lỗi đăng xuất:", error);
+            alert("Không thể đăng xuất");
+        }
+    };
 }
 
 // Khởi tạo

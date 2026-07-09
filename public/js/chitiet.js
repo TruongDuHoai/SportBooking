@@ -8,7 +8,9 @@ import {
     where,
     getDocs,
     setDoc,
-    addDoc
+    addDoc,
+    deleteDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import {
@@ -122,7 +124,23 @@ function renderSan() {
 }
 
 function bindEvents() {
-    document.getElementById("ngayDat").addEventListener("change", e => {
+    const dateInput = document.getElementById("ngayDat");
+
+    const today = new Date().toISOString().split("T")[0];
+
+    dateInput.min = today;
+
+    dateInput.addEventListener("change", e => {
+        if (e.target.value < today) {
+            alert("Không thể đặt sân ở ngày trong quá khứ!");
+            e.target.value = "";
+            selectedDate = "";
+            selectedHours = [];
+            document.getElementById("timeSlots").innerHTML = "";
+            updateTotal();
+            return;
+        }
+
         selectedDate = e.target.value;
         loadLichTrong();
     });
@@ -160,21 +178,73 @@ async function loadLichTrong() {
             }
         });
 
+        const lockQuery = query(
+            collection(db, "slotLocks"),
+            where("sanId", "==", sanId),
+            where("ngayDat", "==", selectedDate)
+        );
+
+        const lockSnap = await getDocs(lockQuery);
+
+        const lockedHours = [];
+        const now = Date.now();
+
+        lockSnap.forEach((docSnap) => {
+            const lock = docSnap.data();
+
+            let expireTime = 0;
+
+            if (lock.expireAt?.seconds) {
+                expireTime = lock.expireAt.seconds * 1000;
+            } else if (lock.expireAt) {
+                expireTime = new Date(lock.expireAt).getTime();
+            }
+
+            if (
+                expireTime > now &&
+                lock.userId !== currentUser?.uid
+            ) {
+                lockedHours.push(Number(lock.gioBatDau));
+            }
+
+            if (expireTime && expireTime <= now) {
+                deleteDoc(doc(db, "slotLocks", docSnap.id));
+            }
+        });
+
         let html = `<div class="time-slots-grid">`;
 
         gioTrongNgay.forEach(gio => {
             const daDat = bookedHours.includes(gio);
+            const daKhoa = lockedHours.includes(gio);
+
+            const now = new Date();
+            const today = now.toISOString().split("T")[0];
+            const currentHour = now.getHours();
+
+            const gioQuaKhu =
+                selectedDate === today && gio <= currentHour;
+
+            const disabled = daDat || daKhoa || gioQuaKhu;
 
             html += `
-                <label class="time-slot-label ${daDat ? "disabled" : ""}">
+                <label class="time-slot-label ${disabled ? "disabled" : ""}">
                     <input 
                         type="checkbox" 
                         value="${gio}" 
                         class="time-checkbox"
-                        ${daDat ? "disabled" : ""}
+                        ${disabled ? "disabled" : ""}
                     >
                     ${String(gio).padStart(2, "0")}:00 - ${String(gio + 1).padStart(2, "0")}:00
-                    ${daDat ? " (Đã đặt)" : ""}
+                    ${
+                        daDat
+                            ? " (Đã đặt)"
+                            : daKhoa
+                            ? " (Đang giữ chỗ)"
+                            : gioQuaKhu
+                            ? " (Đã qua)"
+                            : ""
+                    }
                 </label>
             `;
         });
@@ -184,14 +254,38 @@ async function loadLichTrong() {
         document.getElementById("timeSlots").innerHTML = html;
 
         document.querySelectorAll(".time-checkbox").forEach(cb => {
-            cb.addEventListener("change", e => {
+            cb.addEventListener("change", async e => {
                 const gio = Number(e.target.value);
                 const label = e.target.closest(".time-slot-label");
 
                 if (e.target.checked) {
+                    const ok = await lockSlot(
+                        sanId,
+                        selectedDate,
+                        gio,
+                        gio + 1,
+                        currentUser.uid
+                    );
+
+                    if (!ok) {
+                        alert(`Khung giờ ${gio}:00 đang có người giữ chỗ!`);
+                        e.target.checked = false;
+                        label.classList.remove("selected");
+                        await loadLichTrong();
+                        return;
+                    }
+
                     selectedHours.push(gio);
                     label.classList.add("selected");
                 } else {
+                    await deleteDoc(
+                        doc(
+                            db,
+                            "slotLocks",
+                            `${sanId}_${selectedDate}_${gio}_${gio + 1}`
+                        )
+                    );
+
                     selectedHours = selectedHours.filter(h => h !== gio);
                     label.classList.remove("selected");
                 }
@@ -212,8 +306,58 @@ function updateTotal() {
         `Tổng: ${total.toLocaleString()}đ`;
 }
 
+async function lockSlot(sanId, ngayDat, gioBatDau, gioKetThuc, userId) {
+
+    const lockId = `${sanId}_${ngayDat}_${gioBatDau}_${gioKetThuc}`;
+
+    const lockRef = doc(db, "slotLocks", lockId);
+
+    const snap = await getDoc(lockRef);
+
+    if (snap.exists()) {
+
+        const data = snap.data();
+
+        const now = Date.now();
+
+        let expireTime = 0;
+
+        if (data.expireAt?.seconds) {
+            expireTime = data.expireAt.seconds * 1000;
+        }
+
+        // Chưa hết hạn -> đang bị giữ
+        if (expireTime > now) {
+            return false;
+        }
+
+        // Hết hạn -> ghi đè
+    }
+
+    const expireAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await setDoc(lockRef, {
+        sanId,
+        ngayDat,
+        gioBatDau,
+        gioKetThuc,
+        userId,
+        createdAt: serverTimestamp(),
+        expireAt
+    });
+
+    return true;
+}
+
 async function datSan() {
     if (!currentUser) return location.href = "dangnhap.html";
+
+    const today = new Date().toISOString().split("T")[0];
+
+    if (!selectedDate || selectedDate < today) {
+        alert("Không thể đặt sân ở ngày trong quá khứ!");
+        return;
+    }
 
     const cartRef = doc(db, "carts", currentUser.uid);
     const cartSnap = await getDoc(cartRef);
