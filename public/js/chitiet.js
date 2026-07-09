@@ -41,6 +41,15 @@ let selectedHours = [];
 
 const gioTrongNgay = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
 
+function getTodayLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
 async function loadSan() {
     const sanSnap = await getDoc(doc(db, "san", sanId));
 
@@ -126,7 +135,7 @@ function renderSan() {
 function bindEvents() {
     const dateInput = document.getElementById("ngayDat");
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayLocal();
 
     dateInput.min = today;
 
@@ -219,11 +228,12 @@ async function loadLichTrong() {
             const daKhoa = lockedHours.includes(gio);
 
             const now = new Date();
-            const today = now.toISOString().split("T")[0];
+            const today = getTodayLocal();
             const currentHour = now.getHours();
 
             const gioQuaKhu =
-                selectedDate === today && gio <= currentHour;
+                selectedDate === today &&
+                gio <= currentHour;
 
             const disabled = daDat || daKhoa || gioQuaKhu;
 
@@ -352,11 +362,26 @@ async function lockSlot(sanId, ngayDat, gioBatDau, gioKetThuc, userId) {
 async function datSan() {
     if (!currentUser) return location.href = "dangnhap.html";
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayLocal();
 
     if (!selectedDate || selectedDate < today) {
         alert("Không thể đặt sân ở ngày trong quá khứ!");
         return;
+    }
+
+    if (selectedDate === today) {
+
+        const currentHour = new Date().getHours();
+
+        const invalidHour = selectedHours.find(
+            h => h <= currentHour
+        );
+
+        if (invalidHour !== undefined) {
+            alert("Không thể đặt khung giờ đã qua!");
+            return;
+        }
+
     }
 
     const cartRef = doc(db, "carts", currentUser.uid);

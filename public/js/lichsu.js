@@ -39,14 +39,81 @@ async function loadBookings(uid){
     const snap = await getDocs(q);
 
     allBookings = [];
-    snap.forEach(docSnap=>{
-        allBookings.push({
-            id: docSnap.id,
-            ...docSnap.data()
-        });
+
+snap.forEach(docSnap => {
+    const data = docSnap.data();
+
+    allBookings.push({
+        id: docSnap.id,
+        ...data
+    });
+});
+
+// Mới nhất lên đầu
+allBookings.sort((a, b) => {
+
+    const timeA = a.createdAt?.seconds
+        ? a.createdAt.seconds * 1000
+        : new Date(a.createdAt || 0).getTime();
+
+    const timeB = b.createdAt?.seconds
+        ? b.createdAt.seconds * 1000
+        : new Date(b.createdAt || 0).getTime();
+
+    return timeB - timeA;
+
+});
+
+allBookings = mergeBookings(allBookings);
+
+applyFilters();
+}
+
+function mergeBookings(bookings) {
+    const groups = {};
+
+    bookings.forEach(item => {
+        const key = item.maThanhToan || item.createdAt;
+
+        if (!groups[key]) {
+            groups[key] = {
+                ...item,
+                tenSan: item.type === "food" ? "" : item.tenSan,
+                sanInfo: null,
+                foodItems: [],
+                tongTien: 0,
+                ids: []
+            };
+        }
+
+        groups[key].ids.push(item.id);
+        groups[key].tongTien += Number(item.tongTien || 0);
+
+        if (item.type === "food") {
+            groups[key].foodItems.push(item.tenSan || item.tenMon || "Món ăn");
+        } else {
+            if (!groups[key].sanInfo) {
+                groups[key].sanInfo = {
+                    tenSan: item.tenSan,
+                    ngayDat: item.ngayDat,
+                    gioBatDau: Number(item.gioBatDau),
+                    gioKetThuc: Number(item.gioKetThuc)
+                };
+            } else {
+                groups[key].sanInfo.gioBatDau = Math.min(
+                    groups[key].sanInfo.gioBatDau,
+                    Number(item.gioBatDau)
+                );
+
+                groups[key].sanInfo.gioKetThuc = Math.max(
+                    groups[key].sanInfo.gioKetThuc,
+                    Number(item.gioKetThuc)
+                );
+            }
+        }
     });
 
-    applyFilters();
+    return Object.values(groups);
 }
 
 function renderBookings(bookings){
@@ -73,9 +140,25 @@ function renderBookings(bookings){
             <div class="booking-card history-row">
                 <div class="booking-top">
                     <div class="booking-info">
-                        <h3>${item.tenSan}</h3>
-                        <p>Ngày: ${item.ngayDat}</p>
-                        <p>Giờ: ${item.gioBatDau}:00 - ${item.gioKetThuc}:00</p>
+                        <h3>Đơn hàng SportBooking</h3>
+
+                        ${
+                            item.sanInfo
+                                ? `
+                                    <p><strong>Sân:</strong> ${item.sanInfo.tenSan}</p>
+                                    <p><strong>Ngày:</strong> ${item.sanInfo.ngayDat}</p>
+                                    <p><strong>Giờ:</strong> ${item.sanInfo.gioBatDau}:00 - ${item.sanInfo.gioKetThuc}:00</p>
+                                `
+                                : ""
+                        }
+
+                        ${
+                            item.foodItems && item.foodItems.length > 0
+                                ? `
+                                    <p><strong>Đồ ăn / thức uống:</strong> ${item.foodItems.join(", ")}</p>
+                                `
+                                : ""
+                        }
                         <p>Tổng tiền: ${(item.tongTien || item.gia).toLocaleString()}đ</p>
                     </div>
 
@@ -87,13 +170,15 @@ function renderBookings(bookings){
                 </div>
 
                 <div class="booking-actions">
-                    <button class="btn btn-rebook" onclick="datLai('${item.sanId}')">
-                        Đặt lại
-                    </button>
+                    ${
+                        item.type === "food"
+                            ? `<button class="btn btn-rebook" onclick="window.location.href='doan.html'">Đặt lại</button>`
+                            : `<button class="btn btn-rebook" onclick="datLai('${item.sanId}')">Đặt lại</button>`
+                    }
 
                     ${
                         item.trangThai === "Chờ xác nhận"
-                        ? `<button class="btn btn-cancel" onclick="huyDon('${item.id}')">Hủy đơn</button>`
+                        ? `<button class="btn btn-cancel" onclick='huyDonNhieu(${JSON.stringify(item.ids)})'>Hủy đơn</button>`
                         : ""
                     }
                 </div>
@@ -103,6 +188,20 @@ function renderBookings(bookings){
 
     box.innerHTML = html;
 }
+
+window.huyDonNhieu = async function(ids) {
+    if (!confirm("Bạn chắc chắn muốn hủy đơn này?")) return;
+
+    for (const id of ids) {
+        await updateDoc(doc(db, "donDat", id), {
+            trangThai: "Đã hủy",
+            updatedAt: new Date()
+        });
+    }
+
+    alert("Đã hủy đơn");
+    loadBookings(currentUser.uid);
+};
 
 function applyFilters() {
 
