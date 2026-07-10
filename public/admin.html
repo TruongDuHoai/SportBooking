@@ -489,7 +489,7 @@
             <a href="#" data-tab="dashboard" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             <a href="#" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
             <a href="#" data-tab="bookings"><i class="fas fa-calendar-check"></i> Đơn đặt sân</a>
-            <a href="#" data-tab="foodOrders"><i class="fas fa-receipt"></i> Đơn đồ ăn</a>
+            
             <a href="#" data-tab="sans"><i class="fas fa-futbol"></i> Quản lý sân</a>
             <a href="#" data-tab="users"><i class="fas fa-users"></i> Quản lý người dùng</a>
             <a href="#" data-tab="policies"><i class="fas fa-file-contract"></i> Quản lý chính sách</a>
@@ -2694,8 +2694,6 @@ async function loadBookings() {
                         <th>STT</th>
                         <th>Khách hàng</th>
                         <th>Sân</th>
-                        <th>Ngày</th>
-                        <th>Giờ</th>
                         <th>Tiền</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
@@ -2706,8 +2704,25 @@ async function loadBookings() {
 
     let stt = 1;
 
-    for (const docSnap of snapshot.docs) {
-        const b = docSnap.data();
+    let orders = [];
+
+    snapshot.forEach(docSnap => {
+        orders.push({
+            id: docSnap.id,
+            ...docSnap.data()
+        });
+    });
+
+    orders.sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+
+        return timeB - timeA;
+    });
+
+    orders = mergeAdminOrders(orders);
+
+    for (const b of orders) {
 
         const isPending =
             b.trangThai === "Chờ xác nhận" ||
@@ -2724,21 +2739,42 @@ async function loadBookings() {
             class="booking-row"
             data-search="
                 ${(b.userName || "").toLowerCase()}
-                ${(b.tenSan || "").toLowerCase()}
-                ${(b.ngayDat || "").toLowerCase()}
                 ${(b.userPhone || "").toLowerCase()}
+                ${(b.userEmail || "").toLowerCase()}
+                ${(b.sanInfo?.tenSan || "").toLowerCase()}
+                ${(b.sanInfo?.ngayDat || "").toLowerCase()}
+                ${(b.foodItems || []).join(" ").toLowerCase()}
             "
         >
             <td>${stt++}</td>
 
             <td>${b.userName || b.userEmail || "---"}</td>
 
-            <td>${b.tenSan || "---"}</td>
-
-            <td>${b.ngayDat || "---"}</td>
-
             <td>
-                ${b.gioBatDau || 0}:00 - ${b.gioKetThuc || 0}:00
+                ${
+                    b.sanInfo
+                        ? `
+                            <strong>${b.sanInfo.tenSan}</strong>
+                            <br>
+                            <small>
+                                ${b.sanInfo.ngayDat} |
+                                ${b.sanInfo.gioBatDau}:00 - ${b.sanInfo.gioKetThuc}:00
+                            </small>
+                        `
+                        : ""
+                }
+
+                ${
+                    b.foodItems && b.foodItems.length > 0
+                        ? `
+                            <div style="margin-top:6px;">
+                                <strong>Đồ ăn:</strong>
+                                <br>
+                                <small>${b.foodItems.join(", ")}</small>
+                            </div>
+                        `
+                        : ""
+                }
             </td>
 
             <td>
@@ -2778,20 +2814,20 @@ async function loadBookings() {
                 <!-- Xem -->
                 <button
                     class="btn-view"
-                    onclick="showBookingDetail(
-                        '${docSnap.id}',
-                        '${b.tenSan || ""}',
-                        '${b.ngayDat || ""}',
-                        ${Number(b.gioBatDau || 0)},
-                        ${Number(b.gioKetThuc || 0)},
-                        ${Number(b.tongTien || 0)},
-                        '${b.trangThai || ""}',
-                        '${b.userName || b.userEmail || "Khách hàng"}',
-                        '${b.userPhone || "---"}',
-                        '${b.trangThaiThanhToan || "Chưa thanh toán"}',
-                        '${b.phuongThucThanhToan || "Không rõ"}',
-                        '${b.maThanhToan || ""}'
-                    )"
+                    onclick='showBookingDetail(
+                        "${b.ids[0]}",
+                        "${b.sanInfo?.tenSan || ""}",
+                        "${b.sanInfo?.ngayDat || ""}",
+                        ${b.sanInfo?.gioBatDau || 0},
+                        ${b.sanInfo?.gioKetThuc || 0},
+                        ${b.tongTien || 0},
+                        "${b.trangThai}",
+                        "${b.userName || b.userEmail}",
+                        "${b.userPhone || ""}",
+                        "${b.trangThaiThanhToan || ""}",
+                        "${b.phuongThucThanhToan || ""}",
+                        "${b.maThanhToan || ""}"
+                    )'
                     title="Xem chi tiết"
                     style="margin-right:5px;color:#ff9800;"
                 >
@@ -2803,7 +2839,7 @@ async function loadBookings() {
                         ? `
                         <button
                             class="btn-edit"
-                            onclick="confirmBookingFromList('${docSnap.id}')"
+                            onclick="confirmBookingFromList('${b.ids[0]}')"
                             title="Xác nhận"
                             style="margin-right:5px;"
                         >
@@ -2819,7 +2855,7 @@ async function loadBookings() {
                         ? `
                         <button
                             class="btn-edit"
-                            onclick="confirmPaymentFromList('${docSnap.id}')"
+                            onclick="confirmPaymentFromList('${b.ids[0]}')"
                             title="Xác nhận thanh toán"
                             style="margin-right:5px;"
                         >
@@ -2834,7 +2870,7 @@ async function loadBookings() {
                         ? `
                         <button
                             class="btn-delete"
-                            onclick="cancelBookingFromList('${docSnap.id}')"
+                            onclick="cancelBookingFromList('${'${b.ids[0]}'}')"
                             title="Hủy đơn"
                             style="margin-right:5px;"
                         >
@@ -2846,7 +2882,7 @@ async function loadBookings() {
 
                 <button
                     class="btn-delete"
-                    onclick="deleteBookingFromList('${docSnap.id}')"
+                    onclick="deleteBookingFromList('${b.ids[0]}')"
                     title="Xóa"
                 >
                     <i class="fas fa-trash"></i>
@@ -2884,6 +2920,60 @@ async function loadBookings() {
 
     };
 }
+}
+
+function mergeAdminOrders(orders) {
+    const groups = {};
+
+    orders.forEach(item => {
+        const key = item.maThanhToan || item.createdAt || item.id;
+
+        if (!groups[key]) {
+            groups[key] = {
+                ...item,
+                ids: [],
+                sanInfo: null,
+                foodItems: [],
+                tongTien: 0,
+                createdAt: item.createdAt
+            };
+        }
+
+        groups[key].ids.push(item.id);
+        groups[key].tongTien += Number(item.tongTien || 0);
+
+        if (item.type === "food") {
+            groups[key].foodItems.push(
+                `${item.tenSan || item.tenMon || "Món ăn"} x${item.soLuong || 1}`
+            );
+        } else {
+            if (!groups[key].sanInfo) {
+                groups[key].sanInfo = {
+                    tenSan: item.tenSan,
+                    ngayDat: item.ngayDat,
+                    gioBatDau: Number(item.gioBatDau),
+                    gioKetThuc: Number(item.gioKetThuc)
+                };
+            } else {
+                groups[key].sanInfo.gioBatDau = Math.min(
+                    groups[key].sanInfo.gioBatDau,
+                    Number(item.gioBatDau)
+                );
+
+                groups[key].sanInfo.gioKetThuc = Math.max(
+                    groups[key].sanInfo.gioKetThuc,
+                    Number(item.gioKetThuc)
+                );
+            }
+        }
+    });
+
+    return Object.values(groups).sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+
+        return timeB - timeA;
+    });
 }
 
 window.confirmBookingFromList = async function (bookingId) {
@@ -2985,6 +3075,33 @@ window.deleteBookingFromList = async function (bookingId) {
     loadDashboard();
 };
 
+window.cancelBookingGroup = async function(ids) {
+    if (!confirm("Bạn có chắc muốn hủy đơn hàng này?")) return;
+
+    for (const id of ids) {
+        await updateDoc(doc(db, "donDat", id), {
+            trangThai: "đã_hủy",
+            updatedAt: new Date()
+        });
+    }
+
+    alert("Đã hủy đơn hàng!");
+    loadBookings();
+    loadDashboard();
+};
+
+window.deleteBookingGroup = async function(ids) {
+    if (!confirm("Xóa vĩnh viễn đơn hàng này?")) return;
+
+    for (const id of ids) {
+        await deleteDoc(doc(db, "donDat", id));
+    }
+
+    alert("Đã xóa đơn hàng!");
+    loadBookings();
+    loadDashboard();
+};
+
 async function loadFoodsAdmin() {
     const container = document.getElementById("foodsTab");
 
@@ -3036,7 +3153,7 @@ async function loadFoodsAdmin() {
                 </td>
                 <td>
                     <button class="btn-edit" onclick="openFoodModal(
-                        '${docSnap.id}',
+                        '${b.ids[0]}',
                         '${food.ten || ""}',
                         '${food.phanLoai || ""}',
                         ${Number(food.gia || 0)},
@@ -3046,7 +3163,7 @@ async function loadFoodsAdmin() {
                         <i class="fas fa-edit"></i>
                     </button>
 
-                    <button class="btn-delete" onclick="deleteFood('${docSnap.id}')">
+                    <button class="btn-delete" onclick="deleteFood('${b.ids[0]}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -3203,7 +3320,7 @@ async function loadFoodOrders() {
                             ? `
                             <button
                                 class="btn-edit"
-                                onclick="completeFoodOrder('${docSnap.id}')"
+                                onclick="completeFoodOrder('${b.ids[0]}')"
                                 title="Hoàn thành"
                             >
                                 <i class="fas fa-check"></i>
@@ -3217,7 +3334,7 @@ async function loadFoodOrders() {
                             ? `
                             <button
                                 class="btn-delete"
-                                onclick="cancelFoodOrder('${docSnap.id}')"
+                                onclick="cancelFoodOrder('${b.ids[0]}')"
                                 title="Hủy đơn"
                             >
                                 <i class="fas fa-ban"></i>
@@ -3228,7 +3345,7 @@ async function loadFoodOrders() {
 
                     <button
                         class="btn-delete"
-                        onclick="deleteFoodOrder('${docSnap.id}')"
+                        onclick="deleteFoodOrder('${b.ids[0]}')"
                         title="Xóa đơn"
                     >
                         <i class="fas fa-trash"></i>
@@ -4389,7 +4506,7 @@ async function loadSans() {
 
                 <button
                     class="btn-delete"
-                    onclick="deletePromotion('${docSnap.id}')"
+                    onclick="deletePromotion('${b.ids[0]}')"
                 >
                     Xóa
                 </button>
