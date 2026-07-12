@@ -244,13 +244,12 @@
                 }
 
                 alert("Đăng nhập thành công!");
-if (role === "admin") {
-    window.location.href = "admin.html";
-} else if (role === "staff") {
-    window.location.href = "nhanvien.html";
-} else {
-    window.location.href = "index.html";
-}
+
+                if (role === "admin" || role === "staff") {
+                    window.location.href = "admin.html";
+                } else {
+                    window.location.href = "index.html";
+                }
 
             } catch (error) {
                 let errorMessage = "Đăng nhập thất bại";

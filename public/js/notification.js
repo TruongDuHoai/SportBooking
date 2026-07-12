@@ -123,7 +123,12 @@ async function loadNotifications(user) {
                 >
                     <strong>${n.title || "Thông báo"}</strong>
 
-                    <p style="margin:6px 0;color:#555;">
+                    <p style="
+                        margin:6px 0;
+                        color:#555;
+                        white-space:pre-line;
+                        line-height:1.6;
+                    ">
                         ${n.message || ""}
                     </p>
 

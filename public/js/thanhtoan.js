@@ -556,6 +556,7 @@ async function submitOrder() {
     btn.textContent = "Đang xử lý...";
 
     try {
+        const orderGroupId = "ORDER_" + Date.now();
         for (const [index, item] of cartItems.entries()) {
             const itemTotal = getItemTotal(item);
             const itemDiscount = getItemDiscount(itemTotal, index);
@@ -566,6 +567,8 @@ async function submitOrder() {
                 userEmail: currentUser.email,
                 userName: fullName,
                 userPhone: phone,
+
+                orderGroupId: orderGroupId,
 
                 sanId: item.sanId || "",
                 tenSan: item.tenSan || item.tenMon || "Dịch vụ",

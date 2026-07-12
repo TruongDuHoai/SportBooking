@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản trị - SportBooking Admin</title>
+    <title>Quản trị - SportBooking</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -432,6 +432,152 @@
             });
         }
 
+        async function getOrderGroupByBookingId(bookingId) {
+            const bookingSnap = await getDoc(
+                doc(db, "donDat", bookingId)
+            );
+
+            if (!bookingSnap.exists()) {
+                throw new Error("Không tìm thấy đơn!");
+            }
+
+            const selectedBooking = {
+                id: bookingSnap.id,
+                ...bookingSnap.data()
+            };
+
+            let documents = [selectedBooking];
+
+            // Đơn mới: ưu tiên gộp bằng orderGroupId
+            if (selectedBooking.orderGroupId) {
+                const groupQuery = query(
+                    collection(db, "donDat"),
+                    where(
+                        "orderGroupId",
+                        "==",
+                        selectedBooking.orderGroupId
+                    )
+                );
+
+                const groupSnapshot = await getDocs(groupQuery);
+
+                documents = groupSnapshot.docs.map((docSnap) => ({
+                    id: docSnap.id,
+                    ...docSnap.data()
+                }));
+
+            // Hỗ trợ đơn cũ đã có mã thanh toán
+            } else if (selectedBooking.maThanhToan) {
+                const paymentQuery = query(
+                    collection(db, "donDat"),
+                    where(
+                        "maThanhToan",
+                        "==",
+                        selectedBooking.maThanhToan
+                    )
+                );
+
+                const paymentSnapshot = await getDocs(paymentQuery);
+
+                documents = paymentSnapshot.docs.map((docSnap) => ({
+                    id: docSnap.id,
+                    ...docSnap.data()
+                }));
+            }
+
+            return documents;
+        }
+
+        function buildOrderNotification(orderItems, action = "confirmed") {
+            const fieldBookings = orderItems.filter(
+                (item) => item.type !== "food"
+            );
+
+            const foodItems = orderItems.filter(
+                (item) => item.type === "food"
+            );
+
+            const field = fieldBookings[0] || null;
+
+            const userId =
+                orderItems.find((item) => item.userId)?.userId || "";
+
+            let totalAmount = 0;
+
+            orderItems.forEach((item) => {
+                totalAmount += Number(item.tongTien || 0);
+            });
+
+            const foodText = foodItems
+                .map((item) => {
+                    const name =
+                        item.tenMon ||
+                        item.tenSan ||
+                        "Món ăn";
+
+                    const quantity = Number(item.soLuong || 1);
+
+                    return `${name} x${quantity}`;
+                })
+                .join(", ");
+
+            let detailParts = [];
+
+            if (field) {
+                detailParts.push(
+                    `Sân: ${field.tenSan || "Sân thể thao"}`
+                );
+
+                if (field.ngayDat) {
+                    detailParts.push(`Ngày: ${field.ngayDat}`);
+                }
+
+                detailParts.push(
+                    `Giờ: ${Number(field.gioBatDau || 0)}:00 - ` +
+                    `${Number(field.gioKetThuc || 0)}:00`
+                );
+            }
+
+            if (foodText) {
+                detailParts.push(`Đồ ăn / thức uống: \n${foodText}`);
+            }
+
+            detailParts.push(
+                `Tổng tiền: ${totalAmount.toLocaleString("vi-VN")}đ`
+            );
+
+            if (action === "payment") {
+                return {
+                    userId,
+                    title: "Thanh toán đơn hàng đã được xác nhận",
+                    message:
+                        detailParts.join("\n") +
+                        "\n\nĐơn hàng của bạn đã được xác nhận thanh toán.",
+                    type: "payment"
+                };
+            }
+
+            if (action === "cancelled") {
+                return {
+                    userId,
+                    title: "Đơn hàng SportBooking đã bị hủy",
+                    message:
+                        detailParts.join("\n") +
+                        "\nĐơn hàng của bạn đã bị hủy.",
+                    type: "cancel"
+                };
+            }
+
+            return {
+                userId,
+                title: "Đơn hàng SportBooking đã được xác nhận",
+                message:
+                    detailParts.join("\n") +
+                    "\nĐơn hàng của bạn đã được xác nhận.",
+                type: "booking"
+            };
+        }
+
         async function checkUserRole(user) {
             if (!user) return null;
 
@@ -502,7 +648,25 @@
         `;
     } else {
         sidebarHtml = `
-            <a href="#" data-tab="calendar" class="active"><i class="fas fa-calendar-alt"></i> Lịch sân</a>
+            <a href="#" data-tab="dashboard" class="active">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+
+            <a href="#" data-tab="calendar">
+                <i class="fas fa-calendar-alt"></i> Lịch sân
+            </a>
+
+            <a href="#" data-tab="bookings">
+                <i class="fas fa-calendar-check"></i> Đơn đặt sân
+            </a>
+
+            <a href="#" data-tab="feedback">
+                <i class="fas fa-envelope"></i> Phản hồi khách hàng
+            </a>
+
+            <a href="#" data-tab="foods">
+                <i class="fas fa-utensils"></i> Quản lý đồ ăn
+            </a>
         `;
     }
 
@@ -623,13 +787,8 @@
         window.location.href = "index.html";
     };
 
-    if (currentUserRole === "admin") {
-        document.getElementById("dashboardTab").style.display = "block";
-        loadDashboard();
-    } else {
-        document.getElementById("calendarTab").style.display = "block";
-        loadCalendar();
-    }
+    document.getElementById("dashboardTab").style.display = "block";
+    loadDashboard();
 }
 
         let currentSanId = null;
@@ -2340,6 +2499,7 @@ window.showDaySlots = async function(sanId, ngayDat) {
                 }
                 
                 const tempId = 'staff_' + Date.now();
+                const orderGroupId = "ORDER_" + Date.now();
                 
                 await addDoc(collection(db, "donDat"), {
                     sanId: sanId,
@@ -2348,6 +2508,9 @@ window.showDaySlots = async function(sanId, ngayDat) {
                     userEmail: customerEmail,
                     userName: customerName,
                     userPhone: customerPhone,
+
+                    orderGroupId: orderGroupId,
+
                     ngayDat: ngayDat,
                     gioBatDau: gioBatDau,
                     gioKetThuc: gioBatDau + 1,
@@ -2488,62 +2651,7 @@ window.showDaySlots = async function(sanId, ngayDat) {
 
 if (confirmBookingBtn) {
     confirmBookingBtn.onclick = async () => {
-        if (!confirm("Xác nhận đơn đặt sân này?")) return;
-
-        // Lấy thông tin đơn
-        const bookingSnap = await getDoc(
-            doc(db, "donDat", bookingId)
-        );
-
-        if (!bookingSnap.exists()) {
-            alert("Không tìm thấy đơn!");
-            return;
-        }
-
-        const booking = bookingSnap.data();
-
-        console.log("Booking:", booking);
-        console.log("Gửi thông báo cho user:", booking.userId);
-
-        await createNotification(
-            booking.userId,
-            "Đơn đặt sân đã được xác nhận",
-            `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận.`
-        );
-
-        // Cập nhật trạng thái
-        await updateDoc(
-            doc(db, "donDat", bookingId),
-            {
-                trangThai: "đã_xác_nhận",
-                updatedAt: new Date()
-            }
-        );
-
-        // Gửi thông báo
-        console.log("Gửi thông báo cho userId:", booking.userId);
-        await createNotification(
-            booking.userId,
-            "Đơn đặt sân đã được xác nhận",
-            `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận.`
-        );
-
-        alert("Đã xác nhận đơn đặt sân!");
-
-        modal.remove();
-        renderWeeklyGrid();
-        loadBookings();
-        loadDashboard();
-    };
-}
-
-            // XÁC NHẬN THANH TOÁN
-const confirmPaymentBtn =
-    document.getElementById("confirmPaymentBtn");
-
-if (confirmPaymentBtn) {
-    confirmPaymentBtn.onclick = async () => {
-        if (!confirm("Xác nhận khách đã thanh toán?")) return;
+        if (!confirm("Xác nhận đơn này?")) return;
 
         const bookingRef = doc(db, "donDat", bookingId);
         const bookingSnap = await getDoc(bookingRef);
@@ -2554,24 +2662,45 @@ if (confirmPaymentBtn) {
         }
 
         const booking = bookingSnap.data();
+        const isFood = booking.type === "food";
 
-        await updateDoc(
-            bookingRef,
-            {
-                trangThaiThanhToan: "Đã thanh toán",
-                trangThai: "đã_xác_nhận",
-                updatedAt: new Date()
-            }
-        );
+        await updateDoc(bookingRef, {
+            trangThai: "đã_xác_nhận",
+            updatedAt: new Date()
+        });
+
+        let title = "";
+        let message = "";
+
+        if (isFood) {
+            title = "Đơn đồ ăn đã được xác nhận";
+
+            message =
+                `Đơn đồ ăn ${booking.tenSan || booking.tenMon || "của bạn"} ` +
+                `đã được xác nhận.`;
+        } else {
+            title = "Đơn đặt sân đã được xác nhận";
+
+            message =
+                `Đơn đặt sân ${booking.tenSan || ""} ` +
+                `ngày ${booking.ngayDat || ""} ` +
+                `từ ${booking.gioBatDau || 0}:00 ` +
+                `đến ${booking.gioKetThuc || 0}:00 ` +
+                `đã được xác nhận.`;
+        }
 
         await createNotification(
             booking.userId,
-            "Thanh toán đơn đặt sân thành công",
-            `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận thanh toán.`,
-            "payment"
+            title,
+            message,
+            isFood ? "food" : "booking"
         );
 
-        alert("Đã xác nhận thanh toán!");
+        alert(
+            isFood
+                ? "Đã xác nhận đơn đồ ăn!"
+                : "Đã xác nhận đơn đặt sân!"
+        );
 
         modal.remove();
         renderWeeklyGrid();
@@ -2579,6 +2708,8 @@ if (confirmPaymentBtn) {
         loadDashboard();
     };
 }
+
+        
 
             // TỪ CHỐI / XÓA
            const rejectBookingBtn =
@@ -2870,7 +3001,7 @@ async function loadBookings() {
                         ? `
                         <button
                             class="btn-delete"
-                            onclick="cancelBookingFromList('${'${b.ids[0]}'}')"
+                            onclick="cancelBookingFromList('${b.ids[0]}')"
                             title="Hủy đơn"
                             style="margin-right:5px;"
                         >
@@ -2926,7 +3057,11 @@ function mergeAdminOrders(orders) {
     const groups = {};
 
     orders.forEach(item => {
-        const key = item.maThanhToan || item.createdAt || item.id;
+        const key =
+            item.orderGroupId ||
+            item.maThanhToan ||
+            item.createdAt ||
+            item.id;
 
         if (!groups[key]) {
             groups[key] = {
@@ -2977,102 +3112,162 @@ function mergeAdminOrders(orders) {
 }
 
 window.confirmBookingFromList = async function (bookingId) {
-    if (!confirm("Xác nhận đơn đặt sân này?")) return;
+    if (!confirm("Xác nhận toàn bộ đơn hàng này?")) return;
 
-    const bookingRef = doc(db, "donDat", bookingId);
-    const bookingSnap = await getDoc(bookingRef);
+    try {
+        const orderItems =
+            await getOrderGroupByBookingId(bookingId);
 
-    if (!bookingSnap.exists()) {
-        alert("Không tìm thấy đơn!");
-        return;
+        for (const item of orderItems) {
+            await updateDoc(
+                doc(db, "donDat", item.id),
+                {
+                    trangThai: "đã_xác_nhận",
+                    updatedAt: new Date()
+                }
+            );
+        }
+
+        const notification =
+            buildOrderNotification(
+                orderItems,
+                "confirmed"
+            );
+
+        await createNotification(
+            notification.userId,
+            notification.title,
+            notification.message,
+            notification.type
+        );
+
+        alert("Đã xác nhận toàn bộ đơn hàng!");
+
+        loadBookings();
+        loadDashboard();
+        renderWeeklyGrid();
+
+    } catch (error) {
+        console.error("Lỗi xác nhận đơn:", error);
+        alert("Không thể xác nhận đơn: " + error.message);
     }
-
-    const booking = bookingSnap.data();
-
-    await updateDoc(bookingRef, {
-        trangThai: "đã_xác_nhận",
-        updatedAt: new Date()
-    });
-
-    await createNotification(
-        booking.userId,
-        "Đơn đặt sân đã được xác nhận",
-        `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận.`
-    );
-
-    alert("Đã xác nhận đơn!");
-    loadBookings();
-    loadDashboard();
 };
 
+const confirmPaymentBtn =
+document.getElementById("confirmPaymentBtn");
+
+if (confirmPaymentBtn) {
+
+    confirmPaymentBtn.onclick = async () => {
+
+        await window.confirmPaymentFromList(bookingId);
+
+        modal.remove();
+
+        renderWeeklyGrid();
+
+    };
+
+}
+
 window.confirmPaymentFromList = async function (bookingId) {
+
     if (!confirm("Xác nhận khách đã thanh toán?")) return;
 
-    const bookingRef = doc(db, "donDat", bookingId);
-    const bookingSnap = await getDoc(bookingRef);
+    const orderItems = await getOrderGroupByBookingId(bookingId);
 
-    if (!bookingSnap.exists()) {
-        alert("Không tìm thấy đơn!");
-        return;
+    for (const item of orderItems) {
+
+        await updateDoc(doc(db, "donDat", item.id), {
+            trangThaiThanhToan: "Đã thanh toán",
+            trangThai: "đã_xác_nhận",
+            updatedAt: new Date()
+        });
+
     }
 
-    const booking = bookingSnap.data();
-
-    await updateDoc(bookingRef, {
-        trangThaiThanhToan: "Đã thanh toán",
-        trangThai: "đã_xác_nhận",
-        updatedAt: new Date()
-    });
+    const notification =
+        buildOrderNotification(orderItems, "payment");
 
     await createNotification(
-        booking.userId,
-        "Thanh toán đơn đặt sân thành công",
-        `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} từ ${booking.gioBatDau}:00 đến ${booking.gioKetThuc}:00 đã được xác nhận thanh toán.`,
-        "payment"
+        notification.userId,
+        notification.title,
+        notification.message,
+        notification.type
     );
 
     alert("Đã xác nhận thanh toán!");
+
     loadBookings();
     loadDashboard();
+    renderWeeklyGrid();
 };
 
 window.cancelBookingFromList = async function (bookingId) {
-    if (!confirm("Bạn có chắc muốn hủy đơn này?")) return;
+    if (!confirm("Bạn có chắc muốn hủy toàn bộ đơn hàng này?")) return;
 
-    const bookingRef = doc(db, "donDat", bookingId);
-    const bookingSnap = await getDoc(bookingRef);
+    try {
+        const orderItems =
+            await getOrderGroupByBookingId(bookingId);
 
-    if (!bookingSnap.exists()) {
-        alert("Không tìm thấy đơn!");
-        return;
+        for (const item of orderItems) {
+            await updateDoc(
+                doc(db, "donDat", item.id),
+                {
+                    trangThai: "đã_hủy",
+                    updatedAt: new Date()
+                }
+            );
+        }
+
+        const notification =
+            buildOrderNotification(
+                orderItems,
+                "cancelled"
+            );
+
+        await createNotification(
+            notification.userId,
+            notification.title,
+            notification.message,
+            notification.type
+        );
+
+        alert("Đã hủy toàn bộ đơn hàng!");
+
+        loadBookings();
+        loadDashboard();
+        renderWeeklyGrid();
+
+    } catch (error) {
+        console.error("Lỗi hủy đơn:", error);
+        alert("Không thể hủy đơn: " + error.message);
     }
-
-    const booking = bookingSnap.data();
-
-    await updateDoc(bookingRef, {
-        trangThai: "đã_hủy",
-        updatedAt: new Date()
-    });
-
-    await createNotification(
-        booking.userId,
-        "Đơn đặt sân đã bị hủy",
-        `Đơn đặt sân ${booking.tenSan} ngày ${booking.ngayDat} đã bị hủy.`
-    );
-
-    alert("Đã hủy đơn!");
-    loadBookings();
-    loadDashboard();
 };
 
 window.deleteBookingFromList = async function (bookingId) {
-    if (!confirm("Xóa vĩnh viễn đơn này?")) return;
+    if (!confirm("Xóa vĩnh viễn toàn bộ đơn hàng này?")) return;
 
-    await deleteDoc(doc(db, "donDat", bookingId));
+    try {
+        const orderItems =
+            await getOrderGroupByBookingId(bookingId);
 
-    alert("Đã xóa đơn!");
-    loadBookings();
-    loadDashboard();
+        for (const item of orderItems) {
+            await deleteDoc(
+                doc(db, "donDat", item.id)
+            );
+        }
+
+        alert("Đã xóa toàn bộ đơn hàng!");
+
+        loadBookings();
+        loadDashboard();
+        renderWeeklyGrid();
+
+    } catch (error) {
+        console.error("Lỗi xóa đơn:", error);
+        alert("Không thể xóa đơn: " + error.message);
+    }
 };
 
 window.cancelBookingGroup = async function(ids) {
@@ -3153,7 +3348,7 @@ async function loadFoodsAdmin() {
                 </td>
                 <td>
                     <button class="btn-edit" onclick="openFoodModal(
-                        '${b.ids[0]}',
+                        '${docSnap.id}',
                         '${food.ten || ""}',
                         '${food.phanLoai || ""}',
                         ${Number(food.gia || 0)},
@@ -3163,7 +3358,7 @@ async function loadFoodsAdmin() {
                         <i class="fas fa-edit"></i>
                     </button>
 
-                    <button class="btn-delete" onclick="deleteFood('${b.ids[0]}')">
+                    <button class="btn-delete" onclick="deleteFood('${docSnap.id}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -3320,7 +3515,7 @@ async function loadFoodOrders() {
                             ? `
                             <button
                                 class="btn-edit"
-                                onclick="completeFoodOrder('${b.ids[0]}')"
+                                onclick="completeFoodOrder('${docSnap.id}')"
                                 title="Hoàn thành"
                             >
                                 <i class="fas fa-check"></i>
@@ -3334,7 +3529,7 @@ async function loadFoodOrders() {
                             ? `
                             <button
                                 class="btn-delete"
-                                onclick="cancelFoodOrder('${b.ids[0]}')"
+                                onclick="cancelFoodOrder('${docSnap.id}')"
                                 title="Hủy đơn"
                             >
                                 <i class="fas fa-ban"></i>
@@ -3345,7 +3540,7 @@ async function loadFoodOrders() {
 
                     <button
                         class="btn-delete"
-                        onclick="deleteFoodOrder('${b.ids[0]}')"
+                        onclick="deleteFoodOrder('${docSnap.id}')"
                         title="Xóa đơn"
                     >
                         <i class="fas fa-trash"></i>
@@ -4506,7 +4701,7 @@ async function loadSans() {
 
                 <button
                     class="btn-delete"
-                    onclick="deletePromotion('${b.ids[0]}')"
+                    onclick="deletePromotion('${docSnap.id}')"
                 >
                     Xóa
                 </button>
@@ -5925,7 +6120,7 @@ async function loadFeedback() {
                     <td style="
                         padding: 12px;
                         text-align: center;
-                        min-width: 210px;
+                        min-width: 330px;
                     ">
                         <button
                             type="button"
@@ -5939,25 +6134,6 @@ async function loadFeedback() {
                             <i class="fas fa-eye"></i>
                             Xem
                         </button>
-
-                        ${
-                            normalizedStatus !== "processed"
-                                ? `
-                                    <button
-                                        type="button"
-                                        class="
-                                            btn-save
-                                            feedback-process-btn
-                                        "
-                                        data-id="${feedback.id}"
-                                        style="margin: 2px;"
-                                    >
-                                        <i class="fas fa-check"></i>
-                                        Đã xử lý
-                                    </button>
-                                `
-                                : ""
-                        }
 
                         <button
                             type="button"
