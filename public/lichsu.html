@@ -28,7 +28,6 @@
             display:flex;
             gap:15px;
             align-items:center;
-
             background:white;
             padding:20px;
             border-radius:16px;
@@ -74,12 +73,23 @@
             padding:8px 14px;
             border-radius:999px;
             font-weight:600;
-            color:white;
+            font-size:14px;
         }
 
-        .pending{background:#ff9800;}
-        .success{background:#1a6b30;}
-        .cancel{background:#e74c3c;}
+        .status.success{
+            background:#d4edda;
+            color:#155724;
+        }
+
+        .status.pending{
+            background:#fff3cd;
+            color:#856404;
+        }
+
+        .status.cancel{
+            background:#f8d7da;
+            color:#721c24;
+        }
 
         .booking-actions{
             margin-top:20px;
@@ -155,10 +165,10 @@
         <a href="lichsu.html">Lịch sử</a>
         <a href="lienhe.html">Liên hệ</a>
 
+        <!-- CHUÔNG THÔNG BÁO -->
         <div id="notificationBox" style="position:relative;display:none;margin-right:15px;">
             <a href="#" id="notificationBell" style="position:relative;color:white;font-size:20px;">
                 <i class="fas fa-bell"></i>
-
                 <span id="notificationBadge"
                     style="
                         display:none;
@@ -228,7 +238,6 @@
     </div>
 
     <div class="filter-bar">
-
         <input
             type="text"
             id="historySearch"
@@ -237,11 +246,10 @@
 
         <select id="filterStatus">
             <option value="all">Tất cả trạng thái</option>
-            <option value="Chờ xác nhận">Chờ xác nhận</option>
-            <option value="Đã xác nhận">Đã xác nhận</option>
-            <option value="Đã hủy">Đã hủy</option>
+            <option value="chờ_xác_nhận">Chờ xác nhận</option>
+            <option value="đã_xác_nhận">Đã xác nhận</option>
+            <option value="đã_hủy">Đã hủy</option>
         </select>
-
     </div>
 
     <div id="bookingList"></div>
@@ -249,7 +257,6 @@
 </div>
 
 <script type="module" src="js/lichsu.js"></script>
-    
 <script type="module" src="js/notification.js"></script>
 
 </body>

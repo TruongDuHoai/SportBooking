@@ -343,6 +343,7 @@ function hienThiSan(danhSach) {
         
         html += `
             <div class="san-card">
+            console.log("Ảnh:", san.hinhAnh);
                 <img src="${san.hinhAnh}" alt="${san.ten}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
                 <div class="info">
                     <div class="ten-san">${san.ten}</div>
@@ -541,4 +542,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-console.log('Website đã sẵn sàng!');
